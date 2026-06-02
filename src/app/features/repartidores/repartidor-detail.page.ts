@@ -6,10 +6,10 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 
 @Component({
-    selector: 'app-repartidor-detail-page',
-    standalone: true,
-    imports: [CommonModule, PageHeaderComponent],
-    template: `
+  selector: 'app-repartidor-detail-page',
+  standalone: true,
+  imports: [CommonModule, PageHeaderComponent],
+  template: `
     <app-page-header
       [title]="repartidor()?.full_name ?? 'Repartidor'"
       subtitle="Detalle del repartidor">
@@ -190,70 +190,70 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
   `,
 })
 export class RepartidorDetailPageComponent implements OnInit {
-    readonly router = inject(Router);
-    private readonly route = inject(ActivatedRoute);
-    private readonly service = inject(RepartidoresService);
-    private readonly toastService = inject(ToastService);
+  readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly service = inject(RepartidoresService);
+  private readonly toastService = inject(ToastService);
 
-    readonly repartidor = signal<any | null>(null);
-    readonly loading = signal(true);
-    readonly history = signal<any[]>([]);
-    readonly historyTotal = signal(0);
-    readonly historyPage = signal(1);
-    readonly historyLoading = signal(true);
-    readonly ratings = signal<any[]>([]);
-    readonly ratingsLoading = signal(true);
+  readonly repartidor = signal<any | null>(null);
+  readonly loading = signal(true);
+  readonly history = signal<any[]>([]);
+  readonly historyTotal = signal(0);
+  readonly historyPage = signal(1);
+  readonly historyLoading = signal(true);
+  readonly ratings = signal<any[]>([]);
+  readonly ratingsLoading = signal(true);
 
-    readonly pageSize = 15;
-    private repartidorId = '';
+  readonly pageSize = 15;
+  private repartidorId = '';
 
-    ngOnInit(): void {
-        this.repartidorId = this.route.snapshot.paramMap.get('id') ?? '';
-        this.loadRepartidor();
-    }
+  ngOnInit(): void {
+    this.repartidorId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.loadRepartidor();
+  }
 
-    loadRepartidor(): void {
-        this.loading.set(true);
-        this.service.getRepartidorById(this.repartidorId).subscribe({
-            next: data => {
-                this.repartidor.set(data);
-                this.loading.set(false);
-                this.loadHistory();
-                this.loadRatings();
-            },
-            error: () => {
-                this.toastService.error('Error al cargar el repartidor');
-                this.loading.set(false);
-            },
-        });
-    }
+  loadRepartidor(): void {
+    this.loading.set(true);
+    this.service.getRepartidorById(this.repartidorId).subscribe({
+      next: data => {
+        this.repartidor.set(data);
+        this.loading.set(false);
+        this.loadHistory();
+        this.loadRatings();
+      },
+      error: () => {
+        this.toastService.error('Error al cargar el repartidor');
+        this.loading.set(false);
+      },
+    });
+  }
 
-    loadHistory(page = 1): void {
-        this.historyLoading.set(true);
-        this.historyPage.set(page);
-        this.service.getDeliveryHistory(this.repartidorId, page, this.pageSize).subscribe(({ data, count }) => {
-            this.history.set(data);
-            this.historyTotal.set(count);
-            this.historyLoading.set(false);
-        });
-    }
+  loadHistory(page = 1): void {
+    this.historyLoading.set(true);
+    this.historyPage.set(page);
+    this.service.getDeliveryHistory(this.repartidorId, page, this.pageSize).subscribe(({ data, count }) => {
+      this.history.set(data);
+      this.historyTotal.set(count);
+      this.historyLoading.set(false);
+    });
+  }
 
-    loadRatings(): void {
-        this.ratingsLoading.set(true);
-        this.service.getRatings(this.repartidorId).subscribe(data => {
-            this.ratings.set(data);
-            this.ratingsLoading.set(false);
-        });
-    }
+  loadRatings(): void {
+    this.ratingsLoading.set(true);
+    this.service.getRatings(this.repartidorId).subscribe(data => {
+      this.ratings.set(data);
+      this.ratingsLoading.set(false);
+    });
+  }
 
-    changePage(page: number): void {
-        this.loadHistory(page);
-    }
+  changePage(page: number): void {
+    this.loadHistory(page);
+  }
 
-    vehicleLabel(type: string): string {
-        const map: Record<string, string> = {
-            moto: '🏍️ Moto', bicicleta: '🚲 Bicicleta', carro: '🚗 Carro', a_pie: '🚶 A pie',
-        };
-        return map[type] ?? type;
-    }
+  vehicleLabel(type: string): string {
+    const map: Record<string, string> = {
+      moto: '🏍️ Moto', bicicleta: '🚲 Bicicleta', carro: '🚗 Carro', a_pie: '🚶 A pie',
+    };
+    return map[type] ?? type;
+  }
 }

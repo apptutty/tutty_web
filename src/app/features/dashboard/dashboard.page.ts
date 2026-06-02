@@ -164,12 +164,12 @@ export class DashboardPageComponent implements OnInit {
 
     progressColor(status: string): string {
         const map: Record<string, string> = {
-            recibido:       'bg-warning-400',
-            confirmado:     'bg-brand-500',
+            recibido: 'bg-warning-400',
+            confirmado: 'bg-brand-500',
             en_preparacion: 'bg-orange-400',
-            en_camino:      'bg-purple-500',
-            entregado:      'bg-success-500',
-            cancelado:      'bg-error-500',
+            en_camino: 'bg-purple-500',
+            entregado: 'bg-success-500',
+            cancelado: 'bg-error-500',
         };
         return map[status] ?? 'bg-gray-300';
     }

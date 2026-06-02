@@ -8,8 +8,8 @@ module.exports = {
       },
       colors: {
         brand: {
-          25:  '#f2f7ff',
-          50:  '#ecf3ff',
+          25: '#f2f7ff',
+          50: '#ecf3ff',
           100: '#dde9ff',
           200: '#c2d6ff',
           300: '#9cb9ff',
@@ -23,7 +23,7 @@ module.exports = {
         },
         'gray-dark': '#1a2231',
         success: {
-          50:  '#ecfdf3',
+          50: '#ecfdf3',
           100: '#d1fadf',
           200: '#a6f4c5',
           400: '#32d583',
@@ -32,7 +32,7 @@ module.exports = {
           700: '#027a48',
         },
         error: {
-          50:  '#fef3f2',
+          50: '#fef3f2',
           100: '#fee4e2',
           200: '#fecdca',
           400: '#f97066',
@@ -41,7 +41,7 @@ module.exports = {
           700: '#b42318',
         },
         warning: {
-          50:  '#fffaeb',
+          50: '#fffaeb',
           100: '#fef0c7',
           200: '#fedf89',
           400: '#fdb022',
@@ -50,7 +50,7 @@ module.exports = {
           700: '#b54708',
         },
         orange: {
-          50:  '#fff6ed',
+          50: '#fff6ed',
           100: '#ffead5',
           400: '#fd853a',
           500: '#fb6514',
@@ -60,9 +60,12 @@ module.exports = {
       boxShadow: {
         'theme-xs': '0px 1px 2px 0px rgba(16, 24, 40, 0.05)',
         'theme-sm': '0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06)',
-        'theme-md': '0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06)',
-        'theme-lg': '0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03)',
-        'theme-xl': '0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03)',
+        'theme-md':
+          '0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06)',
+        'theme-lg':
+          '0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03)',
+        'theme-xl':
+          '0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03)',
       },
     },
   },

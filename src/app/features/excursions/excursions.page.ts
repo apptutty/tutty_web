@@ -10,10 +10,10 @@ import { ExcursionOperator, Excursion, ExcursionDate, BookingStatus } from '../.
 type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
 
 @Component({
-    selector: 'app-excursions-page',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent],
-    template: `
+  selector: 'app-excursions-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent],
+  template: `
     <app-page-header title="Excursiones" subtitle="Gestión de operadores, excursiones y reservas">
       @if (activeTab() === 'operadores') {
         <button class="btn-primary" (click)="openOperatorModal()">+ Operador</button>
@@ -395,298 +395,298 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
     `,
 })
 export class ExcursionsPageComponent implements OnInit {
-    private readonly service = inject(ExcursionsService);
-    private readonly toastService = inject(ToastService);
-    private readonly fb = inject(FormBuilder);
+  private readonly service = inject(ExcursionsService);
+  private readonly toastService = inject(ToastService);
+  private readonly fb = inject(FormBuilder);
 
-    readonly activeTab = signal<ActiveTab>('operadores');
-    readonly operators = signal<ExcursionOperator[]>([]);
-    readonly excursions = signal<any[]>([]);
-    readonly bookings = signal<any[]>([]);
-    readonly loading = signal(true);
-    readonly showOperatorModal = signal(false);
-    readonly showExcursionModal = signal(false);
-    readonly editingOperator = signal<ExcursionOperator | null>(null);
-    readonly selectedBooking = signal<any | null>(null);
-    readonly bookingDetail = signal<any | null>(null);
-    readonly bookingDetailLoading = signal(false);
-    readonly saveLoading = signal(false);
+  readonly activeTab = signal<ActiveTab>('operadores');
+  readonly operators = signal<ExcursionOperator[]>([]);
+  readonly excursions = signal<any[]>([]);
+  readonly bookings = signal<any[]>([]);
+  readonly loading = signal(true);
+  readonly showOperatorModal = signal(false);
+  readonly showExcursionModal = signal(false);
+  readonly editingOperator = signal<ExcursionOperator | null>(null);
+  readonly selectedBooking = signal<any | null>(null);
+  readonly bookingDetail = signal<any | null>(null);
+  readonly bookingDetailLoading = signal(false);
+  readonly saveLoading = signal(false);
 
-    // Dates
-    readonly selectedExcursion = signal<any | null>(null);
-    readonly excursionDates = signal<ExcursionDate[]>([]);
-    readonly excursionDatesLoading = signal(false);
-    readonly showDatesModal = signal(false);
-    readonly showAddDatesModal = signal(false);
-    newDateInput = '';
-    newDates: string[] = [];
-    newDepartureTime = '08:00';
-    newTotalSpots = 20;
+  // Dates
+  readonly selectedExcursion = signal<any | null>(null);
+  readonly excursionDates = signal<ExcursionDate[]>([]);
+  readonly excursionDatesLoading = signal(false);
+  readonly showDatesModal = signal(false);
+  readonly showAddDatesModal = signal(false);
+  newDateInput = '';
+  newDates: string[] = [];
+  newDepartureTime = '08:00';
+  newTotalSpots = 20;
 
-    bookingStatusFilter: BookingStatus | '' = '';
-    operatorSearch = '';
-    excursionSearch = '';
-    difficultyFilter = '';
-    bookingDateFrom = '';
-    bookingDateTo = '';
+  bookingStatusFilter: BookingStatus | '' = '';
+  operatorSearch = '';
+  excursionSearch = '';
+  difficultyFilter = '';
+  bookingDateFrom = '';
+  bookingDateTo = '';
 
-    readonly filteredOperators = () => {
-        let result = this.operators();
-        if (this.operatorSearch.trim()) {
-            const q = this.operatorSearch.toLowerCase();
-            result = result.filter(op => op.name?.toLowerCase().includes(q) || op.category?.toLowerCase().includes(q));
-        }
-        return result;
-    };
+  readonly filteredOperators = () => {
+    let result = this.operators();
+    if (this.operatorSearch.trim()) {
+      const q = this.operatorSearch.toLowerCase();
+      result = result.filter(op => op.name?.toLowerCase().includes(q) || op.category?.toLowerCase().includes(q));
+    }
+    return result;
+  };
 
-    readonly filteredExcursions = () => {
-        let result = this.excursions();
-        if (this.excursionSearch.trim()) {
-            const q = this.excursionSearch.toLowerCase();
-            result = result.filter(e => e.name?.toLowerCase().includes(q) || e.operator_name?.toLowerCase().includes(q));
-        }
-        if (this.difficultyFilter) result = result.filter(e => e.difficulty === this.difficultyFilter);
-        return result;
-    };
+  readonly filteredExcursions = () => {
+    let result = this.excursions();
+    if (this.excursionSearch.trim()) {
+      const q = this.excursionSearch.toLowerCase();
+      result = result.filter(e => e.name?.toLowerCase().includes(q) || e.operator_name?.toLowerCase().includes(q));
+    }
+    if (this.difficultyFilter) result = result.filter(e => e.difficulty === this.difficultyFilter);
+    return result;
+  };
 
-    readonly filteredBookings = () => {
-        let result = this.bookings();
-        if (this.bookingDateFrom) result = result.filter(b => b.excursion_date_str >= this.bookingDateFrom);
-        if (this.bookingDateTo) result = result.filter(b => b.excursion_date_str <= this.bookingDateTo);
-        return result;
-    };
+  readonly filteredBookings = () => {
+    let result = this.bookings();
+    if (this.bookingDateFrom) result = result.filter(b => b.excursion_date_str >= this.bookingDateFrom);
+    if (this.bookingDateTo) result = result.filter(b => b.excursion_date_str <= this.bookingDateTo);
+    return result;
+  };
 
-    readonly tabs = [
-        { key: 'operadores' as ActiveTab, label: 'Operadores' },
-        { key: 'excursiones' as ActiveTab, label: 'Excursiones' },
-        { key: 'reservas' as ActiveTab, label: 'Reservas' },
-    ];
+  readonly tabs = [
+    { key: 'operadores' as ActiveTab, label: 'Operadores' },
+    { key: 'excursiones' as ActiveTab, label: 'Excursiones' },
+    { key: 'reservas' as ActiveTab, label: 'Reservas' },
+  ];
 
-    readonly operatorColumns: TableColumn[] = [
-        { key: 'name', label: 'Nombre' },
-        { key: 'category', label: 'Categoría' },
-        { key: 'rating', label: 'Rating' },
-        { key: 'total_reviews', label: 'Reseñas' },
-        { key: 'is_active', label: 'Activo', type: 'boolean' },
-    ];
+  readonly operatorColumns: TableColumn[] = [
+    { key: 'name', label: 'Nombre' },
+    { key: 'category', label: 'Categoría' },
+    { key: 'rating', label: 'Rating' },
+    { key: 'total_reviews', label: 'Reseñas' },
+    { key: 'is_active', label: 'Activo', type: 'boolean' },
+  ];
 
-    readonly excursionColumns: TableColumn[] = [
-        { key: 'name', label: 'Nombre' },
-        { key: 'operator_name', label: 'Operador' },
-        { key: 'price_per_person', label: 'Precio/persona', type: 'currency' },
-        { key: 'duration_hours', label: 'Duración (h)' },
-        { key: 'difficulty', label: 'Dificultad' },
-        { key: 'min_people', label: 'Mín' },
-        { key: 'max_people', label: 'Máx' },
-        { key: 'is_active', label: 'Activo', type: 'boolean' },
-    ];
+  readonly excursionColumns: TableColumn[] = [
+    { key: 'name', label: 'Nombre' },
+    { key: 'operator_name', label: 'Operador' },
+    { key: 'price_per_person', label: 'Precio/persona', type: 'currency' },
+    { key: 'duration_hours', label: 'Duración (h)' },
+    { key: 'difficulty', label: 'Dificultad' },
+    { key: 'min_people', label: 'Mín' },
+    { key: 'max_people', label: 'Máx' },
+    { key: 'is_active', label: 'Activo', type: 'boolean' },
+  ];
 
-    readonly bookingColumns: TableColumn[] = [
-        { key: 'booking_number', label: '# Reserva' },
-        { key: 'excursion_name', label: 'Excursión' },
-        { key: 'customer_name', label: 'Cliente' },
-        { key: 'excursion_date_str', label: 'Fecha excursión' },
-        { key: 'num_people', label: 'Personas' },
-        { key: 'total', label: 'Total', type: 'currency' },
-        { key: 'status', label: 'Estado', type: 'badge', badgeType: 'booking' },
-        { key: 'created_at', label: 'Reservado', type: 'date' },
-    ];
+  readonly bookingColumns: TableColumn[] = [
+    { key: 'booking_number', label: '# Reserva' },
+    { key: 'excursion_name', label: 'Excursión' },
+    { key: 'customer_name', label: 'Cliente' },
+    { key: 'excursion_date_str', label: 'Fecha excursión' },
+    { key: 'num_people', label: 'Personas' },
+    { key: 'total', label: 'Total', type: 'currency' },
+    { key: 'status', label: 'Estado', type: 'badge', badgeType: 'booking' },
+    { key: 'created_at', label: 'Reservado', type: 'date' },
+  ];
 
-    readonly operatorForm = this.fb.group({
-        name: ['', Validators.required],
-        category: ['Playa'],
-        whatsapp: [''],
-        description: [''],
+  readonly operatorForm = this.fb.group({
+    name: ['', Validators.required],
+    category: ['Playa'],
+    whatsapp: [''],
+    description: [''],
+  });
+
+  readonly excursionForm = this.fb.group({
+    name: ['', Validators.required],
+    operator_id: ['', Validators.required],
+    difficulty: ['facil'],
+    price_per_person: [0, Validators.required],
+    duration_hours: [4],
+    min_people: [1],
+    max_people: [20],
+    short_description: [''],
+  });
+
+  ngOnInit(): void { this.loadTabData(); }
+
+  loadTabData(): void {
+    this.loading.set(true);
+    if (this.activeTab() === 'operadores') this.loadOperators();
+    else if (this.activeTab() === 'excursiones') this.loadExcursions();
+    else this.loadBookings();
+  }
+
+  loadOperators(): void {
+    this.service.getOperators().subscribe(data => {
+      this.operators.set(data);
+      this.loading.set(false);
     });
+  }
 
-    readonly excursionForm = this.fb.group({
-        name: ['', Validators.required],
-        operator_id: ['', Validators.required],
-        difficulty: ['facil'],
-        price_per_person: [0, Validators.required],
-        duration_hours: [4],
-        min_people: [1],
-        max_people: [20],
-        short_description: [''],
+  loadExcursions(): void {
+    if (this.operators().length === 0) {
+      this.service.getOperators().subscribe(ops => this.operators.set(ops));
+    }
+    this.service.getExcursions().subscribe(data => {
+      this.excursions.set(data);
+      this.loading.set(false);
     });
+  }
 
-    ngOnInit(): void { this.loadTabData(); }
+  loadBookings(): void {
+    this.service.getBookings(this.bookingStatusFilter ? { status: this.bookingStatusFilter as BookingStatus } : {})
+      .subscribe(data => {
+        this.bookings.set(data);
+        this.loading.set(false);
+      });
+  }
 
-    loadTabData(): void {
-        this.loading.set(true);
-        if (this.activeTab() === 'operadores') this.loadOperators();
-        else if (this.activeTab() === 'excursiones') this.loadExcursions();
-        else this.loadBookings();
+  openOperatorModal(op?: ExcursionOperator): void {
+    this.editingOperator.set(op ?? null);
+    this.operatorForm.reset({ category: 'Playa' });
+    if (op) this.operatorForm.patchValue(op as any);
+    this.showOperatorModal.set(true);
+  }
+
+  async saveOperator(): Promise<void> {
+    if (this.operatorForm.invalid) return;
+    this.saveLoading.set(true);
+    try {
+      const val = this.operatorForm.getRawValue();
+      await this.service.saveOperator({
+        ...(this.editingOperator() ? { id: this.editingOperator()!.id } : {}),
+        name: val.name!,
+        slug: val.name!.toLowerCase().replace(/\s+/g, '-'),
+        category: val.category!,
+        whatsapp: val.whatsapp ?? null,
+        description: val.description ?? null,
+        is_active: true,
+        rating: 0,
+        total_reviews: 0,
+      });
+      this.toastService.success('Operador guardado');
+      this.showOperatorModal.set(false);
+      this.loadOperators();
+    } catch { this.toastService.error('Error al guardar'); }
+    finally { this.saveLoading.set(false); }
+  }
+
+  openExcursionModal(): void {
+    this.excursionForm.reset({ difficulty: 'facil', min_people: 1, max_people: 20, duration_hours: 4 });
+    this.showExcursionModal.set(true);
+  }
+
+  async saveExcursion(): Promise<void> {
+    if (this.excursionForm.invalid) return;
+    this.saveLoading.set(true);
+    try {
+      const val = this.excursionForm.getRawValue();
+      await this.service.saveExcursion({
+        name: val.name!,
+        operator_id: val.operator_id!,
+        difficulty: val.difficulty as any,
+        price_per_person: val.price_per_person ?? 0,
+        duration_hours: val.duration_hours ?? 4,
+        min_people: val.min_people ?? 1,
+        max_people: val.max_people ?? 20,
+        short_description: val.short_description ?? null,
+        is_active: true,
+        language: 'Español',
+        min_hours_advance: 24,
+        cancellation_hours: 24,
+        photos: [],
+      });
+      this.toastService.success('Excursión creada');
+      this.showExcursionModal.set(false);
+      this.loadExcursions();
+    } catch { this.toastService.error('Error al guardar'); }
+    finally { this.saveLoading.set(false); }
+  }
+
+  openBookingDetail(booking: any): void {
+    this.selectedBooking.set(booking);
+    this.bookingDetail.set(null);
+    this.bookingDetailLoading.set(true);
+    this.service.getBookingById(booking.id).subscribe({
+      next: detail => { this.bookingDetail.set(detail); this.bookingDetailLoading.set(false); },
+      error: () => this.bookingDetailLoading.set(false),
+    });
+  }
+
+  openDatesModal(excursion: any): void {
+    this.selectedExcursion.set(excursion);
+    this.showDatesModal.set(true);
+    this.excursionDatesLoading.set(true);
+    this.service.getExcursionDates(excursion.id).subscribe(dates => {
+      this.excursionDates.set(dates);
+      this.excursionDatesLoading.set(false);
+    });
+  }
+
+  closeDatesModal(): void {
+    this.showDatesModal.set(false);
+    this.showAddDatesModal.set(false);
+    this.selectedExcursion.set(null);
+    this.newDates = [];
+    this.newDateInput = '';
+  }
+
+  addDateToList(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    if (val && !this.newDates.includes(val)) {
+      this.newDates = [...this.newDates, val].sort();
     }
+    this.newDateInput = '';
+    (event.target as HTMLInputElement).value = '';
+  }
 
-    loadOperators(): void {
-        this.service.getOperators().subscribe(data => {
-            this.operators.set(data);
-            this.loading.set(false);
-        });
-    }
+  removeDate(d: string): void { this.newDates = this.newDates.filter(x => x !== d); }
 
-    loadExcursions(): void {
-        if (this.operators().length === 0) {
-            this.service.getOperators().subscribe(ops => this.operators.set(ops));
-        }
-        this.service.getExcursions().subscribe(data => {
-            this.excursions.set(data);
-            this.loading.set(false);
-        });
-    }
+  async addExcursionDates(): Promise<void> {
+    if (!this.newDates.length || !this.selectedExcursion()) return;
+    this.saveLoading.set(true);
+    try {
+      await this.service.addExcursionDates(
+        this.selectedExcursion()!.id,
+        this.newDates,
+        this.newDepartureTime,
+        this.newTotalSpots,
+      );
+      this.toastService.success(`${this.newDates.length} fecha(s) agregadas`);
+      this.newDates = [];
+      this.newDateInput = '';
+      this.showAddDatesModal.set(false);
+      this.excursionDatesLoading.set(true);
+      this.service.getExcursionDates(this.selectedExcursion()!.id).subscribe(dates => {
+        this.excursionDates.set(dates);
+        this.excursionDatesLoading.set(false);
+      });
+    } catch { this.toastService.error('Error al agregar fechas'); }
+    finally { this.saveLoading.set(false); }
+  }
 
-    loadBookings(): void {
-        this.service.getBookings(this.bookingStatusFilter ? { status: this.bookingStatusFilter as BookingStatus } : {})
-            .subscribe(data => {
-                this.bookings.set(data);
-                this.loading.set(false);
-            });
-    }
+  bookingStatusClass(status: string): string {
+    const map: Record<string, string> = {
+      pendiente: 'bg-warning-100 text-warning-700',
+      confirmada: 'bg-brand-100 text-brand-700',
+      completada: 'bg-success-100 text-success-700',
+      cancelada: 'bg-error-100 text-error-700',
+    };
+    return map[status] ?? 'bg-gray-100 text-gray-600';
+  }
 
-    openOperatorModal(op?: ExcursionOperator): void {
-        this.editingOperator.set(op ?? null);
-        this.operatorForm.reset({ category: 'Playa' });
-        if (op) this.operatorForm.patchValue(op as any);
-        this.showOperatorModal.set(true);
-    }
-
-    async saveOperator(): Promise<void> {
-        if (this.operatorForm.invalid) return;
-        this.saveLoading.set(true);
-        try {
-            const val = this.operatorForm.getRawValue();
-            await this.service.saveOperator({
-                ...(this.editingOperator() ? { id: this.editingOperator()!.id } : {}),
-                name: val.name!,
-                slug: val.name!.toLowerCase().replace(/\s+/g, '-'),
-                category: val.category!,
-                whatsapp: val.whatsapp ?? null,
-                description: val.description ?? null,
-                is_active: true,
-                rating: 0,
-                total_reviews: 0,
-            });
-            this.toastService.success('Operador guardado');
-            this.showOperatorModal.set(false);
-            this.loadOperators();
-        } catch { this.toastService.error('Error al guardar'); }
-        finally { this.saveLoading.set(false); }
-    }
-
-    openExcursionModal(): void {
-        this.excursionForm.reset({ difficulty: 'facil', min_people: 1, max_people: 20, duration_hours: 4 });
-        this.showExcursionModal.set(true);
-    }
-
-    async saveExcursion(): Promise<void> {
-        if (this.excursionForm.invalid) return;
-        this.saveLoading.set(true);
-        try {
-            const val = this.excursionForm.getRawValue();
-            await this.service.saveExcursion({
-                name: val.name!,
-                operator_id: val.operator_id!,
-                difficulty: val.difficulty as any,
-                price_per_person: val.price_per_person ?? 0,
-                duration_hours: val.duration_hours ?? 4,
-                min_people: val.min_people ?? 1,
-                max_people: val.max_people ?? 20,
-                short_description: val.short_description ?? null,
-                is_active: true,
-                language: 'Español',
-                min_hours_advance: 24,
-                cancellation_hours: 24,
-                photos: [],
-            });
-            this.toastService.success('Excursión creada');
-            this.showExcursionModal.set(false);
-            this.loadExcursions();
-        } catch { this.toastService.error('Error al guardar'); }
-        finally { this.saveLoading.set(false); }
-    }
-
-    openBookingDetail(booking: any): void {
-        this.selectedBooking.set(booking);
-        this.bookingDetail.set(null);
-        this.bookingDetailLoading.set(true);
-        this.service.getBookingById(booking.id).subscribe({
-            next: detail => { this.bookingDetail.set(detail); this.bookingDetailLoading.set(false); },
-            error: () => this.bookingDetailLoading.set(false),
-        });
-    }
-
-    openDatesModal(excursion: any): void {
-        this.selectedExcursion.set(excursion);
-        this.showDatesModal.set(true);
-        this.excursionDatesLoading.set(true);
-        this.service.getExcursionDates(excursion.id).subscribe(dates => {
-            this.excursionDates.set(dates);
-            this.excursionDatesLoading.set(false);
-        });
-    }
-
-    closeDatesModal(): void {
-        this.showDatesModal.set(false);
-        this.showAddDatesModal.set(false);
-        this.selectedExcursion.set(null);
-        this.newDates = [];
-        this.newDateInput = '';
-    }
-
-    addDateToList(event: Event): void {
-        const val = (event.target as HTMLInputElement).value;
-        if (val && !this.newDates.includes(val)) {
-            this.newDates = [...this.newDates, val].sort();
-        }
-        this.newDateInput = '';
-        (event.target as HTMLInputElement).value = '';
-    }
-
-    removeDate(d: string): void { this.newDates = this.newDates.filter(x => x !== d); }
-
-    async addExcursionDates(): Promise<void> {
-        if (!this.newDates.length || !this.selectedExcursion()) return;
-        this.saveLoading.set(true);
-        try {
-            await this.service.addExcursionDates(
-                this.selectedExcursion()!.id,
-                this.newDates,
-                this.newDepartureTime,
-                this.newTotalSpots,
-            );
-            this.toastService.success(`${this.newDates.length} fecha(s) agregadas`);
-            this.newDates = [];
-            this.newDateInput = '';
-            this.showAddDatesModal.set(false);
-            this.excursionDatesLoading.set(true);
-            this.service.getExcursionDates(this.selectedExcursion()!.id).subscribe(dates => {
-                this.excursionDates.set(dates);
-                this.excursionDatesLoading.set(false);
-            });
-        } catch { this.toastService.error('Error al agregar fechas'); }
-        finally { this.saveLoading.set(false); }
-    }
-
-    bookingStatusClass(status: string): string {
-        const map: Record<string, string> = {
-            pendiente: 'bg-warning-100 text-warning-700',
-            confirmada: 'bg-brand-100 text-brand-700',
-            completada: 'bg-success-100 text-success-700',
-            cancelada: 'bg-error-100 text-error-700',
-        };
-        return map[status] ?? 'bg-gray-100 text-gray-600';
-    }
-
-    async updateStatus(status: BookingStatus): Promise<void> {
-        if (!this.selectedBooking()) return;
-        try {
-            await this.service.updateBookingStatus(this.selectedBooking()!.id, status);
-            this.toastService.success('Estado actualizado');
-            this.selectedBooking.set(null);
-            this.bookingDetail.set(null);
-            this.loadBookings();
-        } catch { this.toastService.error('Error al actualizar'); }
-    }
+  async updateStatus(status: BookingStatus): Promise<void> {
+    if (!this.selectedBooking()) return;
+    try {
+      await this.service.updateBookingStatus(this.selectedBooking()!.id, status);
+      this.toastService.success('Estado actualizado');
+      this.selectedBooking.set(null);
+      this.bookingDetail.set(null);
+      this.loadBookings();
+    } catch { this.toastService.error('Error al actualizar'); }
+  }
 }
 

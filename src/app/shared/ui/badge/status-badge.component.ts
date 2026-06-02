@@ -45,17 +45,17 @@ export class StatusBadgeComponent {
     };
 
     private readonly classMap: Record<string, string> = {
-        recibido:        'bg-warning-100 text-warning-700',
-        confirmado:      'bg-brand-100 text-brand-700',
-        en_preparacion:  'bg-orange-100 text-orange-600',
-        en_camino:       'bg-purple-100 text-purple-700',
-        entregado:       'bg-success-100 text-success-700',
-        cancelado:       'bg-error-100 text-error-700',
-        pendiente:       'bg-warning-100 text-warning-700',
-        completado:      'bg-success-100 text-success-700',
-        abierto:         'bg-success-100 text-success-700',
-        cerrado:         'bg-gray-100 text-gray-600',
-        activo:          'bg-success-100 text-success-700',
-        inactivo:        'bg-error-100 text-error-700',
+        recibido: 'bg-warning-100 text-warning-700',
+        confirmado: 'bg-brand-100 text-brand-700',
+        en_preparacion: 'bg-orange-100 text-orange-600',
+        en_camino: 'bg-purple-100 text-purple-700',
+        entregado: 'bg-success-100 text-success-700',
+        cancelado: 'bg-error-100 text-error-700',
+        pendiente: 'bg-warning-100 text-warning-700',
+        completado: 'bg-success-100 text-success-700',
+        abierto: 'bg-success-100 text-success-700',
+        cerrado: 'bg-gray-100 text-gray-600',
+        activo: 'bg-success-100 text-success-700',
+        inactivo: 'bg-error-100 text-error-700',
     };
 }

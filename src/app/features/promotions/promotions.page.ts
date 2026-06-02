@@ -9,10 +9,10 @@ import { Promotion, PromoType, PromoUse } from '../../core/supabase/database.typ
 type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
 
 @Component({
-    selector: 'app-promotions-page',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
-    template: `
+  selector: 'app-promotions-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  template: `
     <app-page-header title="Promociones" subtitle="Códigos de descuento y ofertas">
       <button class="btn-primary" (click)="openForm()">+ Nueva promoción</button>
     </app-page-header>
@@ -280,129 +280,129 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
   `,
 })
 export class PromotionsPageComponent implements OnInit {
-    private readonly service = inject(PromotionsService);
-    private readonly toastService = inject(ToastService);
-    private readonly fb = inject(FormBuilder);
+  private readonly service = inject(PromotionsService);
+  private readonly toastService = inject(ToastService);
+  private readonly fb = inject(FormBuilder);
 
-    readonly promotions = signal<Promotion[]>([]);
-    readonly loading = signal(true);
-    readonly showForm = signal(false);
-    readonly editingId = signal<string | null>(null);
-    readonly saveLoading = signal(false);
-    readonly activeTab = signal<PromoTab>('todas');
+  readonly promotions = signal<Promotion[]>([]);
+  readonly loading = signal(true);
+  readonly showForm = signal(false);
+  readonly editingId = signal<string | null>(null);
+  readonly saveLoading = signal(false);
+  readonly activeTab = signal<PromoTab>('todas');
 
-    // Stats
-    readonly statsPromo = signal<Promotion | null>(null);
-    readonly promoUses = signal<PromoUse[]>([]);
-    readonly statsLoading = signal(false);
-    readonly totalDiscount = () => this.promoUses().reduce((sum, u) => sum + (u.discount_applied ?? 0), 0);
+  // Stats
+  readonly statsPromo = signal<Promotion | null>(null);
+  readonly promoUses = signal<PromoUse[]>([]);
+  readonly statsLoading = signal(false);
+  readonly totalDiscount = () => this.promoUses().reduce((sum, u) => sum + (u.discount_applied ?? 0), 0);
 
-    searchText = '';
-    typeFilter = '';
+  searchText = '';
+  typeFilter = '';
 
-    readonly tabs = [
-        { key: 'activas' as PromoTab, label: 'Activas' },
-        { key: 'programadas' as PromoTab, label: 'Programadas' },
-        { key: 'expiradas' as PromoTab, label: 'Expiradas' },
-        { key: 'todas' as PromoTab, label: 'Todas' },
-    ];
+  readonly tabs = [
+    { key: 'activas' as PromoTab, label: 'Activas' },
+    { key: 'programadas' as PromoTab, label: 'Programadas' },
+    { key: 'expiradas' as PromoTab, label: 'Expiradas' },
+    { key: 'todas' as PromoTab, label: 'Todas' },
+  ];
 
-    readonly promoForm = this.fb.group({
-        name: ['', Validators.required],
-        code: ['', Validators.required],
-        type: ['percentage' as PromoType],
-        value: [0, Validators.required],
-        min_order_amount: [null as number | null],
-        max_uses: [null as number | null],
-        valid_from: [null as string | null],
-        valid_until: [null as string | null],
-        description: [''],
+  readonly promoForm = this.fb.group({
+    name: ['', Validators.required],
+    code: ['', Validators.required],
+    type: ['percentage' as PromoType],
+    value: [0, Validators.required],
+    min_order_amount: [null as number | null],
+    max_uses: [null as number | null],
+    valid_from: [null as string | null],
+    valid_until: [null as string | null],
+    description: [''],
+  });
+
+  readonly filteredPromos = () => {
+    const now = new Date().toISOString().split('T')[0];
+    let promos = this.promotions();
+    if (this.activeTab() === 'activas') promos = promos.filter(p => p.is_active);
+    else if (this.activeTab() === 'programadas') promos = promos.filter(p => p.valid_from && p.valid_from > now);
+    else if (this.activeTab() === 'expiradas') promos = promos.filter(p => p.valid_until && p.valid_until < now);
+    if (this.searchText.trim()) {
+      const q = this.searchText.toLowerCase();
+      promos = promos.filter(p => p.code?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
+    }
+    if (this.typeFilter) promos = promos.filter(p => p.type === this.typeFilter);
+    return promos;
+  };
+
+  ngOnInit(): void { this.loadPromotions(); }
+
+  loadPromotions(): void {
+    this.loading.set(true);
+    this.service.getPromotions().subscribe({
+      next: data => { this.promotions.set(data); this.loading.set(false); },
+      error: () => { this.toastService.error('Error al cargar'); this.loading.set(false); },
     });
+  }
 
-    readonly filteredPromos = () => {
-        const now = new Date().toISOString().split('T')[0];
-        let promos = this.promotions();
-        if (this.activeTab() === 'activas') promos = promos.filter(p => p.is_active);
-        else if (this.activeTab() === 'programadas') promos = promos.filter(p => p.valid_from && p.valid_from > now);
-        else if (this.activeTab() === 'expiradas') promos = promos.filter(p => p.valid_until && p.valid_until < now);
-        if (this.searchText.trim()) {
-            const q = this.searchText.toLowerCase();
-            promos = promos.filter(p => p.code?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
-        }
-        if (this.typeFilter) promos = promos.filter(p => p.type === this.typeFilter);
-        return promos;
+  openForm(p?: Promotion): void {
+    this.editingId.set(p?.id ?? null);
+    if (p) { this.promoForm.patchValue(p as any); }
+    else { this.promoForm.reset({ type: 'percentage', value: 0 }); }
+    this.showForm.set(true);
+  }
+
+  generateCode(): void {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    this.promoForm.patchValue({ code });
+  }
+
+  async save(): Promise<void> {
+    if (this.promoForm.invalid) return;
+    this.saveLoading.set(true);
+    const val = this.promoForm.getRawValue();
+    try {
+      await this.service.savePromotion({
+        ...(this.editingId() ? { id: this.editingId()! } : {}),
+        name: val.name!,
+        code: val.code!.toUpperCase(),
+        type: val.type as PromoType,
+        value: val.value ?? 0,
+        min_order_amount: val.min_order_amount ?? null,
+        max_uses: val.max_uses ?? null,
+        valid_from: val.valid_from ?? null,
+        valid_until: val.valid_until ?? null,
+        description: val.description ?? null,
+        is_active: true,
+        current_uses: 0,
+      });
+      this.toastService.success('Promoción guardada');
+      this.showForm.set(false);
+      this.loadPromotions();
+    } catch { this.toastService.error('Error al guardar'); }
+    finally { this.saveLoading.set(false); }
+  }
+
+  async togglePromo(p: Promotion): Promise<void> {
+    try {
+      await this.service.togglePromotion(p.id, !p.is_active);
+      this.promotions.update(list => list.map(x => x.id === p.id ? { ...x, is_active: !p.is_active } : x));
+    } catch { this.toastService.error('Error al actualizar'); }
+  }
+
+  typeLabel(type: PromoType): string {
+    const map: Record<PromoType, string> = {
+      percentage: 'Porcentaje', fixed_amount: 'Monto fijo', free_delivery: 'Delivery gratis',
     };
+    return map[type] ?? type;
+  }
 
-    ngOnInit(): void { this.loadPromotions(); }
-
-    loadPromotions(): void {
-        this.loading.set(true);
-        this.service.getPromotions().subscribe({
-            next: data => { this.promotions.set(data); this.loading.set(false); },
-            error: () => { this.toastService.error('Error al cargar'); this.loading.set(false); },
-        });
-    }
-
-    openForm(p?: Promotion): void {
-        this.editingId.set(p?.id ?? null);
-        if (p) { this.promoForm.patchValue(p as any); }
-        else { this.promoForm.reset({ type: 'percentage', value: 0 }); }
-        this.showForm.set(true);
-    }
-
-    generateCode(): void {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-        this.promoForm.patchValue({ code });
-    }
-
-    async save(): Promise<void> {
-        if (this.promoForm.invalid) return;
-        this.saveLoading.set(true);
-        const val = this.promoForm.getRawValue();
-        try {
-            await this.service.savePromotion({
-                ...(this.editingId() ? { id: this.editingId()! } : {}),
-                name: val.name!,
-                code: val.code!.toUpperCase(),
-                type: val.type as PromoType,
-                value: val.value ?? 0,
-                min_order_amount: val.min_order_amount ?? null,
-                max_uses: val.max_uses ?? null,
-                valid_from: val.valid_from ?? null,
-                valid_until: val.valid_until ?? null,
-                description: val.description ?? null,
-                is_active: true,
-                current_uses: 0,
-            });
-            this.toastService.success('Promoción guardada');
-            this.showForm.set(false);
-            this.loadPromotions();
-        } catch { this.toastService.error('Error al guardar'); }
-        finally { this.saveLoading.set(false); }
-    }
-
-    async togglePromo(p: Promotion): Promise<void> {
-        try {
-            await this.service.togglePromotion(p.id, !p.is_active);
-            this.promotions.update(list => list.map(x => x.id === p.id ? { ...x, is_active: !p.is_active } : x));
-        } catch { this.toastService.error('Error al actualizar'); }
-    }
-
-    typeLabel(type: PromoType): string {
-        const map: Record<PromoType, string> = {
-            percentage: 'Porcentaje', fixed_amount: 'Monto fijo', free_delivery: 'Delivery gratis',
-        };
-        return map[type] ?? type;
-    }
-
-    openStats(p: Promotion): void {
-        this.statsPromo.set(p);
-        this.promoUses.set([]);
-        this.statsLoading.set(true);
-        this.service.getPromoUses(p.id).subscribe(uses => {
-            this.promoUses.set(uses);
-            this.statsLoading.set(false);
-        });
-    }
+  openStats(p: Promotion): void {
+    this.statsPromo.set(p);
+    this.promoUses.set([]);
+    this.statsLoading.set(true);
+    this.service.getPromoUses(p.id).subscribe(uses => {
+      this.promoUses.set(uses);
+      this.statsLoading.set(false);
+    });
+  }
 }

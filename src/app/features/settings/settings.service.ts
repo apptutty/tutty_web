@@ -84,19 +84,19 @@ export class SettingsService {
     }
 
     getAdminUsers(): Observable<AdminUser[]> {
-    // Uses anon key - only returns users visible to current session.
-    // For full list, a backend Edge Function with service role is required.
-    return from(
-      this.supabase
-        .from('users')
-        .select('id, email, full_name, role, is_active, created_at, restaurant_id, operator_id')
-        .order('created_at', { ascending: false })
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return (data ?? []) as AdminUser[];
-        })
-    );
-  }
+        // Uses anon key - only returns users visible to current session.
+        // For full list, a backend Edge Function with service role is required.
+        return from(
+            this.supabase
+                .from('users')
+                .select('id, email, full_name, role, is_active, created_at, restaurant_id, operator_id')
+                .order('created_at', { ascending: false })
+                .then(({ data, error }) => {
+                    if (error) throw error;
+                    return (data ?? []) as AdminUser[];
+                })
+        );
+    }
 
     createAdminUser(userData: { email: string; password: string; full_name: string; role: string; restaurant_id?: string; operator_id?: string }): Observable<void> {
         return from(

@@ -59,10 +59,10 @@ export class StatCardComponent {
 
     get iconBg(): string {
         const map: Record<StatCardColor, string> = {
-            green:  'bg-success-50 text-success-700',
-            blue:   'bg-brand-50 text-brand-600',
+            green: 'bg-success-50 text-success-700',
+            blue: 'bg-brand-50 text-brand-600',
             yellow: 'bg-warning-50 text-warning-700',
-            red:    'bg-error-50 text-error-700',
+            red: 'bg-error-50 text-error-700',
             purple: 'bg-purple-50 text-purple-700',
             orange: 'bg-orange-50 text-orange-700',
         };
@@ -70,7 +70,7 @@ export class StatCardComponent {
     }
 
     get trendClass(): string {
-        if (this.trend === 'up')   return 'text-success-600';
+        if (this.trend === 'up') return 'text-success-600';
         if (this.trend === 'down') return 'text-error-600';
         return 'text-gray-400';
     }

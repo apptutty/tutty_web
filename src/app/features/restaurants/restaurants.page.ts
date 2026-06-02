@@ -11,10 +11,10 @@ import { Restaurant, CommissionTier } from '../../core/supabase/database.types';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 @Component({
-    selector: 'app-restaurants-page',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
-    template: `
+  selector: 'app-restaurants-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  template: `
     <app-page-header title="Restaurantes" subtitle="Gestión de establecimientos">
       <button class="btn-primary" (click)="openForm()">+ Nuevo restaurante</button>
     </app-page-header>
@@ -255,130 +255,130 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
   `,
 })
 export class RestaurantsPageComponent implements OnInit {
-    private readonly service = inject(RestaurantsService);
-    private readonly toastService = inject(ToastService);
-    private readonly confirmService = inject(ConfirmService);
-    private readonly fb = inject(FormBuilder);
-    readonly router = inject(Router);
+  private readonly service = inject(RestaurantsService);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
+  private readonly fb = inject(FormBuilder);
+  readonly router = inject(Router);
 
-    readonly restaurants = signal<Restaurant[]>([]);
-    readonly loading = signal(true);
-    readonly showForm = signal(false);
-    readonly editingRestaurant = signal<Restaurant | null>(null);
-    readonly saveLoading = signal(false);
+  readonly restaurants = signal<Restaurant[]>([]);
+  readonly loading = signal(true);
+  readonly showForm = signal(false);
+  readonly editingRestaurant = signal<Restaurant | null>(null);
+  readonly saveLoading = signal(false);
 
-    searchText = '';
-    categoryFilter = '';
-    statusFilter = '';
-    private searchTimeout: any;
+  searchText = '';
+  categoryFilter = '';
+  statusFilter = '';
+  private searchTimeout: any;
 
-    readonly filteredRestaurants = () => {
-        let result = this.restaurants();
-        if (this.categoryFilter) result = result.filter(r => r.category === this.categoryFilter);
-        if (this.statusFilter === 'active') result = result.filter(r => r.is_active);
-        else if (this.statusFilter === 'inactive') result = result.filter(r => !r.is_active);
-        else if (this.statusFilter === 'open') result = result.filter(r => r.is_open);
-        else if (this.statusFilter === 'closed') result = result.filter(r => !r.is_open);
-        return result;
-    };
+  readonly filteredRestaurants = () => {
+    let result = this.restaurants();
+    if (this.categoryFilter) result = result.filter(r => r.category === this.categoryFilter);
+    if (this.statusFilter === 'active') result = result.filter(r => r.is_active);
+    else if (this.statusFilter === 'inactive') result = result.filter(r => !r.is_active);
+    else if (this.statusFilter === 'open') result = result.filter(r => r.is_open);
+    else if (this.statusFilter === 'closed') result = result.filter(r => !r.is_open);
+    return result;
+  };
 
-    readonly restaurantForm = this.fb.group({
-        name: ['', Validators.required],
-        slug: ['', Validators.required],
-        description: [''],
-        category: ['', Validators.required],
-        whatsapp: [''],
-        address: ['', Validators.required],
-        sector: [''],
-        city: ['Santo Domingo', Validators.required],
-        commission_tier: ['estandar' as CommissionTier],
-        commission_rate_display: [10, [Validators.min(1), Validators.max(99)]],
-        min_order_amount: [200],
-        avg_delivery_time: [30],
+  readonly restaurantForm = this.fb.group({
+    name: ['', Validators.required],
+    slug: ['', Validators.required],
+    description: [''],
+    category: ['', Validators.required],
+    whatsapp: [''],
+    address: ['', Validators.required],
+    sector: [''],
+    city: ['Santo Domingo', Validators.required],
+    commission_tier: ['estandar' as CommissionTier],
+    commission_rate_display: [10, [Validators.min(1), Validators.max(99)]],
+    min_order_amount: [200],
+    avg_delivery_time: [30],
+  });
+
+  ngOnInit(): void { this.loadRestaurants(); }
+
+  loadRestaurants(): void {
+    this.loading.set(true);
+    this.service.getRestaurants(this.searchText || undefined).subscribe({
+      next: ({ data }) => { this.restaurants.set(data); this.loading.set(false); },
+      error: () => { this.toastService.error('Error al cargar restaurantes'); this.loading.set(false); },
     });
+  }
 
-    ngOnInit(): void { this.loadRestaurants(); }
+  onSearch(): void {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => this.loadRestaurants(), 300);
+  }
 
-    loadRestaurants(): void {
-        this.loading.set(true);
-        this.service.getRestaurants(this.searchText || undefined).subscribe({
-            next: ({ data }) => { this.restaurants.set(data); this.loading.set(false); },
-            error: () => { this.toastService.error('Error al cargar restaurantes'); this.loading.set(false); },
-        });
+  clearFilters(): void {
+    this.categoryFilter = '';
+    this.statusFilter = '';
+  }
+
+  openForm(restaurant?: Restaurant): void {
+    this.editingRestaurant.set(restaurant ?? null);
+    if (restaurant) {
+      this.restaurantForm.patchValue({
+        ...restaurant,
+        commission_rate_display: Math.round(restaurant.commission_rate * 100),
+      });
+    } else {
+      this.restaurantForm.reset({ city: 'Santo Domingo', commission_tier: 'estandar', commission_rate_display: 10, min_order_amount: 200, avg_delivery_time: 30 });
     }
+    this.showForm.set(true);
+  }
 
-    onSearch(): void {
-        clearTimeout(this.searchTimeout);
-        this.searchTimeout = setTimeout(() => this.loadRestaurants(), 300);
+  async saveRestaurant(): Promise<void> {
+    if (this.restaurantForm.invalid) return;
+    this.saveLoading.set(true);
+    const val = this.restaurantForm.getRawValue();
+    const payload: Partial<Restaurant> = {
+      ...(this.editingRestaurant() ? { id: this.editingRestaurant()!.id } : {}),
+      name: val.name!,
+      slug: val.slug!.toLowerCase().replace(/\s+/g, '-'),
+      description: val.description ?? null,
+      category: val.category!,
+      whatsapp: val.whatsapp ?? null,
+      address: val.address!,
+      sector: val.sector ?? null,
+      city: val.city!,
+      commission_tier: val.commission_tier as CommissionTier,
+      commission_rate: (val.commission_rate_display ?? 10) / 100,
+      min_order_amount: val.min_order_amount ?? 200,
+      avg_delivery_time: val.avg_delivery_time ?? 30,
+    };
+    try {
+      await this.service.saveRestaurant(payload);
+      this.toastService.success(this.editingRestaurant() ? 'Restaurante actualizado' : 'Restaurante creado');
+      this.showForm.set(false);
+      this.loadRestaurants();
+    } catch (e: any) {
+      this.toastService.error(e?.message ?? 'Error al guardar');
+    } finally {
+      this.saveLoading.set(false);
     }
+  }
 
-    clearFilters(): void {
-        this.categoryFilter = '';
-        this.statusFilter = '';
-    }
+  async toggleOpen(r: Restaurant): Promise<void> {
+    try {
+      await this.service.toggleRestaurantOpen(r.id, !r.is_open);
+      this.restaurants.update(list => list.map(x => x.id === r.id ? { ...x, is_open: !r.is_open } : x));
+    } catch { this.toastService.error('Error al actualizar'); }
+  }
 
-    openForm(restaurant?: Restaurant): void {
-        this.editingRestaurant.set(restaurant ?? null);
-        if (restaurant) {
-            this.restaurantForm.patchValue({
-                ...restaurant,
-                commission_rate_display: Math.round(restaurant.commission_rate * 100),
-            });
-        } else {
-            this.restaurantForm.reset({ city: 'Santo Domingo', commission_tier: 'estandar', commission_rate_display: 10, min_order_amount: 200, avg_delivery_time: 30 });
-        }
-        this.showForm.set(true);
-    }
+  async toggleActive(r: Restaurant): Promise<void> {
+    try {
+      await this.service.toggleRestaurantActive(r.id, !r.is_active);
+      this.restaurants.update(list => list.map(x => x.id === r.id ? { ...x, is_active: !r.is_active } : x));
+    } catch { this.toastService.error('Error al actualizar'); }
+  }
 
-    async saveRestaurant(): Promise<void> {
-        if (this.restaurantForm.invalid) return;
-        this.saveLoading.set(true);
-        const val = this.restaurantForm.getRawValue();
-        const payload: Partial<Restaurant> = {
-            ...(this.editingRestaurant() ? { id: this.editingRestaurant()!.id } : {}),
-            name: val.name!,
-            slug: val.slug!.toLowerCase().replace(/\s+/g, '-'),
-            description: val.description ?? null,
-            category: val.category!,
-            whatsapp: val.whatsapp ?? null,
-            address: val.address!,
-            sector: val.sector ?? null,
-            city: val.city!,
-            commission_tier: val.commission_tier as CommissionTier,
-            commission_rate: (val.commission_rate_display ?? 10) / 100,
-            min_order_amount: val.min_order_amount ?? 200,
-            avg_delivery_time: val.avg_delivery_time ?? 30,
-        };
-        try {
-            await this.service.saveRestaurant(payload);
-            this.toastService.success(this.editingRestaurant() ? 'Restaurante actualizado' : 'Restaurante creado');
-            this.showForm.set(false);
-            this.loadRestaurants();
-        } catch (e: any) {
-            this.toastService.error(e?.message ?? 'Error al guardar');
-        } finally {
-            this.saveLoading.set(false);
-        }
-    }
-
-    async toggleOpen(r: Restaurant): Promise<void> {
-        try {
-            await this.service.toggleRestaurantOpen(r.id, !r.is_open);
-            this.restaurants.update(list => list.map(x => x.id === r.id ? { ...x, is_open: !r.is_open } : x));
-        } catch { this.toastService.error('Error al actualizar'); }
-    }
-
-    async toggleActive(r: Restaurant): Promise<void> {
-        try {
-            await this.service.toggleRestaurantActive(r.id, !r.is_active);
-            this.restaurants.update(list => list.map(x => x.id === r.id ? { ...x, is_active: !r.is_active } : x));
-        } catch { this.toastService.error('Error al actualizar'); }
-    }
-
-    tierLabel(tier: CommissionTier): string {
-        const map: Record<CommissionTier, string> = {
-            onboarding: 'Onboarding', estandar: 'Estándar', medio: 'Medio', alto: 'Alto', premium: 'Premium',
-        };
-        return map[tier] ?? tier;
-    }
+  tierLabel(tier: CommissionTier): string {
+    const map: Record<CommissionTier, string> = {
+      onboarding: 'Onboarding', estandar: 'Estándar', medio: 'Medio', alto: 'Alto', premium: 'Premium',
+    };
+    return map[tier] ?? tier;
+  }
 }

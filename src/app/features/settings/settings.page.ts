@@ -10,10 +10,10 @@ import { AppSetting, Holiday } from '../../core/supabase/database.types';
 type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usuarios';
 
 @Component({
-    selector: 'app-settings-page',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, PageHeaderComponent],
-    template: `
+  selector: 'app-settings-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, PageHeaderComponent],
+  template: `
     <div class="p-6">
       <app-page-header title="Configuración" subtitle="Gestión de parámetros del sistema" />
 
@@ -407,208 +407,208 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
   `
 })
 export class SettingsPageComponent implements OnInit {
-    private settingsService = inject(SettingsService);
-    private toast = inject(ToastService);
+  private settingsService = inject(SettingsService);
+  private toast = inject(ToastService);
 
-    activeTab = signal<SettingsTab>('general');
-    tabs = [
-        { id: 'general' as SettingsTab, label: 'General' },
-        { id: 'delivery' as SettingsTab, label: 'Delivery & Precios' },
-        { id: 'feriados' as SettingsTab, label: 'Feriados' },
-        { id: 'notificaciones' as SettingsTab, label: 'Notificaciones' },
-        { id: 'usuarios' as SettingsTab, label: 'Usuarios Admin' },
-    ];
+  activeTab = signal<SettingsTab>('general');
+  tabs = [
+    { id: 'general' as SettingsTab, label: 'General' },
+    { id: 'delivery' as SettingsTab, label: 'Delivery & Precios' },
+    { id: 'feriados' as SettingsTab, label: 'Feriados' },
+    { id: 'notificaciones' as SettingsTab, label: 'Notificaciones' },
+    { id: 'usuarios' as SettingsTab, label: 'Usuarios Admin' },
+  ];
 
-    loadingSettings = signal(true);
-    savingGeneral = signal(false);
-    savingDelivery = signal(false);
+  loadingSettings = signal(true);
+  savingGeneral = signal(false);
+  savingDelivery = signal(false);
 
-    generalForm = {
-        min_order_amount: 0,
-        default_delivery_fee: 0,
-        default_commission_rate: 0,
-        itbis_rate: 18,
-        max_items_per_order: 20,
-        max_orders_in_flight: 50,
-        referral_bonus_amount: 200,
-        order_auto_cancel_minutes: 30,
-        free_delivery_threshold: 0,
-    };
+  generalForm = {
+    min_order_amount: 0,
+    default_delivery_fee: 0,
+    default_commission_rate: 0,
+    itbis_rate: 18,
+    max_items_per_order: 20,
+    max_orders_in_flight: 50,
+    referral_bonus_amount: 200,
+    order_auto_cancel_minutes: 30,
+    free_delivery_threshold: 0,
+  };
 
-    deliveryForm = {
-        weather_surcharge_enabled: false,
-        weather_surcharge_rate: 10,
-        surge_pricing_enabled: false,
-        peak_surcharge_rate: 20,
-        night_surcharge_rate: 15,
-        peak_hours: '12:00-14:00,18:00-21:00',
-    };
+  deliveryForm = {
+    weather_surcharge_enabled: false,
+    weather_surcharge_rate: 10,
+    surge_pricing_enabled: false,
+    peak_surcharge_rate: 20,
+    night_surcharge_rate: 15,
+    peak_hours: '12:00-14:00,18:00-21:00',
+  };
 
-    notifForm = {
-        push_enabled: true,
-        whatsapp_enabled: false,
-        new_order_alert: true,
-        unassigned_alert: true,
-        unassigned_alert_minutes: 10,
-    };
-    savingNotif = signal(false);
+  notifForm = {
+    push_enabled: true,
+    whatsapp_enabled: false,
+    new_order_alert: true,
+    unassigned_alert: true,
+    unassigned_alert_minutes: 10,
+  };
+  savingNotif = signal(false);
 
-    loadingHolidays = signal(false);
-    savingHoliday = signal(false);
-    holidays = signal<Holiday[]>([]);
-    showHolidayModal = signal(false);
-    editingHoliday = signal<Holiday | null>(null);
-    holidayForm: { name: string; date: string; surcharge_rate: number } = { name: '', date: '', surcharge_rate: 0 };
+  loadingHolidays = signal(false);
+  savingHoliday = signal(false);
+  holidays = signal<Holiday[]>([]);
+  showHolidayModal = signal(false);
+  editingHoliday = signal<Holiday | null>(null);
+  holidayForm: { name: string; date: string; surcharge_rate: number } = { name: '', date: '', surcharge_rate: 0 };
 
-    loadingUsers = signal(false);
-    adminUsers = signal<AdminUser[]>([]);
-    showUserModal = signal(false);
-    creatingUser = signal(false);
-    createUserError = signal('');
-    userForm = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
+  loadingUsers = signal(false);
+  adminUsers = signal<AdminUser[]>([]);
+  showUserModal = signal(false);
+  creatingUser = signal(false);
+  createUserError = signal('');
+  userForm = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
 
-    roleLabels: Record<string, string> = {
-        super_admin: 'Superadmin',
-        restaurant_admin: 'Admin Restaurante',
-        excursion_operator: 'Admin Operadora',
-        store_admin: 'Admin Tienda'
-    };
+  roleLabels: Record<string, string> = {
+    super_admin: 'Superadmin',
+    restaurant_admin: 'Admin Restaurante',
+    excursion_operator: 'Admin Operadora',
+    store_admin: 'Admin Tienda'
+  };
 
-    ngOnInit() {
-        this.loadSettings();
+  ngOnInit() {
+    this.loadSettings();
+    this.loadHolidays();
+    this.loadUsers();
+  }
+
+  loadSettings() {
+    this.loadingSettings.set(true);
+    this.settingsService.getSettings().subscribe({
+      next: (settings) => {
+        const map: Record<string, string> = {};
+        settings.forEach(s => map[s.key] = s.value);
+        this.generalForm.min_order_amount = Number(map['min_order_amount'] ?? 150);
+        this.generalForm.default_delivery_fee = Number(map['default_delivery_fee'] ?? 75);
+        this.generalForm.default_commission_rate = Number(map['default_commission_rate'] ?? 15);
+        this.generalForm.itbis_rate = Number(map['itbis_rate'] ?? 18);
+        this.generalForm.max_items_per_order = Number(map['max_items_per_order'] ?? 20);
+        this.generalForm.max_orders_in_flight = Number(map['max_orders_in_flight'] ?? 50);
+        this.generalForm.referral_bonus_amount = Number(map['referral_bonus_amount'] ?? 200);
+        this.generalForm.order_auto_cancel_minutes = Number(map['order_auto_cancel_minutes'] ?? 30);
+        this.generalForm.free_delivery_threshold = Number(map['free_delivery_threshold'] ?? 0);
+        this.deliveryForm.weather_surcharge_enabled = map['weather_surcharge_enabled'] === 'true';
+        this.deliveryForm.weather_surcharge_rate = Number(map['weather_surcharge_rate'] ?? 10);
+        this.deliveryForm.surge_pricing_enabled = map['surge_pricing_enabled'] === 'true';
+        this.deliveryForm.peak_surcharge_rate = Number(map['peak_surcharge_rate'] ?? 20);
+        this.deliveryForm.night_surcharge_rate = Number(map['night_surcharge_rate'] ?? 15);
+        this.deliveryForm.peak_hours = map['peak_hours'] ?? '12:00-14:00,18:00-21:00';
+        this.notifForm.push_enabled = map['push_enabled'] !== 'false';
+        this.notifForm.whatsapp_enabled = map['whatsapp_enabled'] === 'true';
+        this.notifForm.new_order_alert = map['new_order_alert'] !== 'false';
+        this.notifForm.unassigned_alert = map['unassigned_alert'] !== 'false';
+        this.notifForm.unassigned_alert_minutes = Number(map['unassigned_alert_minutes'] ?? 10);
+        this.loadingSettings.set(false);
+      },
+      error: () => this.loadingSettings.set(false)
+    });
+  }
+
+  saveGeneralSettings() {
+    this.savingGeneral.set(true);
+    const rows = Object.entries(this.generalForm).map(([key, value]) => ({ key, value: String(value) }));
+    this.settingsService.upsertSettings(rows).subscribe({
+      next: () => { this.toast.success('Configuración general guardada'); this.savingGeneral.set(false); },
+      error: () => { this.toast.error('Error al guardar'); this.savingGeneral.set(false); }
+    });
+  }
+
+  saveDeliverySettings() {
+    this.savingDelivery.set(true);
+    const rows = Object.entries(this.deliveryForm).map(([key, value]) => ({ key, value: String(value) }));
+    this.settingsService.upsertSettings(rows).subscribe({
+      next: () => { this.toast.success('Configuración de delivery guardada'); this.savingDelivery.set(false); },
+      error: () => { this.toast.error('Error al guardar'); this.savingDelivery.set(false); }
+    });
+  }
+
+  saveNotifSettings() {
+    this.savingNotif.set(true);
+    const rows = Object.entries(this.notifForm).map(([key, value]) => ({ key, value: String(value) }));
+    this.settingsService.upsertSettings(rows).subscribe({
+      next: () => { this.toast.success('Configuración de notificaciones guardada'); this.savingNotif.set(false); },
+      error: () => { this.toast.error('Error al guardar'); this.savingNotif.set(false); }
+    });
+  }
+
+  loadHolidays() {
+    this.loadingHolidays.set(true);
+    this.settingsService.getHolidays().subscribe({
+      next: (h) => { this.holidays.set(h); this.loadingHolidays.set(false); },
+      error: () => this.loadingHolidays.set(false)
+    });
+  }
+
+  openHolidayForm(h?: Holiday) {
+    this.editingHoliday.set(h ?? null);
+    this.holidayForm = h ? { name: h.name, date: h.date, surcharge_rate: h.surcharge_rate ?? 0 } : { name: '', date: '', surcharge_rate: 0 };
+    this.showHolidayModal.set(true);
+  }
+
+  saveHoliday() {
+    this.savingHoliday.set(true);
+    const payload = { ...this.holidayForm, id: this.editingHoliday()?.id };
+    this.settingsService.saveHoliday(payload).subscribe({
+      next: () => {
+        this.toast.success('Feriado guardado');
+        this.showHolidayModal.set(false);
+        this.savingHoliday.set(false);
         this.loadHolidays();
+      },
+      error: () => { this.toast.error('Error al guardar feriado'); this.savingHoliday.set(false); }
+    });
+  }
+
+  deleteHoliday(id: string) {
+    this.settingsService.deleteHoliday(id).subscribe({
+      next: () => { this.toast.success('Feriado eliminado'); this.loadHolidays(); },
+      error: () => this.toast.error('Error al eliminar')
+    });
+  }
+
+  loadUsers() {
+    this.loadingUsers.set(true);
+    this.settingsService.getAdminUsers().subscribe({
+      next: (u) => { this.adminUsers.set(u); this.loadingUsers.set(false); },
+      error: () => this.loadingUsers.set(false)
+    });
+  }
+
+  openUserForm() {
+    this.userForm = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
+    this.createUserError.set('');
+    this.showUserModal.set(true);
+  }
+
+  createUser() {
+    this.creatingUser.set(true);
+    this.createUserError.set('');
+    this.settingsService.createAdminUser(this.userForm).subscribe({
+      next: () => {
+        this.toast.success('Usuario creado exitosamente');
+        this.showUserModal.set(false);
+        this.creatingUser.set(false);
         this.loadUsers();
-    }
+      },
+      error: (err) => {
+        this.createUserError.set(err?.message ?? 'Error al crear usuario');
+        this.creatingUser.set(false);
+      }
+    });
+  }
 
-    loadSettings() {
-        this.loadingSettings.set(true);
-        this.settingsService.getSettings().subscribe({
-            next: (settings) => {
-                const map: Record<string, string> = {};
-                settings.forEach(s => map[s.key] = s.value);
-                this.generalForm.min_order_amount = Number(map['min_order_amount'] ?? 150);
-                this.generalForm.default_delivery_fee = Number(map['default_delivery_fee'] ?? 75);
-                this.generalForm.default_commission_rate = Number(map['default_commission_rate'] ?? 15);
-                this.generalForm.itbis_rate = Number(map['itbis_rate'] ?? 18);
-                this.generalForm.max_items_per_order = Number(map['max_items_per_order'] ?? 20);
-                this.generalForm.max_orders_in_flight = Number(map['max_orders_in_flight'] ?? 50);
-                this.generalForm.referral_bonus_amount = Number(map['referral_bonus_amount'] ?? 200);
-                this.generalForm.order_auto_cancel_minutes = Number(map['order_auto_cancel_minutes'] ?? 30);
-                this.generalForm.free_delivery_threshold = Number(map['free_delivery_threshold'] ?? 0);
-                this.deliveryForm.weather_surcharge_enabled = map['weather_surcharge_enabled'] === 'true';
-                this.deliveryForm.weather_surcharge_rate = Number(map['weather_surcharge_rate'] ?? 10);
-                this.deliveryForm.surge_pricing_enabled = map['surge_pricing_enabled'] === 'true';
-                this.deliveryForm.peak_surcharge_rate = Number(map['peak_surcharge_rate'] ?? 20);
-                this.deliveryForm.night_surcharge_rate = Number(map['night_surcharge_rate'] ?? 15);
-                this.deliveryForm.peak_hours = map['peak_hours'] ?? '12:00-14:00,18:00-21:00';
-                this.notifForm.push_enabled = map['push_enabled'] !== 'false';
-                this.notifForm.whatsapp_enabled = map['whatsapp_enabled'] === 'true';
-                this.notifForm.new_order_alert = map['new_order_alert'] !== 'false';
-                this.notifForm.unassigned_alert = map['unassigned_alert'] !== 'false';
-                this.notifForm.unassigned_alert_minutes = Number(map['unassigned_alert_minutes'] ?? 10);
-                this.loadingSettings.set(false);
-            },
-            error: () => this.loadingSettings.set(false)
-        });
-    }
-
-    saveGeneralSettings() {
-        this.savingGeneral.set(true);
-        const rows = Object.entries(this.generalForm).map(([key, value]) => ({ key, value: String(value) }));
-        this.settingsService.upsertSettings(rows).subscribe({
-            next: () => { this.toast.success('Configuración general guardada'); this.savingGeneral.set(false); },
-            error: () => { this.toast.error('Error al guardar'); this.savingGeneral.set(false); }
-        });
-    }
-
-    saveDeliverySettings() {
-        this.savingDelivery.set(true);
-        const rows = Object.entries(this.deliveryForm).map(([key, value]) => ({ key, value: String(value) }));
-        this.settingsService.upsertSettings(rows).subscribe({
-            next: () => { this.toast.success('Configuración de delivery guardada'); this.savingDelivery.set(false); },
-            error: () => { this.toast.error('Error al guardar'); this.savingDelivery.set(false); }
-        });
-    }
-
-    saveNotifSettings() {
-        this.savingNotif.set(true);
-        const rows = Object.entries(this.notifForm).map(([key, value]) => ({ key, value: String(value) }));
-        this.settingsService.upsertSettings(rows).subscribe({
-            next: () => { this.toast.success('Configuración de notificaciones guardada'); this.savingNotif.set(false); },
-            error: () => { this.toast.error('Error al guardar'); this.savingNotif.set(false); }
-        });
-    }
-
-    loadHolidays() {
-        this.loadingHolidays.set(true);
-        this.settingsService.getHolidays().subscribe({
-            next: (h) => { this.holidays.set(h); this.loadingHolidays.set(false); },
-            error: () => this.loadingHolidays.set(false)
-        });
-    }
-
-    openHolidayForm(h?: Holiday) {
-        this.editingHoliday.set(h ?? null);
-        this.holidayForm = h ? { name: h.name, date: h.date, surcharge_rate: h.surcharge_rate ?? 0 } : { name: '', date: '', surcharge_rate: 0 };
-        this.showHolidayModal.set(true);
-    }
-
-    saveHoliday() {
-        this.savingHoliday.set(true);
-        const payload = { ...this.holidayForm, id: this.editingHoliday()?.id };
-        this.settingsService.saveHoliday(payload).subscribe({
-            next: () => {
-                this.toast.success('Feriado guardado');
-                this.showHolidayModal.set(false);
-                this.savingHoliday.set(false);
-                this.loadHolidays();
-            },
-            error: () => { this.toast.error('Error al guardar feriado'); this.savingHoliday.set(false); }
-        });
-    }
-
-    deleteHoliday(id: string) {
-        this.settingsService.deleteHoliday(id).subscribe({
-            next: () => { this.toast.success('Feriado eliminado'); this.loadHolidays(); },
-            error: () => this.toast.error('Error al eliminar')
-        });
-    }
-
-    loadUsers() {
-        this.loadingUsers.set(true);
-        this.settingsService.getAdminUsers().subscribe({
-            next: (u) => { this.adminUsers.set(u); this.loadingUsers.set(false); },
-            error: () => this.loadingUsers.set(false)
-        });
-    }
-
-    openUserForm() {
-        this.userForm = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
-        this.createUserError.set('');
-        this.showUserModal.set(true);
-    }
-
-    createUser() {
-        this.creatingUser.set(true);
-        this.createUserError.set('');
-        this.settingsService.createAdminUser(this.userForm).subscribe({
-            next: () => {
-                this.toast.success('Usuario creado exitosamente');
-                this.showUserModal.set(false);
-                this.creatingUser.set(false);
-                this.loadUsers();
-            },
-            error: (err) => {
-                this.createUserError.set(err?.message ?? 'Error al crear usuario');
-                this.creatingUser.set(false);
-            }
-        });
-    }
-
-    toggleUser(u: AdminUser) {
-        this.settingsService.toggleAdminUser(u.id, !u.is_active).subscribe({
-            next: () => { this.toast.success(`Usuario ${!u.is_active ? 'activado' : 'desactivado'}`); this.loadUsers(); },
-            error: () => this.toast.error('Error al actualizar usuario')
-        });
-    }
+  toggleUser(u: AdminUser) {
+    this.settingsService.toggleAdminUser(u.id, !u.is_active).subscribe({
+      next: () => { this.toast.success(`Usuario ${!u.is_active ? 'activado' : 'desactivado'}`); this.loadUsers(); },
+      error: () => this.toast.error('Error al actualizar usuario')
+    });
+  }
 }

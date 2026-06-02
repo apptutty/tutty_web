@@ -8,10 +8,10 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
 import { Repartidor, VehicleType } from '../../core/supabase/database.types';
 
 @Component({
-    selector: 'app-repartidores-page',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
-    template: `
+  selector: 'app-repartidores-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  template: `
     <app-page-header title="Repartidores" subtitle="Gestión del equipo de entrega">
       <button class="btn-primary" (click)="openForm()">+ Repartidor</button>
     </app-page-header>
@@ -153,87 +153,87 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
   `,
 })
 export class RepartidoresPageComponent implements OnInit {
-    private readonly service = inject(RepartidoresService);
-    private readonly toastService = inject(ToastService);
-    private readonly fb = inject(FormBuilder);
-    readonly router = inject(Router);
+  private readonly service = inject(RepartidoresService);
+  private readonly toastService = inject(ToastService);
+  private readonly fb = inject(FormBuilder);
+  readonly router = inject(Router);
 
-    readonly repartidores = signal<Repartidor[]>([]);
-    readonly loading = signal(true);
-    readonly showForm = signal(false);
-    readonly editingId = signal<string | null>(null);
-    readonly saveLoading = signal(false);
+  readonly repartidores = signal<Repartidor[]>([]);
+  readonly loading = signal(true);
+  readonly showForm = signal(false);
+  readonly editingId = signal<string | null>(null);
+  readonly saveLoading = signal(false);
 
-    availableFilter = '';
-    searchText = '';
-    vehicleFilter = '';
+  availableFilter = '';
+  searchText = '';
+  vehicleFilter = '';
 
-    readonly filteredRepartidores = () => {
-        let result = this.repartidores();
-        if (this.searchText.trim()) {
-            const q = this.searchText.toLowerCase();
-            result = result.filter(r =>
-                r.full_name?.toLowerCase().includes(q) ||
-                r.cedula?.includes(q) ||
-                r.phone?.includes(q)
-            );
-        }
-        if (this.vehicleFilter) result = result.filter(r => r.vehicle_type === this.vehicleFilter);
-        return result;
-    };
+  readonly filteredRepartidores = () => {
+    let result = this.repartidores();
+    if (this.searchText.trim()) {
+      const q = this.searchText.toLowerCase();
+      result = result.filter(r =>
+        r.full_name?.toLowerCase().includes(q) ||
+        r.cedula?.includes(q) ||
+        r.phone?.includes(q)
+      );
+    }
+    if (this.vehicleFilter) result = result.filter(r => r.vehicle_type === this.vehicleFilter);
+    return result;
+  };
 
-    readonly repartidorForm = this.fb.group({
-        user_id: [''],
-        cedula: ['', Validators.required],
-        vehicle_type: ['moto' as VehicleType, Validators.required],
-        plate: [''],
+  readonly repartidorForm = this.fb.group({
+    user_id: [''],
+    cedula: ['', Validators.required],
+    vehicle_type: ['moto' as VehicleType, Validators.required],
+    plate: [''],
+  });
+
+  ngOnInit(): void { this.loadRepartidores(); }
+
+  loadRepartidores(): void {
+    this.loading.set(true);
+    const filters = this.availableFilter !== '' ? { available: this.availableFilter === 'true' } : {};
+    this.service.getRepartidores(filters).subscribe({
+      next: list => { this.repartidores.set(list); this.loading.set(false); },
+      error: () => { this.toastService.error('Error al cargar repartidores'); this.loading.set(false); },
     });
+  }
 
-    ngOnInit(): void { this.loadRepartidores(); }
+  openForm(r?: Repartidor): void {
+    this.editingId.set(r?.id ?? null);
+    if (r) { this.repartidorForm.patchValue(r as any); }
+    else { this.repartidorForm.reset({ vehicle_type: 'moto' }); }
+    this.showForm.set(true);
+  }
 
-    loadRepartidores(): void {
-        this.loading.set(true);
-        const filters = this.availableFilter !== '' ? { available: this.availableFilter === 'true' } : {};
-        this.service.getRepartidores(filters).subscribe({
-            next: list => { this.repartidores.set(list); this.loading.set(false); },
-            error: () => { this.toastService.error('Error al cargar repartidores'); this.loading.set(false); },
-        });
-    }
+  async save(): Promise<void> {
+    if (this.repartidorForm.invalid) return;
+    this.saveLoading.set(true);
+    const val = this.repartidorForm.getRawValue();
+    try {
+      await this.service.saveRepartidor({
+        ...(this.editingId() ? { id: this.editingId()! } : {}),
+        cedula: val.cedula!,
+        vehicle_type: val.vehicle_type as VehicleType,
+        plate: val.plate ?? null,
+        is_available: true,
+        rating: 0,
+        total_deliveries: 0,
+        total_earnings: 0,
+        zone_ids: [],
+      });
+      this.toastService.success('Repartidor guardado');
+      this.showForm.set(false);
+      this.loadRepartidores();
+    } catch { this.toastService.error('Error al guardar'); }
+    finally { this.saveLoading.set(false); }
+  }
 
-    openForm(r?: Repartidor): void {
-        this.editingId.set(r?.id ?? null);
-        if (r) { this.repartidorForm.patchValue(r as any); }
-        else { this.repartidorForm.reset({ vehicle_type: 'moto' }); }
-        this.showForm.set(true);
-    }
-
-    async save(): Promise<void> {
-        if (this.repartidorForm.invalid) return;
-        this.saveLoading.set(true);
-        const val = this.repartidorForm.getRawValue();
-        try {
-            await this.service.saveRepartidor({
-                ...(this.editingId() ? { id: this.editingId()! } : {}),
-                cedula: val.cedula!,
-                vehicle_type: val.vehicle_type as VehicleType,
-                plate: val.plate ?? null,
-                is_available: true,
-                rating: 0,
-                total_deliveries: 0,
-                total_earnings: 0,
-                zone_ids: [],
-            });
-            this.toastService.success('Repartidor guardado');
-            this.showForm.set(false);
-            this.loadRepartidores();
-        } catch { this.toastService.error('Error al guardar'); }
-        finally { this.saveLoading.set(false); }
-    }
-
-    vehicleLabel(type: VehicleType): string {
-        const map: Record<VehicleType, string> = {
-            moto: '🏍️ Moto', bicicleta: '🚲 Bicicleta', carro: '🚗 Carro', a_pie: '🚶 A pie',
-        };
-        return map[type] ?? type;
-    }
+  vehicleLabel(type: VehicleType): string {
+    const map: Record<VehicleType, string> = {
+      moto: '🏍️ Moto', bicicleta: '🚲 Bicicleta', carro: '🚗 Carro', a_pie: '🚶 A pie',
+    };
+    return map[type] ?? type;
+  }
 }
