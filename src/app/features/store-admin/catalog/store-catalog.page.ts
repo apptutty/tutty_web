@@ -1,11 +1,11 @@
 import {
-  Component,
-  OnInit,
-  OnDestroy,
-  signal,
-  computed,
-  inject,
-  effect,
+    Component,
+    OnInit,
+    OnDestroy,
+    signal,
+    computed,
+    inject,
+    effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,10 +18,10 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
 
 @Component({
-  selector: 'app-store-catalog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ProductCardComponent],
-  styles: [`
+    selector: 'app-store-catalog',
+    standalone: true,
+    imports: [CommonModule, FormsModule, ProductCardComponent],
+    styles: [`
     .cat-item { transition: background 0.12s, color 0.12s; }
     .cat-item:hover { background: #fdf2f8; }
     .cat-item.active { background: #fce7f3; color: #9d174d; }
@@ -29,7 +29,7 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
     .chip.on { background:#e91e8c; color:white; border-color:#e91e8c; }
     .chip:not(.on):hover { background:#f9fafb; }
   `],
-  template: `
+    template: `
   <div class="flex h-full overflow-hidden" style="min-height:calc(100vh - 64px)">
 
     <!-- ─── LEFT: Categories Panel ─────────────────────────────── -->
@@ -368,290 +368,290 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
   `,
 })
 export class StoreCatalogPageComponent implements OnInit, OnDestroy {
-  private readonly storeService = inject(StoreAdminService);
-  private readonly catalogService = inject(StoreCatalogService);
-  private readonly toast = inject(ToastService);
-  private readonly router = inject(Router);
-  private sub?: Subscription;
+    private readonly storeService = inject(StoreAdminService);
+    private readonly catalogService = inject(StoreCatalogService);
+    private readonly toast = inject(ToastService);
+    private readonly router = inject(Router);
+    private sub?: Subscription;
 
-  // ─── State ────────────────────────────────────────────────────────────────
-  readonly categories = signal<MenuCategory[]>([]);
-  readonly allProducts = signal<MenuItem[]>([]);
-  readonly isLoading = signal(false);
-  readonly selectedCategoryId = signal<string | null>(null);
-  readonly viewMode = signal<'grid' | 'list'>('grid');
+    // ─── State ────────────────────────────────────────────────────────────────
+    readonly categories = signal<MenuCategory[]>([]);
+    readonly allProducts = signal<MenuItem[]>([]);
+    readonly isLoading = signal(false);
+    readonly selectedCategoryId = signal<string | null>(null);
+    readonly viewMode = signal<'grid' | 'list'>('grid');
 
-  // Filters
-  readonly fAvailable = signal(false);
-  readonly fOutOfStock = signal(false);
-  readonly fDiscounted = signal(false);
-  readonly fFeatured = signal(false);
+    // Filters
+    readonly fAvailable = signal(false);
+    readonly fOutOfStock = signal(false);
+    readonly fDiscounted = signal(false);
+    readonly fFeatured = signal(false);
 
-  searchQuery = '';
+    searchQuery = '';
 
-  // Add category
-  readonly addingCategory = signal(false);
-  newCategoryName = '';
+    // Add category
+    readonly addingCategory = signal(false);
+    newCategoryName = '';
 
-  // Bulk import
-  readonly showBulkImport = signal(false);
-  readonly csvHeaders = signal<string[]>([]);
-  readonly csvAllRows = signal<Record<string, string>[]>([]);
-  readonly csvPreviewRows = signal<Record<string, string>[]>([]);
-  readonly csvErrors = signal<string[]>([]);
-  readonly importingCsv = signal(false);
+    // Bulk import
+    readonly showBulkImport = signal(false);
+    readonly csvHeaders = signal<string[]>([]);
+    readonly csvAllRows = signal<Record<string, string>[]>([]);
+    readonly csvPreviewRows = signal<Record<string, string>[]>([]);
+    readonly csvErrors = signal<string[]>([]);
+    readonly importingCsv = signal(false);
 
-  // ─── Computed ─────────────────────────────────────────────────────────────
-  readonly commerceType = computed(() => this.storeService.activeStore()?.commerce_type ?? 'otro');
+    // ─── Computed ─────────────────────────────────────────────────────────────
+    readonly commerceType = computed(() => this.storeService.activeStore()?.commerce_type ?? 'otro');
 
-  readonly catalogTitle = computed(() => {
-    const type = this.commerceType();
-    if (type === 'restaurante') return 'Mi Menú';
-    if (type === 'farmacia') return 'Mis Productos';
-    return 'Mi Catálogo';
-  });
-
-  readonly categoryNameMap = computed(() => {
-    const map: Record<string, string> = {};
-    for (const c of this.categories()) map[c.id] = c.name;
-    return map;
-  });
-
-  readonly productCountByCategory = computed(() => {
-    const map: Record<string, number> = {};
-    for (const p of this.allProducts()) {
-      const k = p.category_id ?? '__none__';
-      map[k] = (map[k] ?? 0) + 1;
-    }
-    return map;
-  });
-
-  readonly filteredProducts = computed(() => {
-    const q = this.searchQuery.toLowerCase().trim();
-    const catId = this.selectedCategoryId();
-    const avail = this.fAvailable();
-    const oos = this.fOutOfStock();
-    const disc = this.fDiscounted();
-    const feat = this.fFeatured();
-
-    return this.allProducts().filter(p => {
-      if (catId && p.category_id !== catId) return false;
-      if (q && !p.name.toLowerCase().includes(q)) return false;
-      if (avail && !p.is_available) return false;
-      if (oos && (p.stock_count ?? 1) > 0) return false;
-      if (disc && !p.discount_price) return false;
-      if (feat && !p.is_featured) return false;
-      return true;
-    });
-  });
-
-  constructor() {
-    effect(() => {
-      const storeId = this.storeService.activeStoreId();
-      if (storeId) this.loadData(storeId);
-    });
-  }
-
-  ngOnInit() {}
-  ngOnDestroy() { this.sub?.unsubscribe(); }
-
-  // ─── Data loading ─────────────────────────────────────────────────────────
-  private loadData(storeId: string) {
-    this.isLoading.set(true);
-    this.sub?.unsubscribe();
-
-    let catsLoaded = false;
-    let prodsLoaded = false;
-    const checkDone = () => { if (catsLoaded && prodsLoaded) this.isLoading.set(false); };
-
-    this.catalogService.getCategories(storeId).subscribe({
-      next: cats => { this.categories.set(cats); catsLoaded = true; checkDone(); },
-      error: () => { catsLoaded = true; checkDone(); },
+    readonly catalogTitle = computed(() => {
+        const type = this.commerceType();
+        if (type === 'restaurante') return 'Mi Menú';
+        if (type === 'farmacia') return 'Mis Productos';
+        return 'Mi Catálogo';
     });
 
-    this.catalogService.getProducts(storeId).subscribe({
-      next: prods => { this.allProducts.set(prods); prodsLoaded = true; checkDone(); },
-      error: () => { prodsLoaded = true; checkDone(); },
+    readonly categoryNameMap = computed(() => {
+        const map: Record<string, string> = {};
+        for (const c of this.categories()) map[c.id] = c.name;
+        return map;
     });
-  }
 
-  // ─── Category actions ─────────────────────────────────────────────────────
-  selectCategory(id: string | null) {
-    this.selectedCategoryId.set(id);
-  }
+    readonly productCountByCategory = computed(() => {
+        const map: Record<string, number> = {};
+        for (const p of this.allProducts()) {
+            const k = p.category_id ?? '__none__';
+            map[k] = (map[k] ?? 0) + 1;
+        }
+        return map;
+    });
 
-  async moveCategory(index: number, dir: -1 | 1) {
-    const cats = [...this.categories()];
-    const target = index + dir;
-    if (target < 0 || target >= cats.length) return;
-    [cats[index], cats[target]] = [cats[target], cats[index]];
-    const reordered = cats.map((c, i) => ({ ...c, display_order: i }));
-    this.categories.set(reordered);
-    try {
-      await this.catalogService.reorderCategories(
-        reordered.map(c => ({ id: c.id, display_order: c.display_order })),
-      );
-    } catch {
-      this.toast.error('Error al reordenar categorías');
+    readonly filteredProducts = computed(() => {
+        const q = this.searchQuery.toLowerCase().trim();
+        const catId = this.selectedCategoryId();
+        const avail = this.fAvailable();
+        const oos = this.fOutOfStock();
+        const disc = this.fDiscounted();
+        const feat = this.fFeatured();
+
+        return this.allProducts().filter(p => {
+            if (catId && p.category_id !== catId) return false;
+            if (q && !p.name.toLowerCase().includes(q)) return false;
+            if (avail && !p.is_available) return false;
+            if (oos && (p.stock_count ?? 1) > 0) return false;
+            if (disc && !p.discount_price) return false;
+            if (feat && !p.is_featured) return false;
+            return true;
+        });
+    });
+
+    constructor() {
+        effect(() => {
+            const storeId = this.storeService.activeStoreId();
+            if (storeId) this.loadData(storeId);
+        });
     }
-  }
 
-  async toggleCategory(cat: MenuCategory) {
-    const updated = { ...cat, is_active: !cat.is_active };
-    this.categories.update(list => list.map(c => (c.id === cat.id ? updated : c)));
-    try {
-      await this.catalogService.updateCategory(cat.id, { is_active: updated.is_active });
-    } catch {
-      this.categories.update(list => list.map(c => (c.id === cat.id ? cat : c)));
-      this.toast.error('Error al actualizar categoría');
+    ngOnInit() { }
+    ngOnDestroy() { this.sub?.unsubscribe(); }
+
+    // ─── Data loading ─────────────────────────────────────────────────────────
+    private loadData(storeId: string) {
+        this.isLoading.set(true);
+        this.sub?.unsubscribe();
+
+        let catsLoaded = false;
+        let prodsLoaded = false;
+        const checkDone = () => { if (catsLoaded && prodsLoaded) this.isLoading.set(false); };
+
+        this.catalogService.getCategories(storeId).subscribe({
+            next: cats => { this.categories.set(cats); catsLoaded = true; checkDone(); },
+            error: () => { catsLoaded = true; checkDone(); },
+        });
+
+        this.catalogService.getProducts(storeId).subscribe({
+            next: prods => { this.allProducts.set(prods); prodsLoaded = true; checkDone(); },
+            error: () => { prodsLoaded = true; checkDone(); },
+        });
     }
-  }
 
-  async saveNewCategory() {
-    const name = this.newCategoryName.trim();
-    const storeId = this.storeService.activeStoreId();
-    if (!name || !storeId) return;
-    try {
-      const cat = await this.catalogService.createCategory(storeId, name);
-      this.categories.update(list => [...list, cat]);
-      this.newCategoryName = '';
-      this.addingCategory.set(false);
-      this.toast.success('Categoría creada');
-    } catch {
-      this.toast.error('Error al crear categoría');
+    // ─── Category actions ─────────────────────────────────────────────────────
+    selectCategory(id: string | null) {
+        this.selectedCategoryId.set(id);
     }
-  }
 
-  async deleteCategory(cat: MenuCategory) {
-    if (!confirm(`¿Eliminar categoría "${cat.name}"? Los productos quedarán sin categoría.`)) return;
-    try {
-      await this.catalogService.updateCategory(cat.id, { is_active: false });
-      this.categories.update(list => list.filter(c => c.id !== cat.id));
-      this.toast.success('Categoría eliminada');
-    } catch {
-      this.toast.error('Error al eliminar categoría');
+    async moveCategory(index: number, dir: -1 | 1) {
+        const cats = [...this.categories()];
+        const target = index + dir;
+        if (target < 0 || target >= cats.length) return;
+        [cats[index], cats[target]] = [cats[target], cats[index]];
+        const reordered = cats.map((c, i) => ({ ...c, display_order: i }));
+        this.categories.set(reordered);
+        try {
+            await this.catalogService.reorderCategories(
+                reordered.map(c => ({ id: c.id, display_order: c.display_order })),
+            );
+        } catch {
+            this.toast.error('Error al reordenar categorías');
+        }
     }
-  }
 
-  // ─── Filter chips ─────────────────────────────────────────────────────────
-  toggleFilter(key: 'available' | 'outOfStock' | 'discounted' | 'featured') {
-    if (key === 'available') this.fAvailable.update(v => !v);
-    else if (key === 'outOfStock') this.fOutOfStock.update(v => !v);
-    else if (key === 'discounted') this.fDiscounted.update(v => !v);
-    else this.fFeatured.update(v => !v);
-  }
-
-  // ─── Product actions ──────────────────────────────────────────────────────
-  newProduct() {
-    this.router.navigate(['/store/catalog/new']);
-  }
-
-  editProduct(id: string) {
-    this.router.navigate(['/store/catalog', id]);
-  }
-
-  async onToggleAvailability(ev: { id: string; val: boolean }) {
-    this.allProducts.update(list =>
-      list.map(p => (p.id === ev.id ? { ...p, is_available: ev.val } : p)),
-    );
-    try {
-      await this.catalogService.toggleProductAvailability(ev.id, ev.val);
-    } catch {
-      this.allProducts.update(list =>
-        list.map(p => (p.id === ev.id ? { ...p, is_available: !ev.val } : p)),
-      );
-      this.toast.error('Error al actualizar disponibilidad');
+    async toggleCategory(cat: MenuCategory) {
+        const updated = { ...cat, is_active: !cat.is_active };
+        this.categories.update(list => list.map(c => (c.id === cat.id ? updated : c)));
+        try {
+            await this.catalogService.updateCategory(cat.id, { is_active: updated.is_active });
+        } catch {
+            this.categories.update(list => list.map(c => (c.id === cat.id ? cat : c)));
+            this.toast.error('Error al actualizar categoría');
+        }
     }
-  }
 
-  async onDeleteProduct(id: string) {
-    const prod = this.allProducts().find(p => p.id === id);
-    if (!confirm(`¿Eliminar "${prod?.name ?? 'este producto'}"? Esta acción no se puede deshacer.`)) return;
-    try {
-      await this.catalogService.deleteProduct(id);
-      this.allProducts.update(list => list.filter(p => p.id !== id));
-      this.toast.success('Producto eliminado');
-    } catch {
-      this.toast.error('Error al eliminar producto');
+    async saveNewCategory() {
+        const name = this.newCategoryName.trim();
+        const storeId = this.storeService.activeStoreId();
+        if (!name || !storeId) return;
+        try {
+            const cat = await this.catalogService.createCategory(storeId, name);
+            this.categories.update(list => [...list, cat]);
+            this.newCategoryName = '';
+            this.addingCategory.set(false);
+            this.toast.success('Categoría creada');
+        } catch {
+            this.toast.error('Error al crear categoría');
+        }
     }
-  }
 
-  // ─── CSV Import ───────────────────────────────────────────────────────────
-  downloadCsvTemplate() {
-    const type = this.commerceType();
-    let headers = ['name', 'description', 'price', 'discount_price', 'category_name', 'is_available', 'is_featured', 'tags'];
-
-    if (type === 'restaurante') headers = [...headers, 'preparation_time', 'calories', 'is_combo'];
-    else if (type === 'farmacia') headers = [...headers, 'brand', 'sku', 'barcode', 'unit_type', 'requires_prescription'];
-    else if (['bodega', 'colmado', 'supermercado'].includes(type)) headers = [...headers, 'brand', 'sku', 'barcode', 'unit_type'];
-    else if (['tienda_ropa', 'electronica'].includes(type)) headers = [...headers, 'sku', 'has_variants'];
-
-    const csv = headers.join(',') + '\nEjemplo producto,Descripción,10.99,,Mi categoría,true,false,';
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'plantilla_productos.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  onCsvFileSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = (e.target?.result as string) ?? '';
-      this.parseCsv(text);
-    };
-    reader.readAsText(file);
-  }
-
-  private parseCsv(text: string) {
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) { this.toast.warning('El CSV está vacío'); return; }
-    const headers = lines[0].split(',').map(h => h.trim());
-    this.csvHeaders.set(headers);
-    const rows: Record<string, string>[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim());
-      const row: Record<string, string> = {};
-      headers.forEach((h, idx) => (row[h] = cols[idx] ?? ''));
-      rows.push(row);
+    async deleteCategory(cat: MenuCategory) {
+        if (!confirm(`¿Eliminar categoría "${cat.name}"? Los productos quedarán sin categoría.`)) return;
+        try {
+            await this.catalogService.updateCategory(cat.id, { is_active: false });
+            this.categories.update(list => list.filter(c => c.id !== cat.id));
+            this.toast.success('Categoría eliminada');
+        } catch {
+            this.toast.error('Error al eliminar categoría');
+        }
     }
-    this.csvAllRows.set(rows);
-    this.csvPreviewRows.set(rows.slice(0, 5));
-    this.csvErrors.set([]);
-  }
 
-  async runBulkImport() {
-    const storeId = this.storeService.activeStoreId();
-    if (!storeId || this.csvAllRows().length === 0) return;
-    this.importingCsv.set(true);
-    const mapped = this.csvAllRows().map(row => ({
-      name: row['name'],
-      description: row['description'] || undefined,
-      price: parseFloat(row['price']) || 0,
-      discount_price: row['discount_price'] ? parseFloat(row['discount_price']) : undefined,
-      is_available: row['is_available'] !== 'false',
-      is_featured: row['is_featured'] === 'true',
-      tags: row['tags'] ? row['tags'].split('|') : [],
-      preparation_time: row['preparation_time'] ? parseInt(row['preparation_time']) : undefined,
-      calories: row['calories'] ? parseInt(row['calories']) : undefined,
-      sku: row['sku'] || undefined,
-      brand: row['brand'] || undefined,
-    } as Parameters<typeof this.catalogService.bulkImport>[1][number]));
-
-    try {
-      const result = await this.catalogService.bulkImport(storeId, mapped);
-      this.toast.success(`${result.success} productos importados correctamente`);
-      if (result.errors.length) this.csvErrors.set(result.errors);
-      // Reload products
-      this.catalogService.getProducts(storeId).subscribe(p => this.allProducts.set(p));
-      if (result.errors.length === 0) this.showBulkImport.set(false);
-    } catch (err) {
-      this.toast.error('Error al importar productos');
-    } finally {
-      this.importingCsv.set(false);
+    // ─── Filter chips ─────────────────────────────────────────────────────────
+    toggleFilter(key: 'available' | 'outOfStock' | 'discounted' | 'featured') {
+        if (key === 'available') this.fAvailable.update(v => !v);
+        else if (key === 'outOfStock') this.fOutOfStock.update(v => !v);
+        else if (key === 'discounted') this.fDiscounted.update(v => !v);
+        else this.fFeatured.update(v => !v);
     }
-  }
+
+    // ─── Product actions ──────────────────────────────────────────────────────
+    newProduct() {
+        this.router.navigate(['/store/catalog/new']);
+    }
+
+    editProduct(id: string) {
+        this.router.navigate(['/store/catalog', id]);
+    }
+
+    async onToggleAvailability(ev: { id: string; val: boolean }) {
+        this.allProducts.update(list =>
+            list.map(p => (p.id === ev.id ? { ...p, is_available: ev.val } : p)),
+        );
+        try {
+            await this.catalogService.toggleProductAvailability(ev.id, ev.val);
+        } catch {
+            this.allProducts.update(list =>
+                list.map(p => (p.id === ev.id ? { ...p, is_available: !ev.val } : p)),
+            );
+            this.toast.error('Error al actualizar disponibilidad');
+        }
+    }
+
+    async onDeleteProduct(id: string) {
+        const prod = this.allProducts().find(p => p.id === id);
+        if (!confirm(`¿Eliminar "${prod?.name ?? 'este producto'}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await this.catalogService.deleteProduct(id);
+            this.allProducts.update(list => list.filter(p => p.id !== id));
+            this.toast.success('Producto eliminado');
+        } catch {
+            this.toast.error('Error al eliminar producto');
+        }
+    }
+
+    // ─── CSV Import ───────────────────────────────────────────────────────────
+    downloadCsvTemplate() {
+        const type = this.commerceType();
+        let headers = ['name', 'description', 'price', 'discount_price', 'category_name', 'is_available', 'is_featured', 'tags'];
+
+        if (type === 'restaurante') headers = [...headers, 'preparation_time', 'calories', 'is_combo'];
+        else if (type === 'farmacia') headers = [...headers, 'brand', 'sku', 'barcode', 'unit_type', 'requires_prescription'];
+        else if (['bodega', 'colmado', 'supermercado'].includes(type)) headers = [...headers, 'brand', 'sku', 'barcode', 'unit_type'];
+        else if (['tienda_ropa', 'electronica'].includes(type)) headers = [...headers, 'sku', 'has_variants'];
+
+        const csv = headers.join(',') + '\nEjemplo producto,Descripción,10.99,,Mi categoría,true,false,';
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'plantilla_productos.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    onCsvFileSelected(event: Event) {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = (e.target?.result as string) ?? '';
+            this.parseCsv(text);
+        };
+        reader.readAsText(file);
+    }
+
+    private parseCsv(text: string) {
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) { this.toast.warning('El CSV está vacío'); return; }
+        const headers = lines[0].split(',').map(h => h.trim());
+        this.csvHeaders.set(headers);
+        const rows: Record<string, string>[] = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',').map(c => c.trim());
+            const row: Record<string, string> = {};
+            headers.forEach((h, idx) => (row[h] = cols[idx] ?? ''));
+            rows.push(row);
+        }
+        this.csvAllRows.set(rows);
+        this.csvPreviewRows.set(rows.slice(0, 5));
+        this.csvErrors.set([]);
+    }
+
+    async runBulkImport() {
+        const storeId = this.storeService.activeStoreId();
+        if (!storeId || this.csvAllRows().length === 0) return;
+        this.importingCsv.set(true);
+        const mapped = this.csvAllRows().map(row => ({
+            name: row['name'],
+            description: row['description'] || undefined,
+            price: parseFloat(row['price']) || 0,
+            discount_price: row['discount_price'] ? parseFloat(row['discount_price']) : undefined,
+            is_available: row['is_available'] !== 'false',
+            is_featured: row['is_featured'] === 'true',
+            tags: row['tags'] ? row['tags'].split('|') : [],
+            preparation_time: row['preparation_time'] ? parseInt(row['preparation_time']) : undefined,
+            calories: row['calories'] ? parseInt(row['calories']) : undefined,
+            sku: row['sku'] || undefined,
+            brand: row['brand'] || undefined,
+        } as Parameters<typeof this.catalogService.bulkImport>[1][number]));
+
+        try {
+            const result = await this.catalogService.bulkImport(storeId, mapped);
+            this.toast.success(`${result.success} productos importados correctamente`);
+            if (result.errors.length) this.csvErrors.set(result.errors);
+            // Reload products
+            this.catalogService.getProducts(storeId).subscribe(p => this.allProducts.set(p));
+            if (result.errors.length === 0) this.showBulkImport.set(false);
+        } catch (err) {
+            this.toast.error('Error al importar productos');
+        } finally {
+            this.importingCsv.set(false);
+        }
+    }
 }

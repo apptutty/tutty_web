@@ -1,9 +1,9 @@
 import {
-  Component,
-  OnInit,
-  signal,
-  computed,
-  inject,
+    Component,
+    OnInit,
+    signal,
+    computed,
+    inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,51 +16,51 @@ import { MenuItem, MenuCategory, ProductVariant } from '../../../core/supabase/d
 
 const UNIT_TYPES = ['unidad', 'par', 'caja', 'frasco', 'pastilla', 'ml', 'mg', 'g', 'kg', 'litro', 'metro'];
 const DAYS = [
-  { key: 'lun', label: 'L' },
-  { key: 'mar', label: 'M' },
-  { key: 'mie', label: 'X' },
-  { key: 'jue', label: 'J' },
-  { key: 'vie', label: 'V' },
-  { key: 'sab', label: 'S' },
-  { key: 'dom', label: 'D' },
+    { key: 'lun', label: 'L' },
+    { key: 'mar', label: 'M' },
+    { key: 'mie', label: 'X' },
+    { key: 'jue', label: 'J' },
+    { key: 'vie', label: 'V' },
+    { key: 'sab', label: 'S' },
+    { key: 'dom', label: 'D' },
 ];
 
 interface ProductForm {
-  name: string;
-  description: string;
-  category_id: string | null;
-  price: number | null;
-  discount_price: number | null;
-  is_available: boolean;
-  is_featured: boolean;
-  tags: string[];
-  display_order: number;
-  use_hours: boolean;
-  available_from: string | null;
-  available_until: string | null;
-  use_days: boolean;
-  available_days: string[];
-  max_qty_per_order: number | null;
-  preparation_time: number | null;
-  calories: number | null;
-  is_combo: boolean;
-  requires_prescription: boolean;
-  controlled_substance: boolean;
-  brand: string | null;
-  sku: string | null;
-  barcode: string | null;
-  unit_type: string | null;
-  has_variants: boolean;
-  track_stock: boolean;
-  stock_count: number | null;
-  low_stock_alert: number | null;
+    name: string;
+    description: string;
+    category_id: string | null;
+    price: number | null;
+    discount_price: number | null;
+    is_available: boolean;
+    is_featured: boolean;
+    tags: string[];
+    display_order: number;
+    use_hours: boolean;
+    available_from: string | null;
+    available_until: string | null;
+    use_days: boolean;
+    available_days: string[];
+    max_qty_per_order: number | null;
+    preparation_time: number | null;
+    calories: number | null;
+    is_combo: boolean;
+    requires_prescription: boolean;
+    controlled_substance: boolean;
+    brand: string | null;
+    sku: string | null;
+    barcode: string | null;
+    unit_type: string | null;
+    has_variants: boolean;
+    track_stock: boolean;
+    stock_count: number | null;
+    low_stock_alert: number | null;
 }
 
 @Component({
-  selector: 'app-store-product-form',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, VariantsManagerComponent],
-  styles: [`
+    selector: 'app-store-product-form',
+    standalone: true,
+    imports: [CommonModule, FormsModule, RouterLink, VariantsManagerComponent],
+    styles: [`
     .section-title { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:12px; }
     .day-btn { width:32px; height:32px; border-radius:50%; border:2px solid #e5e7eb; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
     .day-btn.on { background:#e91e8c; border-color:#e91e8c; color:white; }
@@ -68,7 +68,7 @@ interface ProductForm {
     .tag-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; background:#fce7f3; color:#9d174d; border-radius:99px; font-size:0.75rem; }
     input[type=range]::-webkit-slider-thumb { accent-color:#e91e8c; }
   `],
-  template: `
+    template: `
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
     <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
@@ -418,206 +418,206 @@ interface ProductForm {
   `,
 })
 export class StoreProductFormPageComponent implements OnInit {
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly storeService = inject(StoreAdminService);
-  private readonly catalogService = inject(StoreCatalogService);
-  private readonly toast = inject(ToastService);
+    private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
+    private readonly storeService = inject(StoreAdminService);
+    private readonly catalogService = inject(StoreCatalogService);
+    private readonly toast = inject(ToastService);
 
-  readonly isLoading = signal(false);
-  readonly isSaving = signal(false);
-  readonly categories = signal<MenuCategory[]>([]);
-  readonly existingVariants = signal<Partial<ProductVariant>[]>([]);
-  readonly productId = signal<string | null>(null);
-  readonly photoPreviewSignal = signal<string | null>(null);
+    readonly isLoading = signal(false);
+    readonly isSaving = signal(false);
+    readonly categories = signal<MenuCategory[]>([]);
+    readonly existingVariants = signal<Partial<ProductVariant>[]>([]);
+    readonly productId = signal<string | null>(null);
+    readonly photoPreviewSignal = signal<string | null>(null);
 
-  pendingVariants: Partial<ProductVariant>[] = [];
-  tagInput = '';
-  private photoFile: File | null = null;
+    pendingVariants: Partial<ProductVariant>[] = [];
+    tagInput = '';
+    private photoFile: File | null = null;
 
-  readonly unitTypes = UNIT_TYPES;
-  readonly days = DAYS;
+    readonly unitTypes = UNIT_TYPES;
+    readonly days = DAYS;
 
-  form: ProductForm = {
-    name: '', description: '', category_id: null,
-    price: null, discount_price: null,
-    is_available: true, is_featured: false, tags: [], display_order: 0,
-    use_hours: false, available_from: null, available_until: null,
-    use_days: false, available_days: [],
-    max_qty_per_order: null,
-    preparation_time: null, calories: null, is_combo: false,
-    requires_prescription: false, controlled_substance: false,
-    brand: null, sku: null, barcode: null, unit_type: null,
-    has_variants: false,
-    track_stock: false, stock_count: null, low_stock_alert: null,
-  };
+    form: ProductForm = {
+        name: '', description: '', category_id: null,
+        price: null, discount_price: null,
+        is_available: true, is_featured: false, tags: [], display_order: 0,
+        use_hours: false, available_from: null, available_until: null,
+        use_days: false, available_days: [],
+        max_qty_per_order: null,
+        preparation_time: null, calories: null, is_combo: false,
+        requires_prescription: false, controlled_substance: false,
+        brand: null, sku: null, barcode: null, unit_type: null,
+        has_variants: false,
+        track_stock: false, stock_count: null, low_stock_alert: null,
+    };
 
-  readonly commerceType = computed(() => this.storeService.activeStore()?.commerce_type ?? 'otro');
-  readonly isEditMode = computed(() => !!this.productId());
-  readonly photoPreview = this.photoPreviewSignal;
+    readonly commerceType = computed(() => this.storeService.activeStore()?.commerce_type ?? 'otro');
+    readonly isEditMode = computed(() => !!this.productId());
+    readonly photoPreview = this.photoPreviewSignal;
 
-  ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    const storeId = this.storeService.activeStoreId();
-    if (storeId) {
-      this.catalogService.getCategories(storeId).subscribe(cats => this.categories.set(cats));
-    }
-    if (id && id !== 'new') {
-      this.productId.set(id);
-      this.loadProduct(id);
-    }
-  }
-
-  private loadProduct(id: string) {
-    this.isLoading.set(true);
-    this.catalogService.getProductById(id).subscribe({
-      next: (p) => {
-        this.form = {
-          name: p.name,
-          description: p.description ?? '',
-          category_id: p.category_id ?? null,
-          price: p.price,
-          discount_price: p.discount_price ?? null,
-          is_available: p.is_available,
-          is_featured: p.is_featured,
-          tags: p.tags ?? [],
-          display_order: p.display_order,
-          use_hours: !!(p.available_from || p.available_until),
-          available_from: p.available_from ?? null,
-          available_until: p.available_until ?? null,
-          use_days: !!(p.available_days?.length),
-          available_days: p.available_days ?? [],
-          max_qty_per_order: p.max_qty_per_order ?? null,
-          preparation_time: p.preparation_time ?? null,
-          calories: p.calories ?? null,
-          is_combo: p.is_combo ?? false,
-          requires_prescription: p.requires_prescription ?? false,
-          controlled_substance: p.controlled_substance ?? false,
-          brand: p.brand ?? null,
-          sku: p.sku ?? null,
-          barcode: p.barcode ?? null,
-          unit_type: p.unit_type ?? null,
-          has_variants: p.has_variants,
-          track_stock: p.track_stock,
-          stock_count: p.stock_count ?? null,
-          low_stock_alert: p.low_stock_alert ?? null,
-        };
-        if (p.photo_url) this.photoPreviewSignal.set(p.photo_url);
-        if (p.has_variants) {
-          this.catalogService.getVariants(id).subscribe(v => {
-            this.existingVariants.set(v);
-            this.pendingVariants = v;
-          });
+    ngOnInit() {
+        const id = this.route.snapshot.paramMap.get('id');
+        const storeId = this.storeService.activeStoreId();
+        if (storeId) {
+            this.catalogService.getCategories(storeId).subscribe(cats => this.categories.set(cats));
         }
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('Error al cargar el producto');
-        this.isLoading.set(false);
-      },
-    });
-  }
-
-  // ─── Tags ─────────────────────────────────────────────────────────────────
-  addTag() {
-    const tag = this.tagInput.replace(/,$/, '').trim();
-    if (tag && !this.form.tags.includes(tag)) this.form.tags = [...this.form.tags, tag];
-    this.tagInput = '';
-  }
-
-  removeTag(tag: string) {
-    this.form.tags = this.form.tags.filter(t => t !== tag);
-  }
-
-  // ─── Days ─────────────────────────────────────────────────────────────────
-  toggleDay(key: string) {
-    this.form.available_days = this.form.available_days.includes(key)
-      ? this.form.available_days.filter(d => d !== key)
-      : [...this.form.available_days, key];
-  }
-
-  // ─── Photo ────────────────────────────────────────────────────────────────
-  onPhotoSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    this.photoFile = file;
-    const url = URL.createObjectURL(file);
-    this.photoPreviewSignal.set(url);
-  }
-
-  clearPhoto() {
-    this.photoFile = null;
-    this.photoPreviewSignal.set(null);
-    if (this.form) (this.form as unknown as Record<string, unknown>)['photo_url'] = null;
-  }
-
-  // ─── Submit ───────────────────────────────────────────────────────────────
-  async submit() {
-    if (!this.form.name || this.form.price == null) {
-      this.toast.warning('Nombre y precio son obligatorios');
-      return;
+        if (id && id !== 'new') {
+            this.productId.set(id);
+            this.loadProduct(id);
+        }
     }
-    const storeId = this.storeService.activeStoreId();
-    if (!storeId) return;
 
-    this.isSaving.set(true);
-    try {
-      let photoUrl: string | null = null;
-      if (this.photoFile) {
-        photoUrl = await this.catalogService.uploadProductImage(this.photoFile, storeId);
-      }
-
-      const payload: Partial<MenuItem> = {
-        name: this.form.name,
-        description: this.form.description || null,
-        category_id: this.form.category_id,
-        price: this.form.price!,
-        discount_price: this.form.discount_price,
-        is_available: this.form.is_available,
-        is_featured: this.form.is_featured,
-        tags: this.form.tags,
-        display_order: this.form.display_order,
-        available_from: this.form.use_hours ? this.form.available_from : null,
-        available_until: this.form.use_hours ? this.form.available_until : null,
-        available_days: this.form.use_days ? this.form.available_days : [],
-        max_qty_per_order: this.form.max_qty_per_order,
-        preparation_time: this.form.preparation_time,
-        calories: this.form.calories,
-        is_combo: this.form.is_combo,
-        requires_prescription: this.form.requires_prescription,
-        controlled_substance: this.form.controlled_substance,
-        brand: this.form.brand,
-        sku: this.form.sku,
-        barcode: this.form.barcode,
-        unit_type: this.form.unit_type,
-        has_variants: this.form.has_variants,
-        track_stock: this.form.track_stock,
-        stock_count: this.form.track_stock ? this.form.stock_count : null,
-        low_stock_alert: this.form.track_stock ? this.form.low_stock_alert : null,
-        ...(photoUrl ? { photo_url: photoUrl } : {}),
-      };
-
-      let savedId = this.productId();
-
-      if (savedId) {
-        await this.catalogService.updateProduct(savedId, payload);
-      } else {
-        const created = await this.catalogService.createProduct(storeId, payload);
-        savedId = created.id;
-      }
-
-      // Save variants
-      if (this.form.has_variants && savedId && this.pendingVariants.length > 0) {
-        await this.catalogService.saveVariants(savedId, this.pendingVariants);
-      }
-
-      this.toast.success(this.isEditMode() ? 'Producto actualizado' : 'Producto creado');
-      this.router.navigate(['/store/catalog']);
-    } catch (err) {
-      console.error(err);
-      this.toast.error('Error al guardar el producto');
-    } finally {
-      this.isSaving.set(false);
+    private loadProduct(id: string) {
+        this.isLoading.set(true);
+        this.catalogService.getProductById(id).subscribe({
+            next: (p) => {
+                this.form = {
+                    name: p.name,
+                    description: p.description ?? '',
+                    category_id: p.category_id ?? null,
+                    price: p.price,
+                    discount_price: p.discount_price ?? null,
+                    is_available: p.is_available,
+                    is_featured: p.is_featured,
+                    tags: p.tags ?? [],
+                    display_order: p.display_order,
+                    use_hours: !!(p.available_from || p.available_until),
+                    available_from: p.available_from ?? null,
+                    available_until: p.available_until ?? null,
+                    use_days: !!(p.available_days?.length),
+                    available_days: p.available_days ?? [],
+                    max_qty_per_order: p.max_qty_per_order ?? null,
+                    preparation_time: p.preparation_time ?? null,
+                    calories: p.calories ?? null,
+                    is_combo: p.is_combo ?? false,
+                    requires_prescription: p.requires_prescription ?? false,
+                    controlled_substance: p.controlled_substance ?? false,
+                    brand: p.brand ?? null,
+                    sku: p.sku ?? null,
+                    barcode: p.barcode ?? null,
+                    unit_type: p.unit_type ?? null,
+                    has_variants: p.has_variants,
+                    track_stock: p.track_stock,
+                    stock_count: p.stock_count ?? null,
+                    low_stock_alert: p.low_stock_alert ?? null,
+                };
+                if (p.photo_url) this.photoPreviewSignal.set(p.photo_url);
+                if (p.has_variants) {
+                    this.catalogService.getVariants(id).subscribe(v => {
+                        this.existingVariants.set(v);
+                        this.pendingVariants = v;
+                    });
+                }
+                this.isLoading.set(false);
+            },
+            error: () => {
+                this.toast.error('Error al cargar el producto');
+                this.isLoading.set(false);
+            },
+        });
     }
-  }
+
+    // ─── Tags ─────────────────────────────────────────────────────────────────
+    addTag() {
+        const tag = this.tagInput.replace(/,$/, '').trim();
+        if (tag && !this.form.tags.includes(tag)) this.form.tags = [...this.form.tags, tag];
+        this.tagInput = '';
+    }
+
+    removeTag(tag: string) {
+        this.form.tags = this.form.tags.filter(t => t !== tag);
+    }
+
+    // ─── Days ─────────────────────────────────────────────────────────────────
+    toggleDay(key: string) {
+        this.form.available_days = this.form.available_days.includes(key)
+            ? this.form.available_days.filter(d => d !== key)
+            : [...this.form.available_days, key];
+    }
+
+    // ─── Photo ────────────────────────────────────────────────────────────────
+    onPhotoSelected(event: Event) {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        this.photoFile = file;
+        const url = URL.createObjectURL(file);
+        this.photoPreviewSignal.set(url);
+    }
+
+    clearPhoto() {
+        this.photoFile = null;
+        this.photoPreviewSignal.set(null);
+        if (this.form) (this.form as unknown as Record<string, unknown>)['photo_url'] = null;
+    }
+
+    // ─── Submit ───────────────────────────────────────────────────────────────
+    async submit() {
+        if (!this.form.name || this.form.price == null) {
+            this.toast.warning('Nombre y precio son obligatorios');
+            return;
+        }
+        const storeId = this.storeService.activeStoreId();
+        if (!storeId) return;
+
+        this.isSaving.set(true);
+        try {
+            let photoUrl: string | null = null;
+            if (this.photoFile) {
+                photoUrl = await this.catalogService.uploadProductImage(this.photoFile, storeId);
+            }
+
+            const payload: Partial<MenuItem> = {
+                name: this.form.name,
+                description: this.form.description || null,
+                category_id: this.form.category_id,
+                price: this.form.price!,
+                discount_price: this.form.discount_price,
+                is_available: this.form.is_available,
+                is_featured: this.form.is_featured,
+                tags: this.form.tags,
+                display_order: this.form.display_order,
+                available_from: this.form.use_hours ? this.form.available_from : null,
+                available_until: this.form.use_hours ? this.form.available_until : null,
+                available_days: this.form.use_days ? this.form.available_days : [],
+                max_qty_per_order: this.form.max_qty_per_order,
+                preparation_time: this.form.preparation_time,
+                calories: this.form.calories,
+                is_combo: this.form.is_combo,
+                requires_prescription: this.form.requires_prescription,
+                controlled_substance: this.form.controlled_substance,
+                brand: this.form.brand,
+                sku: this.form.sku,
+                barcode: this.form.barcode,
+                unit_type: this.form.unit_type,
+                has_variants: this.form.has_variants,
+                track_stock: this.form.track_stock,
+                stock_count: this.form.track_stock ? this.form.stock_count : null,
+                low_stock_alert: this.form.track_stock ? this.form.low_stock_alert : null,
+                ...(photoUrl ? { photo_url: photoUrl } : {}),
+            };
+
+            let savedId = this.productId();
+
+            if (savedId) {
+                await this.catalogService.updateProduct(savedId, payload);
+            } else {
+                const created = await this.catalogService.createProduct(storeId, payload);
+                savedId = created.id;
+            }
+
+            // Save variants
+            if (this.form.has_variants && savedId && this.pendingVariants.length > 0) {
+                await this.catalogService.saveVariants(savedId, this.pendingVariants);
+            }
+
+            this.toast.success(this.isEditMode() ? 'Producto actualizado' : 'Producto creado');
+            this.router.navigate(['/store/catalog']);
+        } catch (err) {
+            console.error(err);
+            this.toast.error('Error al guardar el producto');
+        } finally {
+            this.isSaving.set(false);
+        }
+    }
 }
