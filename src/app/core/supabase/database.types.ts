@@ -398,3 +398,138 @@ export interface OrderFilters {
   page?: number;
   pageSize?: number;
 }
+
+// ── Finances / Payouts types ────────────────────────────────────────────────
+
+export type PayoutStatus = 'pendiente' | 'pagado' | 'cancelado';
+export type PayoutMethod = 'transferencia' | 'efectivo' | 'cheque' | 'crypto';
+
+export interface Payout {
+  id: string;
+  store_id: string;
+  store_name?: string;
+  period_from: string;
+  period_to: string;
+  gross_sales: number;
+  commission_total: number;
+  delivery_fees: number;
+  net_amount: number;
+  status: PayoutStatus;
+  payment_method?: PayoutMethod | null;
+  payment_reference?: string | null;
+  paid_at?: string | null;
+  created_at: string;
+}
+
+export interface PayoutSummary {
+  store_id: string;
+  store_name: string;
+  gross_sales: number;
+  commission_total: number;
+  delivery_fees: number;
+  net_amount: number;
+  order_count: number;
+  payout_status?: PayoutStatus | null;
+  payout_id?: string | null;
+}
+
+export interface FinanceKpi {
+  grossSales: number;
+  commissions: number;
+  deliveryFees: number;
+  discounts: number;
+  netTutty: number;
+  orderCount: number;
+}
+
+export interface FinanceDailyPoint {
+  date: string;
+  grossSales: number;
+  commissions: number;
+}
+
+export interface SurchargeStats {
+  weatherCount: number;
+  weatherTotal: number;
+  peakCount: number;
+  peakTotal: number;
+  nightCount: number;
+  nightTotal: number;
+  holidayCount: number;
+  holidayTotal: number;
+  surgeCount: number;
+  surgeTotal: number;
+}
+
+export interface DeliveryFeeRange {
+  range: string;
+  count: number;
+}
+
+// ── Settings SA-6 types ────────────────────────────────────────────────────
+
+export interface StoreCategory {
+  id: string;
+  name: string;
+  slug: string;
+  commerce_type: CommerceType;
+  icon?: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  admin_id?: string | null;
+  admin_email?: string | null;
+  action: string;
+  table_name?: string | null;
+  previous_value?: string | null;
+  new_value?: string | null;
+  created_at: string;
+}
+
+// ── B-0 Registration flow ──────────────────────────────────────────────────
+
+export interface RegistrationDraft {
+  // Step 1 – commerce type
+  commerce_type: CommerceType | null;
+  // Step 2 – basic info
+  name: string;
+  slug: string;
+  description: string;
+  whatsapp_number: string;
+  address: string;
+  sector: string;
+  city: string;
+  logo_url: string | null;
+  banner_url: string | null;
+  category_id: string | null;
+  // Step 3 – operational details
+  opening_time: string;
+  closing_time: string;
+  open_days: string[];
+  avg_delivery_minutes: number;
+  min_order_amount: number;
+  free_delivery_enabled: boolean;
+  free_delivery_threshold: number;
+  // Commerce-type specific
+  sespas_number?: string;
+  farmacia_24h?: boolean;
+  requires_prescription?: boolean;
+  urgent_delivery?: boolean;
+  cuisine_types?: string[];
+  realtime_inventory?: boolean;
+  unit_types?: string[];
+  handles_sizes?: boolean;
+  handles_colors?: boolean;
+  return_policy?: string;
+  offers_warranty?: boolean;
+  sells_secondhand?: boolean;
+  // Step 4 – account
+  email: string;
+  password: string;
+  full_name: string;
+  phone: string;
+}
