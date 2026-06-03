@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'app-store-product-form',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
+    selector: 'app-store-product-form',
+    standalone: true,
+    imports: [CommonModule, RouterLink],
+    template: `
     <div class="p-6 lg:p-8 space-y-6">
       <div class="flex items-center gap-3">
         <a routerLink="../" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
@@ -23,4 +23,4 @@ import { RouterLink } from '@angular/router';
     </div>
   `,
 })
-export class StoreProductFormPageComponent {}
+export class StoreProductFormPageComponent { }

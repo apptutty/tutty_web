@@ -2,10 +2,10 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-store-reviews',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-store-reviews',
+    standalone: true,
+    imports: [CommonModule],
+    template: `
     <div class="p-6 lg:p-8 space-y-6">
       <h1 class="text-2xl font-bold text-gray-900">Reseñas</h1>
       <div class="card p-10 text-center text-gray-400">
@@ -18,4 +18,4 @@ import { CommonModule } from '@angular/common';
     </div>
   `,
 })
-export class StoreReviewsPageComponent {}
+export class StoreReviewsPageComponent { }

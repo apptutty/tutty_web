@@ -4,10 +4,10 @@ import { RouterLink } from '@angular/router';
 import { StoreAdminService } from '../store-admin.service';
 
 @Component({
-  selector: 'app-store-catalog',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
+    selector: 'app-store-catalog',
+    standalone: true,
+    imports: [CommonModule, RouterLink],
+    template: `
     <div class="p-6 lg:p-8 space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900">{{ catalogTitle() }}</h1>
@@ -29,12 +29,12 @@ import { StoreAdminService } from '../store-admin.service';
   `,
 })
 export class StoreCatalogPageComponent {
-  private readonly storeService = inject(StoreAdminService);
+    private readonly storeService = inject(StoreAdminService);
 
-  readonly catalogTitle = computed(() => {
-    const type = this.storeService.activeStore()?.commerce_type;
-    if (type === 'restaurante') return 'Mi Menú';
-    if (type === 'farmacia') return 'Mis Productos';
-    return 'Mi Catálogo';
-  });
+    readonly catalogTitle = computed(() => {
+        const type = this.storeService.activeStore()?.commerce_type;
+        if (type === 'restaurante') return 'Mi Menú';
+        if (type === 'farmacia') return 'Mis Productos';
+        return 'Mi Catálogo';
+    });
 }

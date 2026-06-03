@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, OnDestroy, inject, signal, computed,
+    Component, OnInit, OnDestroy, inject, signal, computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
@@ -8,30 +8,30 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { OrderStatus } from '../../../core/supabase/database.types';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  recibido: 'Nuevo',
-  confirmado: 'Confirmado',
-  en_preparacion: 'En preparación',
-  en_camino: 'En camino',
-  entregado: 'Entregado',
-  cancelado: 'Cancelado',
+    recibido: 'Nuevo',
+    confirmado: 'Confirmado',
+    en_preparacion: 'En preparación',
+    en_camino: 'En camino',
+    entregado: 'Entregado',
+    cancelado: 'Cancelado',
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  recibido: 'bg-yellow-100 text-yellow-700',
-  confirmado: 'bg-blue-100 text-blue-700',
-  en_preparacion: 'bg-purple-100 text-purple-700',
-  en_camino: 'bg-pink-100 text-pink-700',
-  entregado: 'bg-green-100 text-green-700',
-  cancelado: 'bg-red-100 text-red-700',
+    recibido: 'bg-yellow-100 text-yellow-700',
+    confirmado: 'bg-blue-100 text-blue-700',
+    en_preparacion: 'bg-purple-100 text-purple-700',
+    en_camino: 'bg-pink-100 text-pink-700',
+    entregado: 'bg-green-100 text-green-700',
+    cancelado: 'bg-red-100 text-red-700',
 };
 
 const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion', 'en_camino', 'entregado'];
 
 @Component({
-  selector: 'app-store-order-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  styles: [`
+    selector: 'app-store-order-detail',
+    standalone: true,
+    imports: [CommonModule, RouterLink],
+    styles: [`
     :host { display: block; }
     .print-only { display: none; }
     .step-active { background-color: #e91e8c; }
@@ -42,7 +42,7 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
       .card { box-shadow: none; border: 1px solid #eee; }
     }
   `],
-  template: `
+    template: `
     <div class="p-4 lg:p-6 space-y-5 max-w-3xl mx-auto">
 
       <!-- Header -->
@@ -267,131 +267,131 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
   `,
 })
 export class StoreOrderDetailPageComponent implements OnInit, OnDestroy {
-  private readonly ordersService = inject(StoreOrdersService);
-  private readonly toast = inject(ToastService);
-  private readonly route = inject(ActivatedRoute);
+    private readonly ordersService = inject(StoreOrdersService);
+    private readonly toast = inject(ToastService);
+    private readonly route = inject(ActivatedRoute);
 
-  readonly isLoading = signal(true);
-  readonly order = signal<StoreOrderDetail | null>(null);
-  readonly advancingStatus = signal(false);
+    readonly isLoading = signal(true);
+    readonly order = signal<StoreOrderDetail | null>(null);
+    readonly advancingStatus = signal(false);
 
-  readonly statusSteps: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion', 'en_camino', 'entregado'];
+    readonly statusSteps: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion', 'en_camino', 'entregado'];
 
-  readonly orderStatusHistory = computed(() => this.order()?.status_history ?? []);
+    readonly orderStatusHistory = computed(() => this.order()?.status_history ?? []);
 
-  readonly repartidorName = computed(() => {
-    const r = this.order()?.repartidor as any;
-    if (!r) return '—';
-    return r.user?.full_name ?? r.full_name ?? '—';
-  });
-
-  readonly orderItemsForDisplay = computed(() =>
-    (this.order()?.items ?? []).map(item => ({
-      id: item.id,
-      name: this.itemName(item),
-      quantity: item.quantity,
-      unitPrice: item.unit_price,
-      lineTotal: item.unit_price * item.quantity,
-    }))
-  );
-
-  readonly nextStatusValue = computed(() => {
-    const o = this.order();
-    if (!o) return null;
-    return this.ordersService.nextStatus(o.status);
-  });
-
-  readonly canAdvance = computed(() => {
-    const o = this.order();
-    if (!o) return false;
-    if (o.status === 'cancelado' || o.status === 'entregado') return false;
-    return this.nextStatusValue() !== null;
-  });
-
-  readonly whatsappUrl = computed(() => {
-    const o = this.order();
-    if (!o?.customer?.phone) return '#';
-    const phone = o.customer.phone.replace(/\D/g, '');
-    const text = encodeURIComponent(
-      `Hola ${o.customer.full_name}, tu pedido #${o.order_number} en Tutty está siendo procesado. ¡Gracias por tu compra!`,
-    );
-    return `https://wa.me/${phone}?text=${text}`;
-  });
-
-  private sub: any = null;
-
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) return;
-    this.sub = this.ordersService.getOrderDetail(id).subscribe({
-      next: (detail) => {
-        this.order.set(detail);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('No se pudo cargar el detalle del pedido');
-        this.isLoading.set(false);
-      },
+    readonly repartidorName = computed(() => {
+        const r = this.order()?.repartidor as any;
+        if (!r) return '—';
+        return r.user?.full_name ?? r.full_name ?? '—';
     });
-  }
 
-  ngOnDestroy(): void {
-    this.sub?.unsubscribe?.();
-  }
+    readonly orderItemsForDisplay = computed(() =>
+        (this.order()?.items ?? []).map(item => ({
+            id: item.id,
+            name: this.itemName(item),
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            lineTotal: item.unit_price * item.quantity,
+        }))
+    );
 
-  statusLabel(status: OrderStatus): string { return STATUS_LABELS[status] ?? status; }
-  statusColor(status: OrderStatus): string { return STATUS_COLORS[status] ?? ''; }
+    readonly nextStatusValue = computed(() => {
+        const o = this.order();
+        if (!o) return null;
+        return this.ordersService.nextStatus(o.status);
+    });
 
-  itemName(item: any): string {
-    const snap = item.menu_item_snapshot;
-    if (!snap) return '—';
-    return (snap as any).name ?? (snap as any).nombre ?? '—';
-  }
+    readonly canAdvance = computed(() => {
+        const o = this.order();
+        if (!o) return false;
+        if (o.status === 'cancelado' || o.status === 'entregado') return false;
+        return this.nextStatusValue() !== null;
+    });
 
-  isPastStatus(status: OrderStatus): boolean {
-    const o = this.order();
-    if (!o || o.status === 'cancelado') return false;
-    const currentIdx = STATUS_ORDER.indexOf(o.status);
-    const checkIdx = STATUS_ORDER.indexOf(status);
-    return checkIdx < currentIdx;
-  }
+    readonly whatsappUrl = computed(() => {
+        const o = this.order();
+        if (!o?.customer?.phone) return '#';
+        const phone = o.customer.phone.replace(/\D/g, '');
+        const text = encodeURIComponent(
+            `Hola ${o.customer.full_name}, tu pedido #${o.order_number} en Tutty está siendo procesado. ¡Gracias por tu compra!`,
+        );
+        return `https://wa.me/${phone}?text=${text}`;
+    });
 
-  statusStepColor(status: OrderStatus): string {
-    const o = this.order();
-    if (!o) return 'bg-gray-100 text-gray-400';
-    if (o.status === status) return 'step-active text-white';
-    if (this.isPastStatus(status)) return 'bg-green-400 text-white';
-    return 'bg-gray-100 text-gray-400';
-  }
+    private sub: any = null;
 
-  async advanceStatus(): Promise<void> {
-    const o = this.order();
-    const next = this.nextStatusValue();
-    if (!o || !next || this.advancingStatus()) return;
-
-    this.advancingStatus.set(true);
-    try {
-      await this.ordersService.updateStatus(o.id, next);
-      this.order.update(ord => ord ? { ...ord, status: next } : ord);
-      this.toast.success(`Estado actualizado: ${this.statusLabel(next)}`);
-    } catch {
-      this.toast.error('No se pudo actualizar el estado');
-    } finally {
-      this.advancingStatus.set(false);
+    ngOnInit(): void {
+        const id = this.route.snapshot.paramMap.get('id');
+        if (!id) return;
+        this.sub = this.ordersService.getOrderDetail(id).subscribe({
+            next: (detail) => {
+                this.order.set(detail);
+                this.isLoading.set(false);
+            },
+            error: () => {
+                this.toast.error('No se pudo cargar el detalle del pedido');
+                this.isLoading.set(false);
+            },
+        });
     }
-  }
 
-  printTicket(): void {
-    const o = this.order();
-    if (!o) return;
+    ngOnDestroy(): void {
+        this.sub?.unsubscribe?.();
+    }
 
-    const itemRows = this.orderItemsForDisplay()
-      .map(item => `<tr><td>${item.quantity}x ${item.name}</td><td style="text-align:right">RD$${item.lineTotal.toLocaleString('es-DO')}</td></tr>`)
-      .join('');
+    statusLabel(status: OrderStatus): string { return STATUS_LABELS[status] ?? status; }
+    statusColor(status: OrderStatus): string { return STATUS_COLORS[status] ?? ''; }
 
-    const win = window.open('', '_blank', 'width=400,height=600');
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head>
+    itemName(item: any): string {
+        const snap = item.menu_item_snapshot;
+        if (!snap) return '—';
+        return (snap as any).name ?? (snap as any).nombre ?? '—';
+    }
+
+    isPastStatus(status: OrderStatus): boolean {
+        const o = this.order();
+        if (!o || o.status === 'cancelado') return false;
+        const currentIdx = STATUS_ORDER.indexOf(o.status);
+        const checkIdx = STATUS_ORDER.indexOf(status);
+        return checkIdx < currentIdx;
+    }
+
+    statusStepColor(status: OrderStatus): string {
+        const o = this.order();
+        if (!o) return 'bg-gray-100 text-gray-400';
+        if (o.status === status) return 'step-active text-white';
+        if (this.isPastStatus(status)) return 'bg-green-400 text-white';
+        return 'bg-gray-100 text-gray-400';
+    }
+
+    async advanceStatus(): Promise<void> {
+        const o = this.order();
+        const next = this.nextStatusValue();
+        if (!o || !next || this.advancingStatus()) return;
+
+        this.advancingStatus.set(true);
+        try {
+            await this.ordersService.updateStatus(o.id, next);
+            this.order.update(ord => ord ? { ...ord, status: next } : ord);
+            this.toast.success(`Estado actualizado: ${this.statusLabel(next)}`);
+        } catch {
+            this.toast.error('No se pudo actualizar el estado');
+        } finally {
+            this.advancingStatus.set(false);
+        }
+    }
+
+    printTicket(): void {
+        const o = this.order();
+        if (!o) return;
+
+        const itemRows = this.orderItemsForDisplay()
+            .map(item => `<tr><td>${item.quantity}x ${item.name}</td><td style="text-align:right">RD$${item.lineTotal.toLocaleString('es-DO')}</td></tr>`)
+            .join('');
+
+        const win = window.open('', '_blank', 'width=400,height=600');
+        if (!win) return;
+        win.document.write(`<!DOCTYPE html><html><head>
       <meta charset="UTF-8">
       <title>Ticket #${o.order_number}</title>
       <style>
@@ -420,12 +420,12 @@ export class StoreOrderDetailPageComponent implements OnInit, OnDestroy {
       <p class="center" style="color:#999;font-size:10px;">Generado por Tutty</p>
       <script>window.print();window.close();</script>
     </body></html>`);
-    win.document.close();
-  }
+        win.document.close();
+    }
 
-  formatDateTime(iso: string): string {
-    return new Date(iso).toLocaleString('es-DO', {
-      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-    });
-  }
+    formatDateTime(iso: string): string {
+        return new Date(iso).toLocaleString('es-DO', {
+            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+        });
+    }
 }

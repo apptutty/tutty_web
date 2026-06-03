@@ -7,23 +7,23 @@ import { StoreDashboardService, StoreKPIs, ActiveOrder, TopProduct, SalesDay, Lo
 import { OpenCloseToggleComponent } from './open-close-toggle.component';
 
 const STATUS_CFG: Record<string, { label: string; classes: string; pulse: boolean }> = {
-  recibido:       { label: 'Nuevo',      classes: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',      pulse: true  },
-  confirmado:     { label: 'Confirmado', classes: 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200', pulse: false },
-  en_preparacion: { label: 'Preparando', classes: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',    pulse: false },
-  en_camino:      { label: 'En camino',  classes: 'bg-purple-100 text-purple-700 ring-1 ring-purple-200', pulse: false },
+    recibido: { label: 'Nuevo', classes: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200', pulse: true },
+    confirmado: { label: 'Confirmado', classes: 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200', pulse: false },
+    en_preparacion: { label: 'Preparando', classes: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200', pulse: false },
+    en_camino: { label: 'En camino', classes: 'bg-purple-100 text-purple-700 ring-1 ring-purple-200', pulse: false },
 };
 
 const NEXT_BTN: Record<string, string> = {
-  recibido: 'Confirmar',
-  confirmado: 'Preparando',
-  en_preparacion: 'Listo',
+    recibido: 'Confirmar',
+    confirmado: 'Preparando',
+    en_preparacion: 'Listo',
 };
 
 @Component({
-  selector: 'app-store-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule, OpenCloseToggleComponent],
-  template: `
+    selector: 'app-store-dashboard',
+    standalone: true,
+    imports: [CommonModule, FormsModule, OpenCloseToggleComponent],
+    template: `
     <div class="p-6 lg:p-8 space-y-6">
 
       <!-- Header -->
@@ -287,133 +287,133 @@ const NEXT_BTN: Record<string, string> = {
   `,
 })
 export class StoreDashboardPageComponent implements OnInit, OnDestroy {
-  private readonly storeService = inject(StoreAdminService);
-  private readonly dashService = inject(StoreDashboardService);
-  private readonly subs: Subscription[] = [];
+    private readonly storeService = inject(StoreAdminService);
+    private readonly dashService = inject(StoreDashboardService);
+    private readonly subs: Subscription[] = [];
 
-  readonly skeleton = [1, 2, 3, 4];
-  readonly today = new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' });
-  editingStockValue = 0;
+    readonly skeleton = [1, 2, 3, 4];
+    readonly today = new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' });
+    editingStockValue = 0;
 
-  readonly kpis = signal<StoreKPIs | null>(null);
-  readonly kpisLoading = signal(true);
-  readonly activeOrders = signal<ActiveOrder[]>([]);
-  readonly topProducts = signal<TopProduct[]>([]);
-  readonly weeklySales = signal<SalesDay[]>([]);
-  readonly lowStockItems = signal<LowStockItem[]>([]);
-  readonly editingStockId = signal<string | null>(null);
+    readonly kpis = signal<StoreKPIs | null>(null);
+    readonly kpisLoading = signal(true);
+    readonly activeOrders = signal<ActiveOrder[]>([]);
+    readonly topProducts = signal<TopProduct[]>([]);
+    readonly weeklySales = signal<SalesDay[]>([]);
+    readonly lowStockItems = signal<LowStockItem[]>([]);
+    readonly editingStockId = signal<string | null>(null);
 
-  // Derived KPI helpers (avoid complex optional chaining in template)
-  readonly storeName    = computed(() => this.storeService.activeStore()?.name ?? '');
-  readonly sales        = computed(() => this.fmtN(this.kpis()?.sales ?? 0));
-  readonly avgTicket    = computed(() => this.fmtN(this.kpis()?.avgTicket ?? 0));
-  readonly orderCount   = computed(() => this.kpis()?.orderCount ?? 0);
-  readonly cancellations = computed(() => this.kpis()?.cancellations ?? 0);
-  readonly activeOrdering = computed(() => this.kpis()?.activeOrders ?? 0);
-  readonly rating       = computed(() => (this.kpis()?.rating ?? 0).toFixed(1));
-  readonly totalReviews = computed(() => this.storeService.activeStore()?.total_reviews ?? 0);
+    // Derived KPI helpers (avoid complex optional chaining in template)
+    readonly storeName = computed(() => this.storeService.activeStore()?.name ?? '');
+    readonly sales = computed(() => this.fmtN(this.kpis()?.sales ?? 0));
+    readonly avgTicket = computed(() => this.fmtN(this.kpis()?.avgTicket ?? 0));
+    readonly orderCount = computed(() => this.kpis()?.orderCount ?? 0);
+    readonly cancellations = computed(() => this.kpis()?.cancellations ?? 0);
+    readonly activeOrdering = computed(() => this.kpis()?.activeOrders ?? 0);
+    readonly rating = computed(() => (this.kpis()?.rating ?? 0).toFixed(1));
+    readonly totalReviews = computed(() => this.storeService.activeStore()?.total_reviews ?? 0);
 
-  readonly maxWeekly = computed(() => Math.max(...this.weeklySales().map(d => d.sales), 1));
-  readonly maxTop    = computed(() => Math.max(...this.topProducts().map(p => p.totalSold), 1));
+    readonly maxWeekly = computed(() => Math.max(...this.weeklySales().map(d => d.sales), 1));
+    readonly maxTop = computed(() => Math.max(...this.topProducts().map(p => p.totalSold), 1));
 
-  readonly hasInventoryAlerts = computed(() => {
-    const k = this.kpis();
-    if (k?.lowStockCount == null) return false;
-    return (k.outOfStockCount ?? 0) > 0 || (k.lowStockCount ?? 0) > 0;
-  });
+    readonly hasInventoryAlerts = computed(() => {
+        const k = this.kpis();
+        if (k?.lowStockCount == null) return false;
+        return (k.outOfStockCount ?? 0) > 0 || (k.lowStockCount ?? 0) > 0;
+    });
 
-  readonly inventoryAlertSummary = computed(() => {
-    const k = this.kpis();
-    if (!k) return '';
-    const parts: string[] = [];
-    if ((k.outOfStockCount ?? 0) > 0) parts.push(`${k.outOfStockCount} sin stock`);
-    if ((k.lowStockCount ?? 0) > 0) parts.push(`${k.lowStockCount} con stock bajo`);
-    return parts.join(' · ');
-  });
+    readonly inventoryAlertSummary = computed(() => {
+        const k = this.kpis();
+        if (!k) return '';
+        const parts: string[] = [];
+        if ((k.outOfStockCount ?? 0) > 0) parts.push(`${k.outOfStockCount} sin stock`);
+        if ((k.lowStockCount ?? 0) > 0) parts.push(`${k.lowStockCount} con stock bajo`);
+        return parts.join(' · ');
+    });
 
-  ngOnInit(): void {
-    const storeId = this.storeService.activeStoreId();
-    const commerceType = this.storeService.activeStore()?.commerce_type ?? '';
-    if (!storeId) return;
+    ngOnInit(): void {
+        const storeId = this.storeService.activeStoreId();
+        const commerceType = this.storeService.activeStore()?.commerce_type ?? '';
+        if (!storeId) return;
 
-    this.subs.push(
-      this.dashService.getTodayKPIs(storeId, commerceType).subscribe(k => {
-        this.kpis.set(k);
-        this.kpisLoading.set(false);
-      }),
-      this.dashService.getActiveOrders(storeId).subscribe(o => this.activeOrders.set(o)),
-      this.dashService.getTopProducts(storeId).subscribe(p => this.topProducts.set(p)),
-      this.dashService.getWeeklySales(storeId).subscribe(s => this.weeklySales.set(s)),
-      this.dashService.getLowStockItems(storeId).subscribe(i => this.lowStockItems.set(i)),
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subs.forEach(s => s.unsubscribe());
-  }
-
-  statusCfg(status: string) {
-    return STATUS_CFG[status] ?? { label: status, classes: 'bg-gray-100 text-gray-600', pulse: false };
-  }
-
-  nextBtn(status: string): string | null {
-    return NEXT_BTN[status] ?? null;
-  }
-
-  async advanceStatus(order: ActiveOrder) {
-    const next = await this.dashService.advanceOrderStatus(order.id, order.status);
-    if (next) {
-      this.activeOrders.update(list =>
-        list.map(o => o.id === order.id ? { ...o, status: next } : o)
-      );
+        this.subs.push(
+            this.dashService.getTodayKPIs(storeId, commerceType).subscribe(k => {
+                this.kpis.set(k);
+                this.kpisLoading.set(false);
+            }),
+            this.dashService.getActiveOrders(storeId).subscribe(o => this.activeOrders.set(o)),
+            this.dashService.getTopProducts(storeId).subscribe(p => this.topProducts.set(p)),
+            this.dashService.getWeeklySales(storeId).subscribe(s => this.weeklySales.set(s)),
+            this.dashService.getLowStockItems(storeId).subscribe(i => this.lowStockItems.set(i)),
+        );
     }
-  }
 
-  itemSummary(order: ActiveOrder): string {
-    const first2 = order.items.slice(0, 2).map(i => i.quantity + 'x ' + i.name).join(', ');
-    const extra = order.items.length - 2;
-    return extra > 0 ? first2 + ' y ' + extra + ' mas' : first2;
-  }
+    ngOnDestroy(): void {
+        this.subs.forEach(s => s.unsubscribe());
+    }
 
-  elapsed(createdAt: string): string {
-    const diff = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
-    if (diff < 60) return diff + ' min';
-    const h = Math.floor(diff / 60);
-    return h + 'h ' + (diff % 60) + 'm';
-  }
+    statusCfg(status: string) {
+        return STATUS_CFG[status] ?? { label: status, classes: 'bg-gray-100 text-gray-600', pulse: false };
+    }
 
-  fmtN(n: number): string {
-    return Math.round(n).toLocaleString('es-DO');
-  }
+    nextBtn(status: string): string | null {
+        return NEXT_BTN[status] ?? null;
+    }
 
-  barH(sales: number): number {
-    const max = this.maxWeekly();
-    return max > 0 ? Math.max(5, Math.round((sales / max) * 100)) : 5;
-  }
+    async advanceStatus(order: ActiveOrder) {
+        const next = await this.dashService.advanceOrderStatus(order.id, order.status);
+        if (next) {
+            this.activeOrders.update(list =>
+                list.map(o => o.id === order.id ? { ...o, status: next } : o)
+            );
+        }
+    }
 
-  topBarW(sold: number): number {
-    const max = this.maxTop();
-    return max > 0 ? Math.round((sold / max) * 100) : 0;
-  }
+    itemSummary(order: ActiveOrder): string {
+        const first2 = order.items.slice(0, 2).map(i => i.quantity + 'x ' + i.name).join(', ');
+        const extra = order.items.length - 2;
+        return extra > 0 ? first2 + ' y ' + extra + ' mas' : first2;
+    }
 
-  stockLabel(item: LowStockItem): string {
-    if ((item.stock_count ?? 0) === 0) return 'Sin stock';
-    const base = 'Stock: ' + item.stock_count;
-    return item.low_stock_alert ? base + ' · Minimo: ' + item.low_stock_alert : base;
-  }
+    elapsed(createdAt: string): string {
+        const diff = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+        if (diff < 60) return diff + ' min';
+        const h = Math.floor(diff / 60);
+        return h + 'h ' + (diff % 60) + 'm';
+    }
 
-  startEditStock(item: LowStockItem) {
-    this.editingStockId.set(item.id);
-    this.editingStockValue = item.stock_count ?? 0;
-  }
+    fmtN(n: number): string {
+        return Math.round(n).toLocaleString('es-DO');
+    }
 
-  async saveStock(itemId: string) {
-    await this.dashService.updateStock(itemId, this.editingStockValue);
-    const newVal = this.editingStockValue;
-    this.lowStockItems.update(list =>
-      list.map(i => i.id === itemId ? { ...i, stock_count: newVal } : i)
-        .filter(i => i.low_stock_alert == null || (i.stock_count ?? 0) <= i.low_stock_alert || (i.stock_count ?? 0) === 0)
-    );
-    this.editingStockId.set(null);
-  }
+    barH(sales: number): number {
+        const max = this.maxWeekly();
+        return max > 0 ? Math.max(5, Math.round((sales / max) * 100)) : 5;
+    }
+
+    topBarW(sold: number): number {
+        const max = this.maxTop();
+        return max > 0 ? Math.round((sold / max) * 100) : 0;
+    }
+
+    stockLabel(item: LowStockItem): string {
+        if ((item.stock_count ?? 0) === 0) return 'Sin stock';
+        const base = 'Stock: ' + item.stock_count;
+        return item.low_stock_alert ? base + ' · Minimo: ' + item.low_stock_alert : base;
+    }
+
+    startEditStock(item: LowStockItem) {
+        this.editingStockId.set(item.id);
+        this.editingStockValue = item.stock_count ?? 0;
+    }
+
+    async saveStock(itemId: string) {
+        await this.dashService.updateStock(itemId, this.editingStockValue);
+        const newVal = this.editingStockValue;
+        this.lowStockItems.update(list =>
+            list.map(i => i.id === itemId ? { ...i, stock_count: newVal } : i)
+                .filter(i => i.low_stock_alert == null || (i.stock_count ?? 0) <= i.low_stock_alert || (i.stock_count ?? 0) === 0)
+        );
+        this.editingStockId.set(null);
+    }
 }

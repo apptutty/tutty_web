@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, OnDestroy, inject, signal, computed,
+    Component, OnInit, OnDestroy, inject, signal, computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,42 +13,42 @@ import { OrderStatus } from '../../../core/supabase/database.types';
 type ViewTab = 'kanban' | 'lista' | 'mapa';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  recibido: 'Nuevo',
-  confirmado: 'Confirmado',
-  en_preparacion: 'En preparación',
-  en_camino: 'En camino',
-  entregado: 'Entregado',
-  cancelado: 'Cancelado',
+    recibido: 'Nuevo',
+    confirmado: 'Confirmado',
+    en_preparacion: 'En preparación',
+    en_camino: 'En camino',
+    entregado: 'Entregado',
+    cancelado: 'Cancelado',
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  recibido: 'bg-yellow-100 text-yellow-800',
-  confirmado: 'bg-blue-100 text-blue-800',
-  en_preparacion: 'bg-purple-100 text-purple-800',
-  en_camino: 'bg-brand-50 text-brand-700',
-  entregado: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800',
+    recibido: 'bg-yellow-100 text-yellow-800',
+    confirmado: 'bg-blue-100 text-blue-800',
+    en_preparacion: 'bg-purple-100 text-purple-800',
+    en_camino: 'bg-brand-50 text-brand-700',
+    entregado: 'bg-green-100 text-green-800',
+    cancelado: 'bg-red-100 text-red-800',
 };
 
 interface KanbanColumn {
-  title: string;
-  statuses: OrderStatus[];
-  advanceLabel: string;
-  color: string;
+    title: string;
+    statuses: OrderStatus[];
+    advanceLabel: string;
+    color: string;
 }
 
 const KANBAN_COLUMNS: KanbanColumn[] = [
-  { title: 'Nuevos', statuses: ['recibido'], advanceLabel: 'Confirmar', color: 'border-yellow-400 bg-yellow-50' },
-  { title: 'Preparando', statuses: ['confirmado', 'en_preparacion'], advanceLabel: 'Listo', color: 'border-purple-400 bg-purple-50' },
-  { title: 'Listo / En camino', statuses: ['en_camino'], advanceLabel: 'Entregado', color: 'border-brand-500 bg-brand-50' },
-  { title: 'Entregados', statuses: ['entregado'], advanceLabel: '', color: 'border-green-400 bg-green-50' },
+    { title: 'Nuevos', statuses: ['recibido'], advanceLabel: 'Confirmar', color: 'border-yellow-400 bg-yellow-50' },
+    { title: 'Preparando', statuses: ['confirmado', 'en_preparacion'], advanceLabel: 'Listo', color: 'border-purple-400 bg-purple-50' },
+    { title: 'Listo / En camino', statuses: ['en_camino'], advanceLabel: 'Entregado', color: 'border-brand-500 bg-brand-50' },
+    { title: 'Entregados', statuses: ['entregado'], advanceLabel: '', color: 'border-green-400 bg-green-50' },
 ];
 
 @Component({
-  selector: 'app-store-orders',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  template: `
+    selector: 'app-store-orders',
+    standalone: true,
+    imports: [CommonModule, FormsModule, RouterLink],
+    template: `
     <div class="p-4 lg:p-6 space-y-4 h-full flex flex-col">
 
       <!-- Header -->
@@ -297,7 +297,7 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .text-brand-600 { color: #e91e8c; }
     .text-brand-700 { color: #c5176d; }
     .bg-brand-600 { background-color: #e91e8c; }
@@ -312,255 +312,255 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
   `],
 })
 export class StoreOrdersPageComponent implements OnInit, OnDestroy {
-  private readonly ordersService = inject(StoreOrdersService);
-  private readonly storeAdminService = inject(StoreAdminService);
-  private readonly toast = inject(ToastService);
-  private readonly router = inject(Router);
+    private readonly ordersService = inject(StoreOrdersService);
+    private readonly storeAdminService = inject(StoreAdminService);
+    private readonly toast = inject(ToastService);
+    private readonly router = inject(Router);
 
-  // ── Signals ────────────────────────────────────────────────────────────────
-  readonly isLoading = signal(true);
-  readonly activeView = signal<ViewTab>('kanban');
-  readonly allOrders = signal<StoreOrder[]>([]);
-  readonly listOrders = signal<StoreOrder[]>([]);
-  readonly totalOrders = signal(0);
-  readonly totalCount = signal(0);
-  readonly currentPage = signal(1);
-  readonly advancingId = signal<string | null>(null);
-  readonly rejectingId = signal<string | null>(null);
-  readonly rejectModal = signal<StoreOrder | null>(null);
-  readonly rejectReason = signal<string>('');
+    // ── Signals ────────────────────────────────────────────────────────────────
+    readonly isLoading = signal(true);
+    readonly activeView = signal<ViewTab>('kanban');
+    readonly allOrders = signal<StoreOrder[]>([]);
+    readonly listOrders = signal<StoreOrder[]>([]);
+    readonly totalOrders = signal(0);
+    readonly totalCount = signal(0);
+    readonly currentPage = signal(1);
+    readonly advancingId = signal<string | null>(null);
+    readonly rejectingId = signal<string | null>(null);
+    readonly rejectModal = signal<StoreOrder | null>(null);
+    readonly rejectReason = signal<string>('');
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.PAGE_SIZE)));
+    readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.PAGE_SIZE)));
 
-  // ── View tabs ──────────────────────────────────────────────────────────────
-  readonly tabs = [
-    { id: 'kanban' as ViewTab, label: 'Kanban', icon: '🗂' },
-    { id: 'lista' as ViewTab, label: 'Lista', icon: '📋' },
-    { id: 'mapa' as ViewTab, label: 'Mapa', icon: '🗺' },
-  ];
+    // ── View tabs ──────────────────────────────────────────────────────────────
+    readonly tabs = [
+        { id: 'kanban' as ViewTab, label: 'Kanban', icon: '🗂' },
+        { id: 'lista' as ViewTab, label: 'Lista', icon: '📋' },
+        { id: 'mapa' as ViewTab, label: 'Mapa', icon: '🗺' },
+    ];
 
-  readonly kanbanColumns = KANBAN_COLUMNS;
-  readonly rejectReasons = [
-    'Producto no disponible',
-    'Cocina cerrada / sin capacidad',
-    'Dirección de entrega fuera de zona',
-    'Pedido duplicado',
-  ];
-  customRejectReason = '';
+    readonly kanbanColumns = KANBAN_COLUMNS;
+    readonly rejectReasons = [
+        'Producto no disponible',
+        'Cocina cerrada / sin capacidad',
+        'Dirección de entrega fuera de zona',
+        'Pedido duplicado',
+    ];
+    customRejectReason = '';
 
-  readonly finalRejectReason = computed(() => this.customRejectReason.trim() || this.rejectReason());
+    readonly finalRejectReason = computed(() => this.customRejectReason.trim() || this.rejectReason());
 
-  // ── List filters ───────────────────────────────────────────────────────────
-  filterSearch = '';
-  filterStatus = 'activos';
-  filterDateFrom = '';
-  filterDateTo = '';
-  private readonly PAGE_SIZE = 30;
+    // ── List filters ───────────────────────────────────────────────────────────
+    filterSearch = '';
+    filterStatus = 'activos';
+    filterDateFrom = '';
+    filterDateTo = '';
+    private readonly PAGE_SIZE = 30;
 
-  private kanbanSub: Subscription | null = null;
+    private kanbanSub: Subscription | null = null;
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
-  ngOnInit(): void {
-    this.loadKanbanOrders();
-    this.setupRealtime();
-  }
-
-  ngOnDestroy(): void {
-    this.kanbanSub?.unsubscribe();
-    this.ordersService.unsubscribe();
-  }
-
-  // ── Data loading ───────────────────────────────────────────────────────────
-  private loadKanbanOrders(): void {
-    const storeId = this.storeAdminService.activeStoreId();
-    if (!storeId) return;
-
-    this.isLoading.set(true);
-    this.kanbanSub = this.ordersService.getLiveOrders(storeId).subscribe({
-      next: ({ data }) => {
-        this.allOrders.set(data);
-        this.totalOrders.set(data.length);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('Error al cargar los pedidos');
-        this.isLoading.set(false);
-      },
-    });
-  }
-
-  private loadListOrders(): void {
-    const storeId = this.storeAdminService.activeStoreId();
-    if (!storeId) return;
-
-    this.isLoading.set(true);
-    this.ordersService.getMyOrders(storeId, {
-      status: (this.filterStatus as any) || null,
-      search: this.filterSearch || undefined,
-      date_from: this.filterDateFrom || undefined,
-      date_to: this.filterDateTo || undefined,
-      page: this.currentPage(),
-      pageSize: this.PAGE_SIZE,
-    }).subscribe({
-      next: ({ data, count }) => {
-        this.listOrders.set(data);
-        this.totalCount.set(count);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('Error al cargar los pedidos');
-        this.isLoading.set(false);
-      },
-    });
-  }
-
-  private setupRealtime(): void {
-    const storeId = this.storeAdminService.activeStoreId();
-    if (!storeId) return;
-
-    this.ordersService.subscribeToNewOrders(storeId, (order) => {
-      this.playNewOrderSound();
-      this.toast.info(`🔔 Nuevo pedido #${order.order_number} — RD$ ${order.total?.toLocaleString('es-DO') ?? '—'}`);
-      // Refresh kanban immediately
-      const id = this.storeAdminService.activeStoreId()!;
-      this.ordersService.getMyOrders(id, { status: 'activos' }).subscribe({
-        next: ({ data }) => this.allOrders.set(data),
-      });
-    });
-  }
-
-  private playNewOrderSound(): void {
-    try {
-      const audio = new Audio('/assets/sounds/new-order.mp3');
-      audio.volume = 0.7;
-      audio.play().catch(() => {
-        // Fallback: Web Audio API beep
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.4);
-      });
-    } catch {
-      // Ignore if audio not supported
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
+    ngOnInit(): void {
+        this.loadKanbanOrders();
+        this.setupRealtime();
     }
-  }
 
-  // ── View switching ─────────────────────────────────────────────────────────
-  setView(tab: ViewTab): void {
-    this.activeView.set(tab);
-    if (tab === 'lista') {
-      this.currentPage.set(1);
-      this.loadListOrders();
+    ngOnDestroy(): void {
+        this.kanbanSub?.unsubscribe();
+        this.ordersService.unsubscribe();
     }
-  }
 
-  onFilterChange(): void {
-    this.currentPage.set(1);
-    this.loadListOrders();
-  }
+    // ── Data loading ───────────────────────────────────────────────────────────
+    private loadKanbanOrders(): void {
+        const storeId = this.storeAdminService.activeStoreId();
+        if (!storeId) return;
 
-  prevPage(): void {
-    if (this.currentPage() > 1) {
-      this.currentPage.update(p => p - 1);
-      this.loadListOrders();
+        this.isLoading.set(true);
+        this.kanbanSub = this.ordersService.getLiveOrders(storeId).subscribe({
+            next: ({ data }) => {
+                this.allOrders.set(data);
+                this.totalOrders.set(data.length);
+                this.isLoading.set(false);
+            },
+            error: () => {
+                this.toast.error('Error al cargar los pedidos');
+                this.isLoading.set(false);
+            },
+        });
     }
-  }
 
-  nextPage(): void {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update(p => p + 1);
-      this.loadListOrders();
+    private loadListOrders(): void {
+        const storeId = this.storeAdminService.activeStoreId();
+        if (!storeId) return;
+
+        this.isLoading.set(true);
+        this.ordersService.getMyOrders(storeId, {
+            status: (this.filterStatus as any) || null,
+            search: this.filterSearch || undefined,
+            date_from: this.filterDateFrom || undefined,
+            date_to: this.filterDateTo || undefined,
+            page: this.currentPage(),
+            pageSize: this.PAGE_SIZE,
+        }).subscribe({
+            next: ({ data, count }) => {
+                this.listOrders.set(data);
+                this.totalCount.set(count);
+                this.isLoading.set(false);
+            },
+            error: () => {
+                this.toast.error('Error al cargar los pedidos');
+                this.isLoading.set(false);
+            },
+        });
     }
-  }
 
-  // ── Kanban helpers ─────────────────────────────────────────────────────────
-  ordersForColumn(statuses: OrderStatus[]): StoreOrder[] {
-    return this.allOrders().filter(o => statuses.includes(o.status));
-  }
+    private setupRealtime(): void {
+        const storeId = this.storeAdminService.activeStoreId();
+        if (!storeId) return;
 
-  isUrgent(order: StoreOrder): boolean {
-    if (order.status !== 'recibido') return false;
-    const minutes = (Date.now() - new Date(order.created_at).getTime()) / 60_000;
-    return minutes > 5;
-  }
-
-  elapsedLabel(createdAt: string): string {
-    const minutes = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60_000);
-    if (minutes < 1) return 'Ahora';
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ${minutes % 60}m`;
-  }
-
-  nextStatus(current: OrderStatus): OrderStatus | null {
-    return this.ordersService.nextStatus(current);
-  }
-
-  async advanceOrder(order: StoreOrder, event: Event): Promise<void> {
-    event.stopPropagation();
-    const next = this.nextStatus(order.status);
-    if (!next || this.advancingId() === order.id) return;
-
-    this.advancingId.set(order.id);
-    try {
-      await this.ordersService.updateStatus(order.id, next);
-      this.allOrders.update(orders =>
-        orders.map(o => o.id === order.id ? { ...o, status: next } : o),
-      );
-      this.toast.success(`Pedido #${order.order_number} → ${STATUS_LABELS[next]}`);
-    } catch {
-      this.toast.error('No se pudo actualizar el estado');
-    } finally {
-      this.advancingId.set(null);
+        this.ordersService.subscribeToNewOrders(storeId, (order) => {
+            this.playNewOrderSound();
+            this.toast.info(`🔔 Nuevo pedido #${order.order_number} — RD$ ${order.total?.toLocaleString('es-DO') ?? '—'}`);
+            // Refresh kanban immediately
+            const id = this.storeAdminService.activeStoreId()!;
+            this.ordersService.getMyOrders(id, { status: 'activos' }).subscribe({
+                next: ({ data }) => this.allOrders.set(data),
+            });
+        });
     }
-  }
 
-  goToDetail(id: string): void {
-    this.router.navigate(['/store/orders', id]);
-  }
-
-  // ── Reject modal ───────────────────────────────────────────────────────────
-  openRejectModal(order: StoreOrder, event: Event): void {
-    event.stopPropagation();
-    this.rejectModal.set(order);
-    this.rejectReason.set('');
-    this.customRejectReason = '';
-  }
-
-  closeRejectModal(): void {
-    if (this.rejectingId() !== null) return;
-    this.rejectModal.set(null);
-  }
-
-  async confirmReject(): Promise<void> {
-    const order = this.rejectModal();
-    const reason = this.finalRejectReason();
-    if (!order || !reason) return;
-
-    this.rejectingId.set(order.id);
-    try {
-      await this.ordersService.rejectOrder(order.id, reason);
-      this.allOrders.update(orders => orders.filter(o => o.id !== order.id));
-      this.toast.success(`Pedido #${order.order_number} rechazado`);
-      this.rejectModal.set(null);
-    } catch {
-      this.toast.error('No se pudo rechazar el pedido');
-    } finally {
-      this.rejectingId.set(null);
+    private playNewOrderSound(): void {
+        try {
+            const audio = new Audio('/assets/sounds/new-order.mp3');
+            audio.volume = 0.7;
+            audio.play().catch(() => {
+                // Fallback: Web Audio API beep
+                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.4);
+            });
+        } catch {
+            // Ignore if audio not supported
+        }
     }
-  }
 
-  // ── List helpers ───────────────────────────────────────────────────────────
-  statusLabel(status: OrderStatus): string { return STATUS_LABELS[status] ?? status; }
-  statusColor(status: OrderStatus): string { return STATUS_COLORS[status] ?? ''; }
+    // ── View switching ─────────────────────────────────────────────────────────
+    setView(tab: ViewTab): void {
+        this.activeView.set(tab);
+        if (tab === 'lista') {
+            this.currentPage.set(1);
+            this.loadListOrders();
+        }
+    }
 
-  formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' });
-  }
+    onFilterChange(): void {
+        this.currentPage.set(1);
+        this.loadListOrders();
+    }
+
+    prevPage(): void {
+        if (this.currentPage() > 1) {
+            this.currentPage.update(p => p - 1);
+            this.loadListOrders();
+        }
+    }
+
+    nextPage(): void {
+        if (this.currentPage() < this.totalPages()) {
+            this.currentPage.update(p => p + 1);
+            this.loadListOrders();
+        }
+    }
+
+    // ── Kanban helpers ─────────────────────────────────────────────────────────
+    ordersForColumn(statuses: OrderStatus[]): StoreOrder[] {
+        return this.allOrders().filter(o => statuses.includes(o.status));
+    }
+
+    isUrgent(order: StoreOrder): boolean {
+        if (order.status !== 'recibido') return false;
+        const minutes = (Date.now() - new Date(order.created_at).getTime()) / 60_000;
+        return minutes > 5;
+    }
+
+    elapsedLabel(createdAt: string): string {
+        const minutes = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60_000);
+        if (minutes < 1) return 'Ahora';
+        if (minutes < 60) return `${minutes} min`;
+        const hours = Math.floor(minutes / 60);
+        return `${hours}h ${minutes % 60}m`;
+    }
+
+    nextStatus(current: OrderStatus): OrderStatus | null {
+        return this.ordersService.nextStatus(current);
+    }
+
+    async advanceOrder(order: StoreOrder, event: Event): Promise<void> {
+        event.stopPropagation();
+        const next = this.nextStatus(order.status);
+        if (!next || this.advancingId() === order.id) return;
+
+        this.advancingId.set(order.id);
+        try {
+            await this.ordersService.updateStatus(order.id, next);
+            this.allOrders.update(orders =>
+                orders.map(o => o.id === order.id ? { ...o, status: next } : o),
+            );
+            this.toast.success(`Pedido #${order.order_number} → ${STATUS_LABELS[next]}`);
+        } catch {
+            this.toast.error('No se pudo actualizar el estado');
+        } finally {
+            this.advancingId.set(null);
+        }
+    }
+
+    goToDetail(id: string): void {
+        this.router.navigate(['/store/orders', id]);
+    }
+
+    // ── Reject modal ───────────────────────────────────────────────────────────
+    openRejectModal(order: StoreOrder, event: Event): void {
+        event.stopPropagation();
+        this.rejectModal.set(order);
+        this.rejectReason.set('');
+        this.customRejectReason = '';
+    }
+
+    closeRejectModal(): void {
+        if (this.rejectingId() !== null) return;
+        this.rejectModal.set(null);
+    }
+
+    async confirmReject(): Promise<void> {
+        const order = this.rejectModal();
+        const reason = this.finalRejectReason();
+        if (!order || !reason) return;
+
+        this.rejectingId.set(order.id);
+        try {
+            await this.ordersService.rejectOrder(order.id, reason);
+            this.allOrders.update(orders => orders.filter(o => o.id !== order.id));
+            this.toast.success(`Pedido #${order.order_number} rechazado`);
+            this.rejectModal.set(null);
+        } catch {
+            this.toast.error('No se pudo rechazar el pedido');
+        } finally {
+            this.rejectingId.set(null);
+        }
+    }
+
+    // ── List helpers ───────────────────────────────────────────────────────────
+    statusLabel(status: OrderStatus): string { return STATUS_LABELS[status] ?? status; }
+    statusColor(status: OrderStatus): string { return STATUS_COLORS[status] ?? ''; }
+
+    formatTime(iso: string): string {
+        return new Date(iso).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' });
+    }
 }

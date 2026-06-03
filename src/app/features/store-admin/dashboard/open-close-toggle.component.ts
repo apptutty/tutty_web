@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { StoreAdminService } from '../store-admin.service';
 
 @Component({
-  selector: 'app-open-close-toggle',
-  standalone: true,
-  imports: [CommonModule],
-  styles: [`
+    selector: 'app-open-close-toggle',
+    standalone: true,
+    imports: [CommonModule],
+    styles: [`
     .toggle-track {
       @apply relative inline-flex items-center cursor-pointer select-none;
       min-height: 60px;
@@ -30,7 +30,7 @@ import { StoreAdminService } from '../store-admin.service';
     .toggle-bg.on  { background: linear-gradient(90deg, #16a34a, #22c55e); }
     .toggle-bg.off { background: linear-gradient(90deg, #ef4444, #f87171); }
   `],
-  template: `
+    template: `
     <div class="card p-5 space-y-4">
       <!-- Header -->
       <div class="flex items-center justify-between">
@@ -110,58 +110,58 @@ import { StoreAdminService } from '../store-admin.service';
   `,
 })
 export class OpenCloseToggleComponent {
-  private readonly storeService = inject(StoreAdminService);
+    private readonly storeService = inject(StoreAdminService);
 
-  readonly busy = signal(false);
-  readonly showConfirm = signal(false);
+    readonly busy = signal(false);
+    readonly showConfirm = signal(false);
 
-  readonly isOpen = computed(() => this.storeService.activeStore()?.is_open ?? false);
-  readonly outsideSchedule = computed(() => this.storeService.isOutsideSchedule());
+    readonly isOpen = computed(() => this.storeService.activeStore()?.is_open ?? false);
+    readonly outsideSchedule = computed(() => this.storeService.isOutsideSchedule());
 
-  readonly scheduleText = computed(() => {
-    const store = this.storeService.activeStore();
-    if (!store?.opening_time || !store?.closing_time) return null;
-    const days = store.open_days?.length
-      ? this.formatDays(store.open_days)
-      : 'Todos los días';
-    return `${days} ${this.fmt12(store.opening_time)} – ${this.fmt12(store.closing_time)}`;
-  });
+    readonly scheduleText = computed(() => {
+        const store = this.storeService.activeStore();
+        if (!store?.opening_time || !store?.closing_time) return null;
+        const days = store.open_days?.length
+            ? this.formatDays(store.open_days)
+            : 'Todos los días';
+        return `${days} ${this.fmt12(store.opening_time)} – ${this.fmt12(store.closing_time)}`;
+    });
 
-  async handleToggle() {
-    if (this.busy()) return;
+    async handleToggle() {
+        if (this.busy()) return;
 
-    // If trying to open while outside schedule → show confirmation first
-    if (!this.isOpen() && this.outsideSchedule()) {
-      this.showConfirm.set(true);
-      return;
+        // If trying to open while outside schedule → show confirmation first
+        if (!this.isOpen() && this.outsideSchedule()) {
+            this.showConfirm.set(true);
+            return;
+        }
+
+        await this.doToggle();
     }
 
-    await this.doToggle();
-  }
+    async confirmOpen() {
+        this.showConfirm.set(false);
+        await this.doToggle();
+    }
 
-  async confirmOpen() {
-    this.showConfirm.set(false);
-    await this.doToggle();
-  }
+    private async doToggle() {
+        this.busy.set(true);
+        await this.storeService.toggleIsOpen();
+        this.busy.set(false);
+    }
 
-  private async doToggle() {
-    this.busy.set(true);
-    await this.storeService.toggleIsOpen();
-    this.busy.set(false);
-  }
+    private fmt12(time: string): string {
+        const [h, m] = time.split(':').map(Number);
+        const ampm = h >= 12 ? 'pm' : 'am';
+        const h12 = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
+    }
 
-  private fmt12(time: string): string {
-    const [h, m] = time.split(':').map(Number);
-    const ampm = h >= 12 ? 'pm' : 'am';
-    const h12 = h % 12 || 12;
-    return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
-  }
-
-  private formatDays(days: string[]): string {
-    const abbr: Record<string, string> = {
-      lunes: 'Lun', martes: 'Mar', miercoles: 'Mié',
-      jueves: 'Jue', viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
-    };
-    return days.map(d => abbr[d] ?? d).join('-');
-  }
+    private formatDays(days: string[]): string {
+        const abbr: Record<string, string> = {
+            lunes: 'Lun', martes: 'Mar', miercoles: 'Mié',
+            jueves: 'Jue', viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
+        };
+        return days.map(d => abbr[d] ?? d).join('-');
+    }
 }
