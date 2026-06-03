@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/auth/auth.guard';
+import { storeApprovedGuard } from './core/auth/store-approved.guard';
 import { AdminShellComponent } from './layout/admin-shell/admin-shell.component';
 
 export const routes: Routes = [
@@ -109,6 +110,26 @@ export const routes: Routes = [
         path: 'pending',
         loadComponent: () => import('./features/register/register-pending.component').then(m => m.RegisterPendingComponent),
       },
+    ],
+  },
+  {
+    path: 'store',
+    loadComponent: () => import('./features/store-admin/store-admin-shell.component').then(m => m.StoreAdminShellComponent),
+    canActivate: [authGuard, storeApprovedGuard],
+    children: [
+      { path: 'dashboard',    loadComponent: () => import('./features/store-admin/dashboard/store-dashboard.page').then(m => m.StoreDashboardPageComponent) },
+      { path: 'orders',       loadComponent: () => import('./features/store-admin/orders/store-orders.page').then(m => m.StoreOrdersPageComponent) },
+      { path: 'orders/:id',   loadComponent: () => import('./features/store-admin/orders/store-order-detail.page').then(m => m.StoreOrderDetailPageComponent) },
+      { path: 'catalog',      loadComponent: () => import('./features/store-admin/catalog/store-catalog.page').then(m => m.StoreCatalogPageComponent) },
+      { path: 'catalog/new',  loadComponent: () => import('./features/store-admin/catalog/store-product-form.page').then(m => m.StoreProductFormPageComponent) },
+      { path: 'catalog/:id',  loadComponent: () => import('./features/store-admin/catalog/store-product-form.page').then(m => m.StoreProductFormPageComponent) },
+      { path: 'zones',        loadComponent: () => import('./features/store-admin/zones/store-zones.page').then(m => m.StoreZonesPageComponent) },
+      { path: 'promotions',   loadComponent: () => import('./features/store-admin/promotions/store-promotions.page').then(m => m.StorePromotionsPageComponent) },
+      { path: 'reviews',      loadComponent: () => import('./features/store-admin/reviews/store-reviews.page').then(m => m.StoreReviewsPageComponent) },
+      { path: 'reports',      loadComponent: () => import('./features/store-admin/reports/store-reports.page').then(m => m.StoreReportsPageComponent) },
+      { path: 'settings',     loadComponent: () => import('./features/store-admin/settings/store-settings.page').then(m => m.StoreSettingsPageComponent) },
+      { path: 'select-store', loadComponent: () => import('./features/store-admin/store-select.page').then(m => m.StoreSelectPageComponent) },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -81,6 +81,7 @@ export interface OrderStatusHistory {
   changed_by: string;
   notes?: string | null;
   created_at: string;
+  changed_by_user?: { full_name: string } | null;
 }
 
 export interface Restaurant {
