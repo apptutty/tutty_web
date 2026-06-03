@@ -43,16 +43,28 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/restaurants/delivery-zones.page').then(m => m.DeliveryZonesPageComponent),
             },
             {
+                path: 'stores',
+                loadComponent: () => import('./features/stores/stores.page').then(m => m.StoresPageComponent),
+            },
+            {
+                path: 'stores/:id',
+                loadComponent: () => import('./features/stores/store-detail.page').then(m => m.StoreDetailPageComponent),
+            },
+            {
+                path: 'stores/:id/catalog',
+                loadComponent: () => import('./features/stores/global-catalog-override.page').then(m => m.GlobalCatalogOverrideComponent),
+            },
+            {
                 path: 'excursions',
                 loadComponent: () => import('./features/excursions/excursions.page').then(m => m.ExcursionsPageComponent),
             },
             {
-                path: 'repartidores',
-                loadComponent: () => import('./features/repartidores/repartidores.page').then(m => m.RepartidoresPageComponent),
+                path: 'couriers',
+                loadComponent: () => import('./features/couriers/couriers.page').then(m => m.CouriersPageComponent),
             },
             {
-                path: 'repartidores/:id',
-                loadComponent: () => import('./features/repartidores/repartidor-detail.page').then(m => m.RepartidorDetailPageComponent),
+                path: 'couriers/:id',
+                loadComponent: () => import('./features/couriers/courier-detail.page').then(m => m.CourierDetailPageComponent),
             },
             {
                 path: 'promotions',

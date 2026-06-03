@@ -5,7 +5,7 @@ import { getSupabaseClient } from '../../core/supabase/supabase.client';
 export interface SalesByDay { date: string; total: number; orders: number; }
 export interface RestaurantSales { restaurant_name: string; orders: number; revenue: number; commission: number; }
 export interface TopProduct { product_name: string; restaurant_name: string; quantity: number; revenue: number; }
-export interface RepartidorPerformance { full_name: string; deliveries: number; avg_rating: number; avg_time_minutes: number; total_earnings: number; }
+export interface CourierPerformance { full_name: string; deliveries: number; avg_rating: number; avg_time_minutes: number; total_earnings: number; }
 
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
@@ -80,7 +80,7 @@ export class ReportsService {
         );
     }
 
-    repartidorPerformance(from_date: string, to_date: string): Observable<RepartidorPerformance[]> {
+    courierPerformance(from_date: string, to_date: string): Observable<CourierPerformance[]> {
         return from(
             this.supabase
                 .from('orders')
@@ -104,7 +104,7 @@ export class ReportsService {
                         avg_rating: 0,
                         avg_time_minutes: r.times.length ? Math.round(r.times.reduce((a, b) => a + b, 0) / r.times.length) : 0,
                         total_earnings: 0,
-                    })).sort((a, b) => b.deliveries - a.deliveries);
+                    })).sort((a, b) => b.deliveries - a.deliveries) as CourierPerformance[];
                 })
         );
     }

@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ReportsService, SalesByDay, RestaurantSales, TopProduct, RepartidorPerformance } from './reports.service';
+import { ReportsService, SalesByDay, RestaurantSales, TopProduct, CourierPerformance } from './reports.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { CurrencyDopPipe } from '../../shared/pipes/currency-dop.pipe';
 import { StatCardComponent } from '../../shared/ui/stat-card/stat-card.component';
@@ -136,9 +136,9 @@ Chart.register(...registerables);
       <!-- Repartidor Performance -->
       <div class="card p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Rendimiento de Repartidores</h3>
-        @if (loadingRepartidores()) {
+        @if (loadingCouriers()) {
           <div class="animate-pulse h-32 bg-gray-200 rounded"></div>
-        } @else if (repartidorPerformance().length === 0) {
+        } @else if (courierPerformance().length === 0) {
           <p class="text-center text-gray-500 py-8">Sin datos</p>
         } @else {
           <div class="overflow-x-auto">
@@ -151,7 +151,7 @@ Chart.register(...registerables);
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
-                @for (r of repartidorPerformance(); track r.full_name) {
+                @for (r of courierPerformance(); track r.full_name) {
                   <tr>
                     <td class="px-4 py-3 font-medium text-gray-900">{{ r.full_name }}</td>
                     <td class="px-4 py-3 text-right text-gray-600">{{ r.deliveries }}</td>
@@ -174,12 +174,12 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
     loadingChart = signal(false);
     loadingRestaurants = signal(false);
     loadingProducts = signal(false);
-    loadingRepartidores = signal(false);
+    loadingCouriers = signal(false);
 
     salesByDay = signal<SalesByDay[]>([]);
     restaurantSales = signal<RestaurantSales[]>([]);
     topProducts = signal<TopProduct[]>([]);
-    repartidorPerformance = signal<RepartidorPerformance[]>([]);
+    courierPerformance = signal<CourierPerformance[]>([]);
     cancellationData = signal<{ total: number; cancelled: number; rate: number } | null>(null);
 
     totalRevenue = computed(() => this.salesByDay().reduce((s, d) => s + d.total, 0));
@@ -220,7 +220,7 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
         this.loadingChart.set(true);
         this.loadingRestaurants.set(true);
         this.loadingProducts.set(true);
-        this.loadingRepartidores.set(true);
+        this.loadingCouriers.set(true);
 
         this.reportsService.salesByDay(this.fromDate, this.toDate).subscribe({
             next: (d) => { this.salesByDay.set(d); this.loadingChart.set(false); this.renderChart(d); },
@@ -234,9 +234,9 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
             next: (d) => { this.topProducts.set(d); this.loadingProducts.set(false); },
             error: () => this.loadingProducts.set(false)
         });
-        this.reportsService.repartidorPerformance(this.fromDate, this.toDate).subscribe({
-            next: (d) => { this.repartidorPerformance.set(d); this.loadingRepartidores.set(false); },
-            error: () => this.loadingRepartidores.set(false)
+        this.reportsService.courierPerformance(this.fromDate, this.toDate).subscribe({
+            next: (d) => { this.courierPerformance.set(d); this.loadingCouriers.set(false); },
+            error: () => this.loadingCouriers.set(false)
         });
         this.reportsService.cancellationRate(this.fromDate, this.toDate).subscribe({
             next: (d) => { this.cancellationData.set(d); this.loading.set(false); },

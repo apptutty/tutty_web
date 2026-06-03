@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
 import {
-    Order, OrderDetail, OrderStatus, OrderFilters, Repartidor,
+    Order, OrderDetail, OrderStatus, OrderFilters, Courier,
 } from '../../core/supabase/database.types';
 
 const ACTIVE_STATUSES: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion', 'en_camino'];
@@ -88,15 +88,15 @@ export class OrdersService {
         if (historyError) throw historyError;
     }
 
-    async assignRepartidor(orderId: string, repartidorId: string): Promise<void> {
+    async assignCourier(orderId: string, courierId: string): Promise<void> {
         const { error } = await this.supabase
             .from('orders')
-            .update({ repartidor_id: repartidorId })
+            .update({ repartidor_id: courierId })
             .eq('id', orderId);
         if (error) throw error;
     }
 
-    getAvailableRepartidores(): Observable<Repartidor[]> {
+    getAvailableCouriers(): Observable<Courier[]> {
         return from(
             this.supabase
                 .from('repartidores')

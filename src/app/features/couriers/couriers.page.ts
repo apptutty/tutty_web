@@ -2,13 +2,13 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { RepartidoresService } from './repartidores.service';
+import { CouriersService } from './couriers.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
-import { Repartidor, VehicleType } from '../../core/supabase/database.types';
+import { Courier, VehicleType } from '../../core/supabase/database.types';
 
 @Component({
-  selector: 'app-repartidores-page',
+  selector: 'app-couriers-page',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
@@ -24,7 +24,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
         placeholder="Buscar por nombre o cédula..."
         [(ngModel)]="searchText"
       />
-      <select class="input-field w-48" [(ngModel)]="availableFilter" (ngModelChange)="loadRepartidores()">
+      <select class="input-field w-48" [(ngModel)]="availableFilter" (ngModelChange)="loadCouriers()">
         <option value="">Todos</option>
         <option value="true">Disponibles</option>
         <option value="false">No disponibles</option>
@@ -63,7 +63,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
                   }
                 </tr>
               }
-            } @else if (repartidores().length === 0) {
+            } @else if (couriers().length === 0) {
               <tr>
                 <td colspan="8" class="px-4 py-12 text-center text-gray-400">
                   <p class="text-3xl mb-2">🛵</p>
@@ -71,7 +71,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
                 </td>
               </tr>
             } @else {
-              @for (r of filteredRepartidores(); track r.id) {
+              @for (r of filteredCouriers(); track r.id) {
                 <tr class="hover:bg-gray-50 transition-colors">
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
@@ -101,7 +101,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
                   <td class="px-4 py-3">
                     <div class="flex gap-1">
                       <button class="btn-secondary px-2 py-1 text-xs" (click)="openForm(r)">Editar</button>
-                      <button class="btn-secondary px-2 py-1 text-xs" (click)="router.navigate(['/repartidores', r.id])">Ver</button>
+                      <button class="btn-secondary px-2 py-1 text-xs" (click)="router.navigate(['/couriers', r.id])">Ver</button>
                     </div>
                   </td>
                 </tr>
@@ -120,7 +120,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
           <h3 class="font-semibold text-gray-800 mb-4">
             {{ editingId() ? 'Editar repartidor' : 'Nuevo repartidor' }}
           </h3>
-          <form [formGroup]="repartidorForm" (ngSubmit)="save()" class="space-y-4">
+          <form [formGroup]="courierForm" (ngSubmit)="save()" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="label">Cédula *</label>
@@ -142,7 +142,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
             </div>
             <div class="flex gap-3 justify-end">
               <button type="button" class="btn-secondary" (click)="showForm.set(false)">Cancelar</button>
-              <button type="submit" class="btn-primary" [disabled]="repartidorForm.invalid || saveLoading()">
+              <button type="submit" class="btn-primary" [disabled]="courierForm.invalid || saveLoading()">
                 {{ saveLoading() ? 'Guardando...' : 'Guardar' }}
               </button>
             </div>
@@ -152,13 +152,13 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
     }
   `,
 })
-export class RepartidoresPageComponent implements OnInit {
-  private readonly service = inject(RepartidoresService);
+export class CouriersPageComponent implements OnInit {
+  private readonly service = inject(CouriersService);
   private readonly toastService = inject(ToastService);
   private readonly fb = inject(FormBuilder);
   readonly router = inject(Router);
 
-  readonly repartidores = signal<Repartidor[]>([]);
+  readonly couriers = signal<Courier[]>([]);
   readonly loading = signal(true);
   readonly showForm = signal(false);
   readonly editingId = signal<string | null>(null);
@@ -168,8 +168,8 @@ export class RepartidoresPageComponent implements OnInit {
   searchText = '';
   vehicleFilter = '';
 
-  readonly filteredRepartidores = () => {
-    let result = this.repartidores();
+  readonly filteredCouriers = () => {
+    let result = this.couriers();
     if (this.searchText.trim()) {
       const q = this.searchText.toLowerCase();
       result = result.filter(r =>
@@ -182,37 +182,37 @@ export class RepartidoresPageComponent implements OnInit {
     return result;
   };
 
-  readonly repartidorForm = this.fb.group({
+  readonly courierForm = this.fb.group({
     user_id: [''],
     cedula: ['', Validators.required],
     vehicle_type: ['moto' as VehicleType, Validators.required],
     vehicle_plate: [''],
   });
 
-  ngOnInit(): void { this.loadRepartidores(); }
+  ngOnInit(): void { this.loadCouriers(); }
 
-  loadRepartidores(): void {
+  loadCouriers(): void {
     this.loading.set(true);
     const filters = this.availableFilter !== '' ? { available: this.availableFilter === 'true' } : {};
-    this.service.getRepartidores(filters).subscribe({
-      next: list => { this.repartidores.set(list); this.loading.set(false); },
+    this.service.getCouriers(filters).subscribe({
+      next: list => { this.couriers.set(list); this.loading.set(false); },
       error: () => { this.toastService.error('Error al cargar repartidores'); this.loading.set(false); },
     });
   }
 
-  openForm(r?: Repartidor): void {
+  openForm(r?: Courier): void {
     this.editingId.set(r?.id ?? null);
-    if (r) { this.repartidorForm.patchValue(r as any); }
-    else { this.repartidorForm.reset({ vehicle_type: 'moto' }); }
+    if (r) { this.courierForm.patchValue(r as any); }
+    else { this.courierForm.reset({ vehicle_type: 'moto' }); }
     this.showForm.set(true);
   }
 
   async save(): Promise<void> {
-    if (this.repartidorForm.invalid) return;
+    if (this.courierForm.invalid) return;
     this.saveLoading.set(true);
-    const val = this.repartidorForm.getRawValue();
+    const val = this.courierForm.getRawValue();
     try {
-      await this.service.saveRepartidor({
+      await this.service.saveCourier({
         ...(this.editingId() ? { id: this.editingId()! } : {}),
         cedula: val.cedula!,
         vehicle_type: val.vehicle_type as VehicleType,
@@ -225,7 +225,7 @@ export class RepartidoresPageComponent implements OnInit {
       });
       this.toastService.success('Repartidor guardado');
       this.showForm.set(false);
-      this.loadRepartidores();
+      this.loadCouriers();
     } catch { this.toastService.error('Error al guardar'); }
     finally { this.saveLoading.set(false); }
   }

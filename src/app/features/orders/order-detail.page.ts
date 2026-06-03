@@ -9,7 +9,7 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
 import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { CurrencyDopPipe } from '../../shared/pipes/currency-dop.pipe';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
-import { OrderDetail, OrderStatus, Repartidor } from '../../core/supabase/database.types';
+import { OrderDetail, OrderStatus, Courier } from '../../core/supabase/database.types';
 
 const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
   recibido: ['confirmado', 'cancelado'],
@@ -141,7 +141,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
             } @else {
               <p class="text-sm text-gray-400 mb-3">Sin asignar</p>
               @if (['confirmado', 'en_preparacion'].includes(order()!.status)) {
-                <button class="btn-secondary w-full" (click)="loadAndShowRepartidores()">
+                <button class="btn-secondary w-full" (click)="loadAndShowCouriers()">
                   🛵 Asignar repartidor
                 </button>
               }
@@ -182,32 +182,32 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
       }
 
       <!-- Assign repartidor modal -->
-      @if (showRepartidorModal()) {
+      @if (showCourierModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-black/50" (click)="showRepartidorModal.set(false)"></div>
+          <div class="absolute inset-0 bg-black/50" (click)="showCourierModal.set(false)"></div>
           <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
             <h3 class="font-semibold text-gray-800 mb-4">Asignar repartidor</h3>
-            @if (repartidoresLoading()) {
+            @if (couriersLoading()) {
               <div class="py-8 text-center text-gray-400 animate-pulse">Cargando...</div>
             } @else {
               <div class="space-y-2 max-h-72 overflow-y-auto">
-                @for (r of availableRepartidores(); track r.id) {
+                @for (r of availableCouriers(); track r.id) {
                   <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                    <input type="radio" name="repartidor" [value]="r.id" [(ngModel)]="selectedRepartidorId" />
+                    <input type="radio" name="repartidor" [value]="r.id" [(ngModel)]="selectedCourierId" />
                     <div>
                       <p class="text-sm font-medium text-gray-800">{{ r.full_name }}</p>
                       <p class="text-xs text-gray-500">{{ r.vehicle_type }} · ⭐ {{ r.avg_rating }}</p>
                     </div>
                   </label>
                 }
-                @if (availableRepartidores().length === 0) {
+                @if (availableCouriers().length === 0) {
                   <p class="text-center text-gray-400 py-4">No hay repartidores disponibles</p>
                 }
               </div>
             }
             <div class="flex gap-3 justify-end mt-4">
-              <button class="btn-secondary" (click)="showRepartidorModal.set(false)">Cancelar</button>
-              <button class="btn-primary" [disabled]="!selectedRepartidorId" (click)="assignRepartidor()">
+              <button class="btn-secondary" (click)="showCourierModal.set(false)">Cancelar</button>
+              <button class="btn-primary" [disabled]="!selectedCourierId" (click)="assignCourier()">
                 Asignar
               </button>
             </div>
@@ -231,13 +231,13 @@ export class OrderDetailPageComponent implements OnInit {
   readonly order = signal<OrderDetail | null>(null);
   readonly loading = signal(true);
   readonly showStatusModal = signal(false);
-  readonly showRepartidorModal = signal(false);
+  readonly showCourierModal = signal(false);
   readonly statusLoading = signal(false);
-  readonly repartidoresLoading = signal(false);
-  readonly availableRepartidores = signal<Repartidor[]>([]);
+  readonly couriersLoading = signal(false);
+  readonly availableCouriers = signal<Courier[]>([]);
 
   selectedStatus: OrderStatus = 'confirmado';
-  selectedRepartidorId: string | null = null;
+  selectedCourierId: string | null = null;
   statusNotes = '';
 
   readonly statusLabels: Record<OrderStatus, string> = {
@@ -294,21 +294,21 @@ export class OrderDetailPageComponent implements OnInit {
     }
   }
 
-  loadAndShowRepartidores(): void {
-    this.showRepartidorModal.set(true);
-    this.repartidoresLoading.set(true);
-    this.ordersService.getAvailableRepartidores().subscribe(list => {
-      this.availableRepartidores.set(list);
-      this.repartidoresLoading.set(false);
+  loadAndShowCouriers(): void {
+    this.showCourierModal.set(true);
+    this.couriersLoading.set(true);
+    this.ordersService.getAvailableCouriers().subscribe(list => {
+      this.availableCouriers.set(list);
+      this.couriersLoading.set(false);
     });
   }
 
-  async assignRepartidor(): Promise<void> {
-    if (!this.selectedRepartidorId || !this.order()) return;
+  async assignCourier(): Promise<void> {
+    if (!this.selectedCourierId || !this.order()) return;
     try {
-      await this.ordersService.assignRepartidor(this.order()!.id, this.selectedRepartidorId);
+      await this.ordersService.assignCourier(this.order()!.id, this.selectedCourierId);
       this.toastService.success('Repartidor asignado correctamente');
-      this.showRepartidorModal.set(false);
+      this.showCourierModal.set(false);
       this.ordersService.getOrderById(this.order()!.id).subscribe(o => this.order.set(o));
     } catch {
       this.toastService.error('Error al asignar repartidor');

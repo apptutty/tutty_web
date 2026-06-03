@@ -1,19 +1,19 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RepartidoresService } from './repartidores.service';
+import { CouriersService } from './couriers.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 
 @Component({
-  selector: 'app-repartidor-detail-page',
+  selector: 'app-courier-detail-page',
   standalone: true,
   imports: [CommonModule, PageHeaderComponent],
   template: `
     <app-page-header
-      [title]="repartidor()?.full_name ?? 'Repartidor'"
+      [title]="courier()?.full_name ?? 'Repartidor'"
       subtitle="Detalle del repartidor">
-      <button class="btn-secondary" (click)="router.navigate(['/repartidores'])">← Volver</button>
+      <button class="btn-secondary" (click)="router.navigate(['/couriers'])">← Volver</button>
     </app-page-header>
 
     @if (loading()) {
@@ -23,30 +23,30 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
       </div>
-    } @else if (repartidor()) {
+    } @else if (courier()) {
       <!-- Header Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
         <div class="card p-5 flex items-center gap-4">
           <div class="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center text-2xl font-bold text-brand-600">
-            {{ repartidor()!.full_name?.charAt(0) ?? '?' }}
+            {{ courier()!.full_name?.charAt(0) ?? '?' }}
           </div>
           <div>
-            <p class="font-semibold text-gray-900">{{ repartidor()!.full_name }}</p>
-            <p class="text-sm text-gray-500">{{ repartidor()!.email }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">{{ repartidor()!.phone }}</p>
+            <p class="font-semibold text-gray-900">{{ courier()!.full_name }}</p>
+            <p class="text-sm text-gray-500">{{ courier()!.email }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ courier()!.phone }}</p>
           </div>
         </div>
         <div class="card p-5">
           <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Rating</p>
-          <p class="text-2xl font-bold text-gray-800">⭐ {{ repartidor()!.avg_rating?.toFixed(1) ?? '0.0' }}</p>
+          <p class="text-2xl font-bold text-gray-800">⭐ {{ courier()!.avg_rating?.toFixed(1) ?? '0.0' }}</p>
         </div>
         <div class="card p-5">
           <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Entregas</p>
-          <p class="text-2xl font-bold text-gray-800">{{ repartidor()!.total_deliveries ?? 0 }}</p>
+          <p class="text-2xl font-bold text-gray-800">{{ courier()!.total_deliveries ?? 0 }}</p>
         </div>
         <div class="card p-5">
           <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Ganancias</p>
-          <p class="text-2xl font-bold text-gray-800">RD$ {{ repartidor()!.total_earnings?.toFixed(0) ?? '0' }}</p>
+          <p class="text-2xl font-bold text-gray-800">RD$ {{ courier()!.total_earnings?.toFixed(0) ?? '0' }}</p>
         </div>
       </div>
 
@@ -154,27 +154,27 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
             <h3 class="font-semibold text-gray-800 mb-3">Estado actual</h3>
             <div class="flex items-center gap-3 mb-3">
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
-                [class]="repartidor()!.is_available ? 'bg-success-50 text-success-700' : 'bg-gray-100 text-gray-500'">
+                [class]="courier()!.is_available ? 'bg-success-50 text-success-700' : 'bg-gray-100 text-gray-500'">
                 <span class="w-2 h-2 rounded-full"
-                  [class]="repartidor()!.is_available ? 'bg-success-500 animate-pulse' : 'bg-gray-400'"></span>
-                {{ repartidor()!.is_available ? 'Disponible' : 'No disponible' }}
+                  [class]="courier()!.is_available ? 'bg-success-500 animate-pulse' : 'bg-gray-400'"></span>
+                {{ courier()!.is_available ? 'Disponible' : 'No disponible' }}
               </span>
             </div>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <span class="text-gray-500">Vehículo</span>
-                <span class="font-medium text-gray-800">{{ vehicleLabel(repartidor()!.vehicle_type) }}</span>
+                <span class="font-medium text-gray-800">{{ vehicleLabel(courier()!.vehicle_type) }}</span>
               </div>
-              @if (repartidor()!.vehicle_plate) {
+              @if (courier()!.vehicle_plate) {
                 <div class="flex justify-between">
                   <span class="text-gray-500">Placa</span>
-                  <span class="font-medium text-gray-800">{{ repartidor()!.vehicle_plate }}</span>
+                  <span class="font-medium text-gray-800">{{ courier()!.vehicle_plate }}</span>
                 </div>
               }
-              @if (repartidor()!.cedula) {
+              @if (courier()!.cedula) {
                 <div class="flex justify-between">
                   <span class="text-gray-500">Cédula</span>
-                  <span class="font-medium text-gray-800">{{ repartidor()!.cedula }}</span>
+                  <span class="font-medium text-gray-800">{{ courier()!.cedula }}</span>
                 </div>
               }
             </div>
@@ -189,13 +189,13 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
     }
   `,
 })
-export class RepartidorDetailPageComponent implements OnInit {
+export class CourierDetailPageComponent implements OnInit {
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly service = inject(RepartidoresService);
+  private readonly service = inject(CouriersService);
   private readonly toastService = inject(ToastService);
 
-  readonly repartidor = signal<any | null>(null);
+  readonly courier = signal<any | null>(null);
   readonly loading = signal(true);
   readonly history = signal<any[]>([]);
   readonly historyTotal = signal(0);
@@ -205,18 +205,18 @@ export class RepartidorDetailPageComponent implements OnInit {
   readonly ratingsLoading = signal(true);
 
   readonly pageSize = 15;
-  private repartidorId = '';
+  private courierId = '';
 
   ngOnInit(): void {
-    this.repartidorId = this.route.snapshot.paramMap.get('id') ?? '';
-    this.loadRepartidor();
+    this.courierId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.loadCourier();
   }
 
-  loadRepartidor(): void {
+  loadCourier(): void {
     this.loading.set(true);
-    this.service.getRepartidorById(this.repartidorId).subscribe({
+    this.service.getCourierById(this.courierId).subscribe({
       next: data => {
-        this.repartidor.set(data);
+        this.courier.set(data);
         this.loading.set(false);
         this.loadHistory();
         this.loadRatings();
@@ -231,7 +231,7 @@ export class RepartidorDetailPageComponent implements OnInit {
   loadHistory(page = 1): void {
     this.historyLoading.set(true);
     this.historyPage.set(page);
-    this.service.getDeliveryHistory(this.repartidorId, page, this.pageSize).subscribe(({ data, count }) => {
+    this.service.getDeliveryHistory(this.courierId, page, this.pageSize).subscribe(({ data, count }) => {
       this.history.set(data);
       this.historyTotal.set(count);
       this.historyLoading.set(false);
@@ -240,7 +240,7 @@ export class RepartidorDetailPageComponent implements OnInit {
 
   loadRatings(): void {
     this.ratingsLoading.set(true);
-    this.service.getRatings(this.repartidorId).subscribe(data => {
+    this.service.getRatings(this.courierId).subscribe(data => {
       this.ratings.set(data);
       this.ratingsLoading.set(false);
     });

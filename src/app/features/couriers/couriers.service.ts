@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
-import { Repartidor } from '../../core/supabase/database.types';
+import { Courier } from '../../core/supabase/database.types';
 
 @Injectable({ providedIn: 'root' })
-export class RepartidoresService {
+export class CouriersService {
     private readonly supabase = getSupabaseClient();
 
-    getRepartidores(filters: { available?: boolean } = {}): Observable<Repartidor[]> {
+    getCouriers(filters: { available?: boolean } = {}): Observable<Courier[]> {
         return from(
             (async () => {
                 let q = this.supabase.from('repartidores')
@@ -19,12 +19,12 @@ export class RepartidoresService {
                     full_name: r.user?.full_name ?? '—',
                     phone: r.user?.phone ?? '—',
                     email: r.user?.email ?? '—',
-                })) as Repartidor[];
+                })) as Courier[];
             })()
         );
     }
 
-    getRepartidorById(id: string): Observable<any> {
+    getCourierById(id: string): Observable<any> {
         return from(
             this.supabase.from('repartidores')
                 .select('*, user:users(full_name, phone, email, avatar_url)')
@@ -36,13 +36,13 @@ export class RepartidoresService {
         );
     }
 
-    getDeliveryHistory(repartidorId: string, page = 1, pageSize = 20): Observable<{ data: any[]; count: number }> {
+    getDeliveryHistory(courierId: string, page = 1, pageSize = 20): Observable<{ data: any[]; count: number }> {
         const from_ = (page - 1) * pageSize;
         const to = from_ + pageSize - 1;
         return from(
             this.supabase.from('orders')
                 .select('*, restaurant:restaurants(name), customer:users(full_name)', { count: 'exact' })
-                .eq('repartidor_id', repartidorId)
+                .eq('repartidor_id', courierId)
                 .eq('status', 'entregado')
                 .order('created_at', { ascending: false })
                 .range(from_, to)
@@ -57,11 +57,11 @@ export class RepartidoresService {
         );
     }
 
-    getRatings(repartidorId: string): Observable<any[]> {
+    getRatings(courierId: string): Observable<any[]> {
         return from(
             this.supabase.from('delivery_ratings')
                 .select('*, customer:users(full_name)')
-                .eq('repartidor_id', repartidorId)
+                .eq('repartidor_id', courierId)
                 .order('created_at', { ascending: false })
                 .limit(10)
                 .then(({ data }) => (data ?? []).map((r: any) => ({
@@ -71,7 +71,7 @@ export class RepartidoresService {
         );
     }
 
-    async saveRepartidor(data: Partial<Repartidor>): Promise<void> {
+    async saveCourier(data: Partial<Courier>): Promise<void> {
         if (data.id) {
             const { error } = await this.supabase.from('repartidores').update(data).eq('id', data.id);
             if (error) throw error;

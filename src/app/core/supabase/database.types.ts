@@ -120,6 +120,10 @@ export interface Restaurant {
   approved_by?: string | null;
   approved_at?: string | null;
   submitted_at?: string | null;
+  // Runtime join fields (not in DB, populated by query)
+  admin_name?: string | null;
+  admin_email?: string | null;
+  admin_phone?: string | null;
 }
 
 export interface StoreApproval {
@@ -168,8 +172,11 @@ export interface MenuItem {
   stock_count?: number | null;
   low_stock_alert?: number | null;
   sku?: string | null;
+  barcode?: string | null;
+  brand?: string | null;
   unit_type?: string;
   requires_prescription?: boolean;
+  controlled_substance?: boolean;
   max_qty_per_order?: number | null;
 }
 
@@ -190,7 +197,7 @@ export interface DeliveryZone {
   is_active: boolean;
 }
 
-export interface Repartidor {
+export interface Courier {
   id: string;
   user_id: string;
   cedula?: string | null;
@@ -316,6 +323,47 @@ export interface Holiday {
   name: string;
   surcharge: number;
   is_active: boolean;
+}
+
+// ── Stores feature types ────────────────────────────────────────────────────
+
+export interface StoreFinanceKpi {
+  totalOrders: number;
+  grossSales: number;
+  commission: number;
+  deliveryFees: number;
+  netPayout: number;
+}
+
+export interface StoreOrderSummary {
+  id: string;
+  order_number: string;
+  subtotal: number;
+  commission_amount: number;
+  delivery_fee: number;
+  total: number;
+  status: OrderStatus;
+  created_at: string;
+}
+
+export interface StoreApprovalHistory {
+  date: string;
+  event: string;
+  status: ApprovalStatus;
+  by: string;
+  notes?: string | null;
+}
+
+export type ModerationTag = 'verificado' | 'destacado_plataforma' | 'bajo_revision';
+
+export interface CatalogOverride {
+  item_id: string;
+  is_available?: boolean;
+  price?: number;
+  moderation_tags?: ModerationTag[];
+  reason: string;
+  admin_id?: string;
+  created_at?: string;
 }
 
 export interface PromoUse {
