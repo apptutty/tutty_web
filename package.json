@@ -5,9 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "postbuild": "cp dist/tutty_web/browser/index.csr.html dist/tutty_web/browser/index.html",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "serve:ssr:tutty_web": "node dist/tutty_web/server/server.mjs"
+    "test": "ng test"
   },
   "prettier": {
     "printWidth": 100,

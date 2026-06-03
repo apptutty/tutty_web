@@ -175,10 +175,29 @@ export interface MenuItem {
   sku?: string | null;
   barcode?: string | null;
   brand?: string | null;
-  unit_type?: string;
-  requires_prescription?: boolean;
-  controlled_substance?: boolean;
+  unit_type?: string | null;
+  requires_prescription?: boolean | null;
+  controlled_substance?: boolean | null;
   max_qty_per_order?: number | null;
+  available_from?: string | null;
+  available_until?: string | null;
+  available_days?: string[] | null;
+  is_combo?: boolean | null;
+  price_per_unit?: boolean | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  menu_item_id: string;
+  name: string;
+  sku?: string | null;
+  price_modifier: number;
+  stock_count?: number | null;
+  photo_url?: string | null;
+  is_available: boolean;
+  attributes: Record<string, string>;
 }
 
 export interface DeliveryZone {
