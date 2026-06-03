@@ -86,8 +86,8 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-600">{{ r.cedula }}</td>
                   <td class="px-4 py-3">
-                    <span class="text-sm text-gray-600">{{ vehicleLabel(r.vehicle_type) }}</span>
-                    @if (r.plate) { <p class="text-xs text-gray-400">{{ r.plate }}</p> }
+                    <span class="text-sm text-gray-600">{{ vehicleLabel(r.vehicle_type!) }}</span>
+                    @if (r.vehicle_plate) { <p class="text-xs text-gray-400">{{ r.vehicle_plate }}</p> }
                   </td>
                   <td class="px-4 py-3">
                     <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
@@ -95,7 +95,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
                       {{ r.is_available ? '● Disponible' : '○ No disponible' }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-700">⭐ {{ r.rating.toFixed(1) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">⭐ {{ r.avg_rating.toFixed(1) }}</td>
                   <td class="px-4 py-3 text-sm text-gray-700">{{ r.total_deliveries }}</td>
                   <td class="px-4 py-3 text-sm font-medium text-gray-700">RD$ {{ r.total_earnings.toFixed(0) }}</td>
                   <td class="px-4 py-3">
@@ -137,7 +137,7 @@ import { Repartidor, VehicleType } from '../../core/supabase/database.types';
               </div>
               <div>
                 <label class="label">Placa</label>
-                <input class="input-field" formControlName="plate" placeholder="A123456" />
+                <input class="input-field" formControlName="vehicle_plate" placeholder="A123456" />
               </div>
             </div>
             <div class="flex gap-3 justify-end">
@@ -186,7 +186,7 @@ export class RepartidoresPageComponent implements OnInit {
     user_id: [''],
     cedula: ['', Validators.required],
     vehicle_type: ['moto' as VehicleType, Validators.required],
-    plate: [''],
+    vehicle_plate: [''],
   });
 
   ngOnInit(): void { this.loadRepartidores(); }
@@ -216,9 +216,9 @@ export class RepartidoresPageComponent implements OnInit {
         ...(this.editingId() ? { id: this.editingId()! } : {}),
         cedula: val.cedula!,
         vehicle_type: val.vehicle_type as VehicleType,
-        plate: val.plate ?? null,
+        vehicle_plate: val.vehicle_plate ?? null,
         is_available: true,
-        rating: 0,
+        avg_rating: 0,
         total_deliveries: 0,
         total_earnings: 0,
         zone_ids: [],

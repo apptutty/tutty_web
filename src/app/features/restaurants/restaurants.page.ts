@@ -7,7 +7,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
-import { Restaurant, CommissionTier } from '../../core/supabase/database.types';
+import { Restaurant, CommissionTier, CommerceType } from '../../core/supabase/database.types';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 @Component({
@@ -100,7 +100,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
                       </div>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-600">{{ r.category }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">{{ r.commerce_type }}</td>
                   <td class="px-4 py-3 text-sm text-gray-600">{{ r.city }}</td>
                   <td class="px-4 py-3">
                     <button
@@ -122,10 +122,10 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
                         [class]="r.is_active ? 'translate-x-4' : 'translate-x-0.5'"></span>
                     </button>
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-600">⭐ {{ r.rating }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">⭐ {{ r.avg_rating }}</td>
                   <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                      {{ tierLabel(r.commission_tier) }} ({{ (r.commission_rate * 100).toFixed(0) }}%)
+                      {{ tierLabel(r.commission_tier!) }} ({{ (r.commission_rate * 100).toFixed(0) }}%)
                     </span>
                   </td>
                   <td class="px-4 py-3">
@@ -172,24 +172,21 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
                   <textarea class="input-field resize-none" rows="2" formControlName="description"></textarea>
                 </div>
                 <div>
-                  <label class="label">Categoría *</label>
-                  <select class="input-field" formControlName="category">
-                    <option value="Comida rápida">Comida rápida</option>
-                    <option value="Pizza">Pizza</option>
-                    <option value="Sushi">Sushi</option>
-                    <option value="Pollo">Pollo</option>
-                    <option value="Mariscos">Mariscos</option>
-                    <option value="Saludable">Saludable</option>
-                    <option value="Postres">Postres</option>
-                    <option value="Bebidas">Bebidas</option>
-                    <option value="Dominicana">Dominicana</option>
-                    <option value="Italiana">Italiana</option>
-                    <option value="Otra">Otra</option>
+                  <label class="label">Tipo de comercio</label>
+                  <select class="input-field" formControlName="commerce_type">
+                    <option value="restaurante">Restaurante</option>
+                    <option value="farmacia">Farmacia</option>
+                    <option value="bodega">Bodega</option>
+                    <option value="colmado">Colmado</option>
+                    <option value="tienda_ropa">Tienda de Ropa</option>
+                    <option value="supermercado">Supermercado</option>
+                    <option value="electronica">Electrónica</option>
+                    <option value="otro">Otro</option>
                   </select>
                 </div>
                 <div>
                   <label class="label">WhatsApp</label>
-                  <input class="input-field" formControlName="whatsapp" placeholder="8091234567" />
+                  <input class="input-field" formControlName="whatsapp_number" placeholder="8091234567" />
                 </div>
               </div>
             </div>
@@ -274,7 +271,7 @@ export class RestaurantsPageComponent implements OnInit {
 
   readonly filteredRestaurants = () => {
     let result = this.restaurants();
-    if (this.categoryFilter) result = result.filter(r => r.category === this.categoryFilter);
+    if (this.categoryFilter) result = result.filter(r => r.commerce_type === this.categoryFilter);
     if (this.statusFilter === 'active') result = result.filter(r => r.is_active);
     else if (this.statusFilter === 'inactive') result = result.filter(r => !r.is_active);
     else if (this.statusFilter === 'open') result = result.filter(r => r.is_open);
@@ -286,8 +283,8 @@ export class RestaurantsPageComponent implements OnInit {
     name: ['', Validators.required],
     slug: ['', Validators.required],
     description: [''],
-    category: ['', Validators.required],
-    whatsapp: [''],
+    commerce_type: ['' as CommerceType | ''],
+    whatsapp_number: [''],
     address: ['', Validators.required],
     sector: [''],
     city: ['Santo Domingo', Validators.required],
@@ -339,8 +336,8 @@ export class RestaurantsPageComponent implements OnInit {
       name: val.name!,
       slug: val.slug!.toLowerCase().replace(/\s+/g, '-'),
       description: val.description ?? null,
-      category: val.category!,
-      whatsapp: val.whatsapp ?? null,
+      commerce_type: (val.commerce_type || 'restaurante') as CommerceType,
+      whatsapp_number: val.whatsapp_number ?? null,
       address: val.address!,
       sector: val.sector ?? null,
       city: val.city!,

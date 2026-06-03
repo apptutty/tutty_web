@@ -4,24 +4,67 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        outfit: ['Outfit', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
       },
       colors: {
+        // --- Tutty Primary ---
         brand: {
-          25: '#f2f7ff',
-          50: '#ecf3ff',
-          100: '#dde9ff',
-          200: '#c2d6ff',
-          300: '#9cb9ff',
-          400: '#7592ff',
-          500: '#465fff',
-          600: '#3641f5',
-          700: '#2a31d8',
-          800: '#252dae',
-          900: '#262e89',
-          950: '#161950',
+          25: '#fff5fa',
+          50: '#ffe8f4',
+          100: '#ffd1e9',
+          200: '#ffa3d3',
+          300: '#ff75bc',
+          400: '#ff57aa',
+          500: '#FF3C97', // Tutty Pink
+          600: '#e0207d',
+          700: '#b80d63',
+          800: '#8f0a4e',
+          900: '#6b0e3d',
+          950: '#3d0021',
         },
-        'gray-dark': '#1a2231',
+        // --- Tutty Secondary ---
+        mango: {
+          50: '#fffbeb',
+          100: '#fff3c4',
+          400: '#ffd54f',
+          500: '#FFC107',
+          600: '#e6ac00',
+        },
+        purple: {
+          50: '#f5edf3',
+          100: '#e8d5e3',
+          500: '#6B2059',
+          700: '#4a1540',
+        },
+        lavender: {
+          50: '#f8f5fc',
+          100: '#f0eaf8',
+          400: '#D9C5E8',
+          500: '#c5aedd',
+        },
+        // --- Tutty Extended ---
+        tangerine: {
+          50: '#fff4e6',
+          500: '#FF8A00',
+          600: '#e07a00',
+        },
+        coral: {
+          50: '#fff2f2',
+          500: '#FF6B6B',
+          600: '#e05555',
+        },
+        mint: {
+          50: '#edfff8',
+          500: '#63E6BE',
+          700: '#2db896',
+        },
+        ocean: {
+          50: '#ebf4ff',
+          500: '#3182CE',
+          700: '#1a6aad',
+        },
+        // --- Tutty Neutral ---
+        'gray-dark': '#140b11',
         success: {
           50: '#ecfdf3',
           100: '#d1fadf',

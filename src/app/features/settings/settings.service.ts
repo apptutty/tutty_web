@@ -89,7 +89,7 @@ export class SettingsService {
         return from(
             this.supabase
                 .from('users')
-                .select('id, email, full_name, role, is_active, created_at, restaurant_id, operator_id')
+                .select('id, email, full_name, role, is_active, created_at')
                 .order('created_at', { ascending: false })
                 .then(({ data, error }) => {
                     if (error) throw error;

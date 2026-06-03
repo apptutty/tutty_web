@@ -43,7 +43,7 @@ export class PromotionsService {
             this.supabase.from('promo_uses')
                 .select('*, user:users(full_name), order:orders(order_number)')
                 .eq('promotion_id', promoId)
-                .order('created_at', { ascending: false })
+                .order('used_at', { ascending: false })
                 .limit(20)
                 .then(({ data }) => (data ?? []).map((u: any) => ({
                     ...u,

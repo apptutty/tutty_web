@@ -38,7 +38,7 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
         </div>
         <div class="card p-5">
           <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Rating</p>
-          <p class="text-2xl font-bold text-gray-800">⭐ {{ repartidor()!.rating?.toFixed(1) ?? '0.0' }}</p>
+          <p class="text-2xl font-bold text-gray-800">⭐ {{ repartidor()!.avg_rating?.toFixed(1) ?? '0.0' }}</p>
         </div>
         <div class="card p-5">
           <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Entregas</p>
@@ -165,10 +165,10 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
                 <span class="text-gray-500">Vehículo</span>
                 <span class="font-medium text-gray-800">{{ vehicleLabel(repartidor()!.vehicle_type) }}</span>
               </div>
-              @if (repartidor()!.plate) {
+              @if (repartidor()!.vehicle_plate) {
                 <div class="flex justify-between">
                   <span class="text-gray-500">Placa</span>
-                  <span class="font-medium text-gray-800">{{ repartidor()!.plate }}</span>
+                  <span class="font-medium text-gray-800">{{ repartidor()!.vehicle_plate }}</span>
                 </div>
               }
               @if (repartidor()!.cedula) {

@@ -27,6 +27,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/orders/order-detail.page').then(m => m.OrderDetailPageComponent),
             },
             {
+                path: 'approvals',
+                loadComponent: () => import('./features/approvals/approval-queue.page').then(m => m.ApprovalQueuePageComponent),
+            },
+            {
                 path: 'restaurants',
                 loadComponent: () => import('./features/restaurants/restaurants.page').then(m => m.RestaurantsPageComponent),
             },

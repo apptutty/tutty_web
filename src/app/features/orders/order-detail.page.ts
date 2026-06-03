@@ -12,20 +12,20 @@ import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
 import { OrderDetail, OrderStatus, Repartidor } from '../../core/supabase/database.types';
 
 const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
-    recibido: ['confirmado', 'cancelado'],
-    confirmado: ['en_preparacion', 'cancelado'],
-    en_preparacion: ['en_camino'],
-    en_camino: ['entregado'],
+  recibido: ['confirmado', 'cancelado'],
+  confirmado: ['en_preparacion', 'cancelado'],
+  en_preparacion: ['en_camino'],
+  en_camino: ['entregado'],
 };
 
 @Component({
-    selector: 'app-order-detail-page',
-    standalone: true,
-    imports: [
-        CommonModule, FormsModule, PageHeaderComponent,
-        StatusBadgeComponent, CurrencyDopPipe, TimeAgoPipe,
-    ],
-    template: `
+  selector: 'app-order-detail-page',
+  standalone: true,
+  imports: [
+    CommonModule, FormsModule, PageHeaderComponent,
+    StatusBadgeComponent, CurrencyDopPipe, TimeAgoPipe,
+  ],
+  template: `
     @if (loading()) {
       <div class="flex items-center justify-center py-24">
         <div class="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full"></div>
@@ -196,7 +196,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
                     <input type="radio" name="repartidor" [value]="r.id" [(ngModel)]="selectedRepartidorId" />
                     <div>
                       <p class="text-sm font-medium text-gray-800">{{ r.full_name }}</p>
-                      <p class="text-xs text-gray-500">{{ r.vehicle_type }} · ⭐ {{ r.rating }}</p>
+                      <p class="text-xs text-gray-500">{{ r.vehicle_type }} · ⭐ {{ r.avg_rating }}</p>
                     </div>
                   </label>
                 }
@@ -223,95 +223,95 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
   `,
 })
 export class OrderDetailPageComponent implements OnInit {
-    private readonly route = inject(ActivatedRoute);
-    private readonly ordersService = inject(OrdersService);
-    private readonly toastService = inject(ToastService);
-    readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly ordersService = inject(OrdersService);
+  private readonly toastService = inject(ToastService);
+  readonly router = inject(Router);
 
-    readonly order = signal<OrderDetail | null>(null);
-    readonly loading = signal(true);
-    readonly showStatusModal = signal(false);
-    readonly showRepartidorModal = signal(false);
-    readonly statusLoading = signal(false);
-    readonly repartidoresLoading = signal(false);
-    readonly availableRepartidores = signal<Repartidor[]>([]);
+  readonly order = signal<OrderDetail | null>(null);
+  readonly loading = signal(true);
+  readonly showStatusModal = signal(false);
+  readonly showRepartidorModal = signal(false);
+  readonly statusLoading = signal(false);
+  readonly repartidoresLoading = signal(false);
+  readonly availableRepartidores = signal<Repartidor[]>([]);
 
-    selectedStatus: OrderStatus = 'confirmado';
-    selectedRepartidorId: string | null = null;
-    statusNotes = '';
+  selectedStatus: OrderStatus = 'confirmado';
+  selectedRepartidorId: string | null = null;
+  statusNotes = '';
 
-    readonly statusLabels: Record<OrderStatus, string> = {
-        recibido: 'Recibido',
-        confirmado: 'Confirmado',
-        en_preparacion: 'En preparación',
-        en_camino: 'En camino',
-        entregado: 'Entregado',
-        cancelado: 'Cancelado',
-    };
+  readonly statusLabels: Record<OrderStatus, string> = {
+    recibido: 'Recibido',
+    confirmado: 'Confirmado',
+    en_preparacion: 'En preparación',
+    en_camino: 'En camino',
+    entregado: 'Entregado',
+    cancelado: 'Cancelado',
+  };
 
-    ngOnInit(): void {
-        const id = this.route.snapshot.paramMap.get('id')!;
-        this.ordersService.getOrderById(id).subscribe({
-            next: (order) => {
-                this.order.set(order);
-                this.loading.set(false);
-                const next = this.nextStatuses();
-                if (next.length > 0) this.selectedStatus = next[0];
-            },
-            error: () => {
-                this.loading.set(false);
-                this.toastService.error('Error al cargar el pedido');
-            },
-        });
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id')!;
+    this.ordersService.getOrderById(id).subscribe({
+      next: (order) => {
+        this.order.set(order);
+        this.loading.set(false);
+        const next = this.nextStatuses();
+        if (next.length > 0) this.selectedStatus = next[0];
+      },
+      error: () => {
+        this.loading.set(false);
+        this.toastService.error('Error al cargar el pedido');
+      },
+    });
+  }
+
+  nextStatuses(): OrderStatus[] {
+    return STATUS_FLOW[this.order()?.status as OrderStatus] ?? [];
+  }
+
+  getItemName(snapshot: any): string {
+    if (!snapshot) return '—';
+    if (typeof snapshot === 'string') {
+      try { snapshot = JSON.parse(snapshot); } catch { return snapshot; }
     }
+    return snapshot?.name ?? '—';
+  }
 
-    nextStatuses(): OrderStatus[] {
-        return STATUS_FLOW[this.order()?.status as OrderStatus] ?? [];
+  async changeStatus(): Promise<void> {
+    if (!this.order()) return;
+    this.statusLoading.set(true);
+    try {
+      await this.ordersService.updateOrderStatus(this.order()!.id, this.selectedStatus, this.statusNotes);
+      this.toastService.success('Estado actualizado correctamente');
+      this.showStatusModal.set(false);
+      this.statusNotes = '';
+      // Reload
+      this.ordersService.getOrderById(this.order()!.id).subscribe(o => this.order.set(o));
+    } catch {
+      this.toastService.error('Error al actualizar el estado');
+    } finally {
+      this.statusLoading.set(false);
     }
+  }
 
-    getItemName(snapshot: any): string {
-        if (!snapshot) return '—';
-        if (typeof snapshot === 'string') {
-            try { snapshot = JSON.parse(snapshot); } catch { return snapshot; }
-        }
-        return snapshot?.name ?? '—';
-    }
+  loadAndShowRepartidores(): void {
+    this.showRepartidorModal.set(true);
+    this.repartidoresLoading.set(true);
+    this.ordersService.getAvailableRepartidores().subscribe(list => {
+      this.availableRepartidores.set(list);
+      this.repartidoresLoading.set(false);
+    });
+  }
 
-    async changeStatus(): Promise<void> {
-        if (!this.order()) return;
-        this.statusLoading.set(true);
-        try {
-            await this.ordersService.updateOrderStatus(this.order()!.id, this.selectedStatus, this.statusNotes);
-            this.toastService.success('Estado actualizado correctamente');
-            this.showStatusModal.set(false);
-            this.statusNotes = '';
-            // Reload
-            this.ordersService.getOrderById(this.order()!.id).subscribe(o => this.order.set(o));
-        } catch {
-            this.toastService.error('Error al actualizar el estado');
-        } finally {
-            this.statusLoading.set(false);
-        }
+  async assignRepartidor(): Promise<void> {
+    if (!this.selectedRepartidorId || !this.order()) return;
+    try {
+      await this.ordersService.assignRepartidor(this.order()!.id, this.selectedRepartidorId);
+      this.toastService.success('Repartidor asignado correctamente');
+      this.showRepartidorModal.set(false);
+      this.ordersService.getOrderById(this.order()!.id).subscribe(o => this.order.set(o));
+    } catch {
+      this.toastService.error('Error al asignar repartidor');
     }
-
-    loadAndShowRepartidores(): void {
-        this.showRepartidorModal.set(true);
-        this.repartidoresLoading.set(true);
-        this.ordersService.getAvailableRepartidores().subscribe(list => {
-            this.availableRepartidores.set(list);
-            this.repartidoresLoading.set(false);
-        });
-    }
-
-    async assignRepartidor(): Promise<void> {
-        if (!this.selectedRepartidorId || !this.order()) return;
-        try {
-            await this.ordersService.assignRepartidor(this.order()!.id, this.selectedRepartidorId);
-            this.toastService.success('Repartidor asignado correctamente');
-            this.showRepartidorModal.set(false);
-            this.ordersService.getOrderById(this.order()!.id).subscribe(o => this.order.set(o));
-        } catch {
-            this.toastService.error('Error al asignar repartidor');
-        }
-    }
+  }
 }

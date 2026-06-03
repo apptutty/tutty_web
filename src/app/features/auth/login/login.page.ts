@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule],
     template: `
-    <div class="min-h-screen bg-gray-50 flex font-outfit">
+    <div class="min-h-screen bg-gray-50 flex font-inter">
 
       <!-- Left panel — brand illustration (hidden on mobile) -->
       <div class="hidden lg:flex lg:w-1/2 bg-gray-dark flex-col items-center justify-center p-12 relative overflow-hidden">

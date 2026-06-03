@@ -9,10 +9,10 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
 import { MenuCategory, MenuItem } from '../../core/supabase/database.types';
 
 @Component({
-    selector: 'app-menu-manager-page',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
-    template: `
+  selector: 'app-menu-manager-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  template: `
     <app-page-header [title]="'Menú — ' + restaurantId" subtitle="Gestión de categorías e ítems">
       <button class="btn-secondary" (click)="openCategoryModal()">+ Categoría</button>
     </app-page-header>
@@ -59,8 +59,8 @@ import { MenuCategory, MenuItem } from '../../core/supabase/database.types';
           <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 overflow-y-auto pb-4">
             @for (item of items(); track item.id) {
               <div class="card !p-4 flex flex-col gap-2">
-                @if (item.image_url) {
-                  <img [src]="item.image_url" class="w-full h-28 object-cover rounded-lg" />
+                @if (item.photo_url) {
+                  <img [src]="item.photo_url" class="w-full h-28 object-cover rounded-lg" />
                 }
                 <div class="flex items-start justify-between gap-2">
                   <div class="flex-1 min-w-0">
@@ -185,124 +185,124 @@ import { MenuCategory, MenuItem } from '../../core/supabase/database.types';
   `,
 })
 export class MenuManagerPageComponent implements OnInit {
-    private readonly route = inject(ActivatedRoute);
-    private readonly service = inject(RestaurantsService);
-    private readonly toastService = inject(ToastService);
-    private readonly confirmService = inject(ConfirmService);
-    private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly service = inject(RestaurantsService);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
+  private readonly fb = inject(FormBuilder);
 
-    readonly restaurantId = this.route.snapshot.paramMap.get('id')!;
+  readonly restaurantId = this.route.snapshot.paramMap.get('id')!;
 
-    readonly categories = signal<MenuCategory[]>([]);
-    readonly items = signal<MenuItem[]>([]);
-    readonly selectedCategoryId = signal<string | null>(null);
-    readonly categoriesLoading = signal(true);
-    readonly itemsLoading = signal(false);
-    readonly showCategoryModal = signal(false);
-    readonly showItemModal = signal(false);
-    readonly editingItem = signal<MenuItem | null>(null);
+  readonly categories = signal<MenuCategory[]>([]);
+  readonly items = signal<MenuItem[]>([]);
+  readonly selectedCategoryId = signal<string | null>(null);
+  readonly categoriesLoading = signal(true);
+  readonly itemsLoading = signal(false);
+  readonly showCategoryModal = signal(false);
+  readonly showItemModal = signal(false);
+  readonly editingItem = signal<MenuItem | null>(null);
 
-    categoryName = '';
+  categoryName = '';
 
-    readonly selectedCategory = () => this.categories().find(c => c.id === this.selectedCategoryId());
+  readonly selectedCategory = () => this.categories().find(c => c.id === this.selectedCategoryId());
 
-    readonly itemForm = this.fb.group({
-        name: ['', Validators.required],
-        description: [''],
-        price: [0, [Validators.required, Validators.min(0)]],
-        discount_price: [null as number | null],
-        preparation_time: [15],
-        is_available: [true],
-        is_featured: [false],
+  readonly itemForm = this.fb.group({
+    name: ['', Validators.required],
+    description: [''],
+    price: [0, [Validators.required, Validators.min(0)]],
+    discount_price: [null as number | null],
+    preparation_time: [15],
+    is_available: [true],
+    is_featured: [false],
+  });
+
+  ngOnInit(): void { this.loadCategories(); }
+
+  loadCategories(): void {
+    this.service.getCategories(this.restaurantId).subscribe(cats => {
+      this.categories.set(cats);
+      this.categoriesLoading.set(false);
     });
+  }
 
-    ngOnInit(): void { this.loadCategories(); }
+  selectCategory(id: string): void {
+    this.selectedCategoryId.set(id);
+    this.itemsLoading.set(true);
+    this.service.getMenuItems(id).subscribe(items => {
+      this.items.set(items);
+      this.itemsLoading.set(false);
+    });
+  }
 
-    loadCategories(): void {
-        this.service.getCategories(this.restaurantId).subscribe(cats => {
-            this.categories.set(cats);
-            this.categoriesLoading.set(false);
-        });
+  openCategoryModal(): void {
+    this.categoryName = '';
+    this.showCategoryModal.set(true);
+  }
+
+  async saveCategory(): Promise<void> {
+    if (!this.categoryName.trim()) return;
+    try {
+      await this.service.saveCategory({
+        restaurant_id: this.restaurantId,
+        name: this.categoryName.trim(),
+        display_order: this.categories().length,
+        is_active: true,
+      });
+      this.toastService.success('Categoría creada');
+      this.showCategoryModal.set(false);
+      this.loadCategories();
+    } catch { this.toastService.error('Error al guardar categoría'); }
+  }
+
+  openItemModal(item?: MenuItem): void {
+    this.editingItem.set(item ?? null);
+    if (item) {
+      this.itemForm.patchValue(item as any);
+    } else {
+      this.itemForm.reset({ is_available: true, is_featured: false, preparation_time: 15, price: 0 });
     }
+    this.showItemModal.set(true);
+  }
 
-    selectCategory(id: string): void {
-        this.selectedCategoryId.set(id);
-        this.itemsLoading.set(true);
-        this.service.getMenuItems(id).subscribe(items => {
-            this.items.set(items);
-            this.itemsLoading.set(false);
-        });
-    }
+  async saveItem(): Promise<void> {
+    if (this.itemForm.invalid) return;
+    const val = this.itemForm.getRawValue();
+    const payload: Partial<MenuItem> = {
+      ...(this.editingItem() ? { id: this.editingItem()!.id } : {}),
+      restaurant_id: this.restaurantId,
+      category_id: this.selectedCategoryId()!,
+      name: val.name!,
+      description: val.description ?? null,
+      price: val.price ?? 0,
+      discount_price: val.discount_price ?? null,
+      preparation_time: val.preparation_time ?? 15,
+      is_available: val.is_available ?? true,
+      is_featured: val.is_featured ?? false,
+      display_order: this.items().length,
+      tags: [],
+      has_variants: false,
+      track_stock: false,
+    };
+    try {
+      await this.service.saveMenuItem(payload);
+      this.toastService.success(this.editingItem() ? 'Ítem actualizado' : 'Ítem creado');
+      this.showItemModal.set(false);
+      if (this.selectedCategoryId()) this.selectCategory(this.selectedCategoryId()!);
+    } catch { this.toastService.error('Error al guardar ítem'); }
+  }
 
-    openCategoryModal(): void {
-        this.categoryName = '';
-        this.showCategoryModal.set(true);
-    }
-
-    async saveCategory(): Promise<void> {
-        if (!this.categoryName.trim()) return;
-        try {
-            await this.service.saveCategory({
-                restaurant_id: this.restaurantId,
-                name: this.categoryName.trim(),
-                display_order: this.categories().length,
-                is_active: true,
-            });
-            this.toastService.success('Categoría creada');
-            this.showCategoryModal.set(false);
-            this.loadCategories();
-        } catch { this.toastService.error('Error al guardar categoría'); }
-    }
-
-    openItemModal(item?: MenuItem): void {
-        this.editingItem.set(item ?? null);
-        if (item) {
-            this.itemForm.patchValue(item as any);
-        } else {
-            this.itemForm.reset({ is_available: true, is_featured: false, preparation_time: 15, price: 0 });
-        }
-        this.showItemModal.set(true);
-    }
-
-    async saveItem(): Promise<void> {
-        if (this.itemForm.invalid) return;
-        const val = this.itemForm.getRawValue();
-        const payload: Partial<MenuItem> = {
-            ...(this.editingItem() ? { id: this.editingItem()!.id } : {}),
-            restaurant_id: this.restaurantId,
-            category_id: this.selectedCategoryId()!,
-            name: val.name!,
-            description: val.description ?? null,
-            price: val.price ?? 0,
-            discount_price: val.discount_price ?? null,
-            preparation_time: val.preparation_time ?? 15,
-            is_available: val.is_available ?? true,
-            is_featured: val.is_featured ?? false,
-            display_order: this.items().length,
-            tags: [],
-            has_variants: false,
-            track_stock: false,
-        };
-        try {
-            await this.service.saveMenuItem(payload);
-            this.toastService.success(this.editingItem() ? 'Ítem actualizado' : 'Ítem creado');
-            this.showItemModal.set(false);
-            if (this.selectedCategoryId()) this.selectCategory(this.selectedCategoryId()!);
-        } catch { this.toastService.error('Error al guardar ítem'); }
-    }
-
-    async deleteItem(item: MenuItem): Promise<void> {
-        const ok = await this.confirmService.confirm({
-            title: '¿Eliminar ítem?',
-            message: `Se eliminará "${item.name}" permanentemente.`,
-            confirmText: 'Eliminar',
-            danger: true,
-        });
-        if (!ok) return;
-        try {
-            await this.service.deleteMenuItem(item.id);
-            this.toastService.success('Ítem eliminado');
-            if (this.selectedCategoryId()) this.selectCategory(this.selectedCategoryId()!);
-        } catch { this.toastService.error('Error al eliminar'); }
-    }
+  async deleteItem(item: MenuItem): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: '¿Eliminar ítem?',
+      message: `Se eliminará "${item.name}" permanentemente.`,
+      confirmText: 'Eliminar',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await this.service.deleteMenuItem(item.id);
+      this.toastService.success('Ítem eliminado');
+      if (this.selectedCategoryId()) this.selectCategory(this.selectedCategoryId()!);
+    } catch { this.toastService.error('Error al eliminar'); }
+  }
 }

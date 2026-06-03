@@ -125,7 +125,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
               </div>
               <div>
                 <label class="label">WhatsApp</label>
-                <input class="input-field" formControlName="whatsapp" />
+                <input class="input-field" formControlName="whatsapp_number" />
               </div>
               <div class="col-span-2">
                 <label class="label">Descripción</label>
@@ -168,7 +168,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
               </div>
               <div>
                 <label class="label">Dificultad</label>
-                <select class="input-field" formControlName="difficulty">
+                <select class="input-field" formControlName="difficulty_level">
                   <option value="facil">Fácil</option>
                   <option value="moderado">Moderado</option>
                   <option value="dificil">Difícil</option>
@@ -245,8 +245,8 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
                 </span>
               </div>
             </div>
-            @if (selectedBooking()!.special_instructions) {
-              <p class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">{{ selectedBooking()!.special_instructions }}</p>
+            @if (selectedBooking()!.special_requests) {
+              <p class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">{{ selectedBooking()!.special_requests }}</p>
             }
 
             <!-- Participants -->
@@ -334,11 +334,11 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
                       <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ d.date }}</td>
                       <td class="px-4 py-3 text-sm text-gray-600">{{ d.departure_time }}</td>
                       <td class="px-4 py-3 text-sm text-gray-600">{{ d.total_spots }}</td>
-                      <td class="px-4 py-3 text-sm text-gray-600">{{ d.available_spots }}</td>
+                      <td class="px-4 py-3 text-sm text-gray-600">{{ d.spots_left }}</td>
                       <td class="px-4 py-3">
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-                          [class]="d.status === 'disponible' ? 'bg-success-50 text-success-700' : d.status === 'lleno' ? 'bg-warning-50 text-warning-700' : 'bg-error-50 text-error-700'">
-                          {{ d.status }}
+                          [class]="d.is_active ? 'bg-success-50 text-success-700' : 'bg-error-50 text-error-700'">
+                          {{ d.is_active ? 'Activo' : 'Inactivo' }}
                         </span>
                       </td>
                     </tr>
@@ -445,7 +445,7 @@ export class ExcursionsPageComponent implements OnInit {
       const q = this.excursionSearch.toLowerCase();
       result = result.filter(e => e.name?.toLowerCase().includes(q) || e.operator_name?.toLowerCase().includes(q));
     }
-    if (this.difficultyFilter) result = result.filter(e => e.difficulty === this.difficultyFilter);
+    if (this.difficultyFilter) result = result.filter(e => e.difficulty_level === this.difficultyFilter);
     return result;
   };
 
@@ -465,7 +465,7 @@ export class ExcursionsPageComponent implements OnInit {
   readonly operatorColumns: TableColumn[] = [
     { key: 'name', label: 'Nombre' },
     { key: 'category', label: 'Categoría' },
-    { key: 'rating', label: 'Rating' },
+    { key: 'avg_rating', label: 'Rating' },
     { key: 'total_reviews', label: 'Reseñas' },
     { key: 'is_active', label: 'Activo', type: 'boolean' },
   ];
@@ -475,7 +475,7 @@ export class ExcursionsPageComponent implements OnInit {
     { key: 'operator_name', label: 'Operador' },
     { key: 'price_per_person', label: 'Precio/persona', type: 'currency' },
     { key: 'duration_hours', label: 'Duración (h)' },
-    { key: 'difficulty', label: 'Dificultad' },
+    { key: 'difficulty_level', label: 'Dificultad' },
     { key: 'min_people', label: 'Mín' },
     { key: 'max_people', label: 'Máx' },
     { key: 'is_active', label: 'Activo', type: 'boolean' },
@@ -495,14 +495,14 @@ export class ExcursionsPageComponent implements OnInit {
   readonly operatorForm = this.fb.group({
     name: ['', Validators.required],
     category: ['Playa'],
-    whatsapp: [''],
+    whatsapp_number: [''],
     description: [''],
   });
 
   readonly excursionForm = this.fb.group({
     name: ['', Validators.required],
     operator_id: ['', Validators.required],
-    difficulty: ['facil'],
+    difficulty_level: ['facil'],
     price_per_person: [0, Validators.required],
     duration_hours: [4],
     min_people: [1],
@@ -561,10 +561,10 @@ export class ExcursionsPageComponent implements OnInit {
         name: val.name!,
         slug: val.name!.toLowerCase().replace(/\s+/g, '-'),
         category: val.category!,
-        whatsapp: val.whatsapp ?? null,
+        whatsapp_number: val.whatsapp_number ?? null,
         description: val.description ?? null,
         is_active: true,
-        rating: 0,
+        avg_rating: 0,
         total_reviews: 0,
       });
       this.toastService.success('Operador guardado');
@@ -575,7 +575,7 @@ export class ExcursionsPageComponent implements OnInit {
   }
 
   openExcursionModal(): void {
-    this.excursionForm.reset({ difficulty: 'facil', min_people: 1, max_people: 20, duration_hours: 4 });
+    this.excursionForm.reset({ difficulty_level: 'facil', min_people: 1, max_people: 20, duration_hours: 4 });
     this.showExcursionModal.set(true);
   }
 
@@ -587,7 +587,7 @@ export class ExcursionsPageComponent implements OnInit {
       await this.service.saveExcursion({
         name: val.name!,
         operator_id: val.operator_id!,
-        difficulty: val.difficulty as any,
+        difficulty_level: val.difficulty_level as any,
         price_per_person: val.price_per_person ?? 0,
         duration_hours: val.duration_hours ?? 4,
         min_people: val.min_people ?? 1,

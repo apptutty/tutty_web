@@ -213,7 +213,7 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
                 </div>
                 <div>
                   <label class="label">Recargo Especial (%) — 0 si no aplica</label>
-                  <input type="number" class="input-field" [(ngModel)]="holidayForm.surcharge_rate" name="surcharge_rate" min="0" max="200" step="1" />
+                  <input type="number" class="input-field" [(ngModel)]="holidayForm.surcharge" name="surcharge" min="0" max="200" step="1" />
                 </div>
                 <div class="flex gap-3 pt-2">
                   <button type="button" class="btn-secondary flex-1" (click)="showHolidayModal.set(false)">Cancelar</button>
@@ -458,7 +458,7 @@ export class SettingsPageComponent implements OnInit {
   holidays = signal<Holiday[]>([]);
   showHolidayModal = signal(false);
   editingHoliday = signal<Holiday | null>(null);
-  holidayForm: { name: string; date: string; surcharge_rate: number } = { name: '', date: '', surcharge_rate: 0 };
+  holidayForm: { name: string; date: string; surcharge: number } = { name: '', date: '', surcharge: 0 };
 
   loadingUsers = signal(false);
   adminUsers = signal<AdminUser[]>([]);
@@ -549,7 +549,7 @@ export class SettingsPageComponent implements OnInit {
 
   openHolidayForm(h?: Holiday) {
     this.editingHoliday.set(h ?? null);
-    this.holidayForm = h ? { name: h.name, date: h.date, surcharge_rate: h.surcharge_rate ?? 0 } : { name: '', date: '', surcharge_rate: 0 };
+    this.holidayForm = h ? { name: h.name, date: h.date, surcharge: h.surcharge ?? 0 } : { name: '', date: '', surcharge: 0 };
     this.showHolidayModal.set(true);
   }
 

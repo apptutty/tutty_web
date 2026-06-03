@@ -85,10 +85,10 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
                   </td>
                   <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ p.name }}</td>
                   <td class="px-4 py-3">
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ typeLabel(p.type) }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ typeLabel(p.discount_type) }}</span>
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-700">
-                    {{ p.type === 'percentage' ? p.value + '%' : 'RD$ ' + p.value }}
+                    {{ p.discount_type === 'percentage' ? p.discount_value + '%' : 'RD$ ' + p.discount_value }}
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-700">
                     {{ p.current_uses }} / {{ p.max_uses ?? '∞' }}
@@ -200,7 +200,7 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
                         <td class="px-3 py-2 text-sm text-gray-800">{{ u.user_name }}</td>
                         <td class="px-3 py-2 text-sm text-gray-600">{{ u.order_number }}</td>
                         <td class="px-3 py-2 text-sm font-medium text-gray-700">RD$ {{ u.discount_applied }}</td>
-                        <td class="px-3 py-2 text-xs text-gray-400">{{ u.created_at | date:'dd/MM/yy' }}</td>
+                        <td class="px-3 py-2 text-xs text-gray-400">{{ u.used_at | date:'dd/MM/yy' }}</td>
                       </tr>
                     }
                   </tbody>
@@ -236,7 +236,7 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
               </div>
               <div>
                 <label class="label">Tipo</label>
-                <select class="input-field" formControlName="type">
+                <select class="input-field" formControlName="discount_type">
                   <option value="percentage">Porcentaje (%)</option>
                   <option value="fixed_amount">Monto fijo (RD$)</option>
                   <option value="free_delivery">Delivery gratis</option>
@@ -244,7 +244,7 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
               </div>
               <div>
                 <label class="label">Valor</label>
-                <input class="input-field" type="number" formControlName="value" />
+                <input class="input-field" type="number" formControlName="discount_value" />
               </div>
               <div>
                 <label class="label">Monto mínimo (RD$)</label>
@@ -310,8 +310,8 @@ export class PromotionsPageComponent implements OnInit {
   readonly promoForm = this.fb.group({
     name: ['', Validators.required],
     code: ['', Validators.required],
-    type: ['percentage' as PromoType],
-    value: [0, Validators.required],
+    discount_type: ['percentage' as PromoType],
+    discount_value: [0, Validators.required],
     min_order_amount: [null as number | null],
     max_uses: [null as number | null],
     valid_from: [null as string | null],
@@ -329,7 +329,7 @@ export class PromotionsPageComponent implements OnInit {
       const q = this.searchText.toLowerCase();
       promos = promos.filter(p => p.code?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
     }
-    if (this.typeFilter) promos = promos.filter(p => p.type === this.typeFilter);
+    if (this.typeFilter) promos = promos.filter(p => p.discount_type === this.typeFilter);
     return promos;
   };
 
@@ -346,7 +346,7 @@ export class PromotionsPageComponent implements OnInit {
   openForm(p?: Promotion): void {
     this.editingId.set(p?.id ?? null);
     if (p) { this.promoForm.patchValue(p as any); }
-    else { this.promoForm.reset({ type: 'percentage', value: 0 }); }
+    else { this.promoForm.reset({ discount_type: 'percentage', discount_value: 0 }); }
     this.showForm.set(true);
   }
 
@@ -365,8 +365,8 @@ export class PromotionsPageComponent implements OnInit {
         ...(this.editingId() ? { id: this.editingId()! } : {}),
         name: val.name!,
         code: val.code!.toUpperCase(),
-        type: val.type as PromoType,
-        value: val.value ?? 0,
+        discount_type: val.discount_type as PromoType,
+        discount_value: val.discount_value ?? 0,
         min_order_amount: val.min_order_amount ?? null,
         max_uses: val.max_uses ?? null,
         valid_from: val.valid_from ?? null,

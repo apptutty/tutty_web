@@ -63,8 +63,8 @@ export class ExcursionsService {
             date,
             departure_time: departureTime,
             total_spots: totalSpots,
-            available_spots: totalSpots,
-            status: 'disponible',
+            spots_left: totalSpots,
+            is_active: true,
         }));
         const { error } = await this.supabase.from('excursion_dates').insert(rows);
         if (error) throw error;
@@ -81,7 +81,6 @@ export class ExcursionsService {
           customer:users(full_name, phone)
         `).order('created_at', { ascending: false });
                 if (filters.status) q = q.eq('status', filters.status);
-                if (filters.excursion_id) q = q.eq('excursion_id', filters.excursion_id);
                 const { data } = await q;
                 return (data ?? []).map((b: any) => ({
                     ...b,
