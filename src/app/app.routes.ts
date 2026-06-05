@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/auth/auth.guard';
 import { storeApprovedGuard } from './core/auth/store-approved.guard';
 import { operatorApprovedGuard } from './core/auth/operator-approved.guard';
+import { operatorGuard } from './core/auth/operator.guard';
 import { AdminShellComponent } from './layout/admin-shell/admin-shell.component';
 
 export const routes: Routes = [
@@ -13,7 +14,7 @@ export const routes: Routes = [
   {
     path: '',
     component: AdminShellComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {

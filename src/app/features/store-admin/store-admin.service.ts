@@ -51,7 +51,9 @@ export class StoreAdminService {
         if (!validSaved) {
             const firstApproved = restaurants.find(r => r.approval_status === 'aprobado');
             if (firstApproved) {
-                this.setActiveStore(firstApproved.id);
+                // Set the active store without navigating — the guard or redirect handles routing
+                this.activeStoreId.set(firstApproved.id);
+                localStorage.setItem(ACTIVE_STORE_KEY, firstApproved.id);
             } else {
                 this.activeStoreId.set(null);
             }
