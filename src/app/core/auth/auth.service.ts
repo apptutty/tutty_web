@@ -18,20 +18,29 @@ export class AuthService {
     }
 
     private initAuthListener(): void {
-        this.supabase.auth.getSession().then(async ({ data: { session } }) => {
-            if (session?.user) {
-                await this.loadUserProfile(session.user.id);
-            }
-            this.isLoading.set(false);
-        });
+        this.supabase.auth.getSession()
+            .then(async ({ data: { session } }) => {
+                if (session?.user) {
+                    await this.loadUserProfile(session.user.id);
+                }
+            })
+            .catch(() => {
+                this.currentUser.set(null);
+            })
+            .finally(() => {
+                this.isLoading.set(false);
+            });
 
         this.supabase.auth.onAuthStateChange(async (event, session) => {
             if (session?.user) {
                 await this.loadUserProfile(session.user.id);
             } else {
                 this.currentUser.set(null);
+                // Token expired or signed out while app was already loaded
+                if (!this.isLoading() && event === 'SIGNED_OUT') {
+                    this.router.navigate(['/login']);
+                }
             }
-            // Ensure loading is false after any auth state change
             this.isLoading.set(false);
         });
     }

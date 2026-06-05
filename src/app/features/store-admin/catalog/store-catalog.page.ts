@@ -71,7 +71,7 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
 
           <!-- Count -->
           <span class="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5 flex-shrink-0">
-            {{ productCountByCategory()[cat.id] ?? 0 }}
+            {{ productCountByCategory()[cat.id] }}
           </span>
 
           <!-- Active toggle -->

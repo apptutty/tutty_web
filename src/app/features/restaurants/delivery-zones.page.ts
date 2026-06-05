@@ -61,13 +61,13 @@ import { DeliveryZone, Restaurant } from '../../core/supabase/database.types';
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex flex-wrap gap-1 max-w-xs">
-                      @for (sector of (zone.sector_list ?? []); track sector) {
+                      @for (sector of zone.sector_list; track sector) {
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">{{ sector }}</span>
                       }
                     </div>
                   </td>
                   <td class="px-4 py-3 text-sm font-medium text-gray-700">RD$ {{ zone.delivery_fee }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-600">RD$ {{ zone.min_order ?? 0 }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">RD$ {{ zone.min_order }}</td>
                   <td class="px-4 py-3 text-sm text-gray-600">{{ zone.estimated_time }} min</td>
                   <td class="px-4 py-3 text-sm text-gray-600">{{ zone.max_distance_km ?? '—' }} km</td>
                   <td class="px-4 py-3">

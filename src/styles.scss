@@ -4,7 +4,8 @@
 
 // Operator-admin & registration shared UI components
 // (non-Tailwind classes used in inline component styles)
-@import 'app/shared/styles/operator-ui';
+// sass-lint:disable-rule no-import
+@import 'app/shared/styles/operator-ui'; // stylelint-disable-line
 
 @layer base {
   body {

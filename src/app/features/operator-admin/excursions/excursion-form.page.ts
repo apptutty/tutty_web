@@ -142,7 +142,7 @@ function blankForm(): ExcursionFormData & { category: string | null; what_to_bri
             <input type="number" [(ngModel)]="form.max_people" min="1" class="input-field" />
           </div>
         </div>
-        @if (form.max_people !== null && form.min_people > (form.max_people ?? 999)) {
+        @if (form.max_people !== null && form.min_people > form.max_people) {
           <p class="field-error">El mínimo no puede ser mayor que el máximo</p>
         }
       </section>

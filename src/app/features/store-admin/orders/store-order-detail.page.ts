@@ -65,7 +65,7 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
         <!-- Action buttons -->
         @if (order()) {
           <div class="flex gap-2 no-print">
-            @if (order()!.customer?.phone) {
+            @if (order()!.customer.phone) {
               <a
                 [href]="whatsappUrl()"
                 target="_blank"
@@ -143,11 +143,11 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
           <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Cliente</h3>
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-500">
-              {{ order()!.customer?.full_name?.[0]?.toUpperCase() ?? '?' }}
+              {{ order()!.customer.full_name[0]?.toUpperCase() ?? '?' }}
             </div>
             <div>
-              <p class="font-semibold text-gray-900">{{ order()!.customer?.full_name ?? '—' }}</p>
-              @if (order()!.customer?.phone) {
+              <p class="font-semibold text-gray-900">{{ order()!.customer.full_name }}</p>
+              @if (order()!.customer.phone) {
                 <p class="text-sm text-gray-500">{{ order()!.customer!.phone }}</p>
               }
             </div>
