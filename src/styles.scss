@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+// Operator-admin & registration shared UI components
+// (non-Tailwind classes used in inline component styles)
+@import 'app/shared/styles/operator-ui';
+
 @layer base {
     body {
         @apply font-inter bg-gray-50 text-base font-normal text-gray-800;

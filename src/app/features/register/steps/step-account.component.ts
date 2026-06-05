@@ -181,16 +181,6 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
     .step-header h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 0.5rem; }
     .step-header p { color: #6b7280; font-size: 0.9rem; margin: 0; }
 
-    .error-banner {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
-      color: #b91c1c;
-      font-size: 0.875rem;
-      margin-bottom: 1.25rem;
-    }
-
     .account-form { display: flex; flex-direction: column; gap: 1.25rem; }
 
     .form-group { display: flex; flex-direction: column; gap: 0.4rem; }

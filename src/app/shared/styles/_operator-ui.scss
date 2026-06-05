@@ -1,0 +1,286 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Tuttys · Operator-admin & Registration UI — Shared component styles
+//
+// Imported globally via src/styles.scss.
+// These classes replace the ~545 duplicated definitions spread across
+// 18 inline component `styles` arrays.
+//
+// Scope: operator-admin/*, operator-register/*, register/* features.
+// Design tokens match the existing operator panel brand (#e91e8c).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Buttons ──────────────────────────────────────────────────────────────────
+
+.btn-primary {
+  background: #e91e8c;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: .55rem 1.1rem;
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+
+  &:disabled { opacity: .5; cursor: not-allowed; }
+  &:hover:not(:disabled) { opacity: .88; }
+
+  &.btn-sm { font-size: .8rem; padding: .4rem .85rem; }
+  &.btn-lg { padding: .65rem 1.5rem; }
+}
+
+.btn-secondary {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  cursor: pointer;
+  color: #374151;
+  transition: border-color .15s, color .15s;
+
+  &:hover { border-color: #e91e8c; color: #e91e8c; }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
+.btn-outline {
+  background: transparent;
+  color: #e91e8c;
+  border: 2px solid #e91e8c;
+  border-radius: 10px;
+  padding: .55rem 1.25rem;
+  font-weight: 600;
+  font-size: .875rem;
+  cursor: pointer;
+  transition: background .15s;
+
+  &:hover { background: #fdf2f8; }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+}
+
+// ── Form elements ─────────────────────────────────────────────────────────────
+
+.form-group {
+  margin-bottom: .85rem;
+}
+
+.label {
+  display: block;
+  font-size: .8rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.input-field {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: .6rem .85rem;
+  font-size: .875rem;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color .15s;
+
+  &:focus { border-color: #e91e8c; }
+
+  &.textarea { resize: vertical; }
+}
+
+.field-error {
+  font-size: .75rem;
+  color: #ef4444;
+  margin-top: -4px;
+  display: block;
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+// ── Modal / Overlay ───────────────────────────────────────────────────────────
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+}
+
+.modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: .5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+// ── Toggle switch (CSS-only, no JS) ──────────────────────────────────────────
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background .2s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    transition: transform .2s;
+  }
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: #e91e8c;
+
+  &::after { transform: translateX(20px); }
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .78rem;
+
+  th {
+    background: #f9fafb;
+    padding: .45rem .7rem;
+    text-align: left;
+    color: #9ca3af;
+    font-weight: 700;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: .5rem .7rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+  }
+
+  .totals-row td {
+    border-top: 2px solid #e5e7eb;
+    border-bottom: none;
+    background: #f9fafb;
+    font-weight: 700;
+  }
+}
+
+// ── Alert banners ─────────────────────────────────────────────────────────────
+
+%_op-banner-base {
+  border-radius: 8px;
+  padding: .5rem 1rem;
+  font-size: .8rem;
+  margin-bottom: .75rem;
+}
+
+.banner-ok    { @extend %_op-banner-base; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.banner-error { @extend %_op-banner-base; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.banner-info  { @extend %_op-banner-base; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.banner-warn  { @extend %_op-banner-base; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+
+.error-banner { @extend %_op-banner-base; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+  font-size: .875rem;
+}
+
+// ── Loading ───────────────────────────────────────────────────────────────────
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+  font-size: .875rem;
+}
+
+@keyframes _op-spin { to { transform: rotate(360deg); } }
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #e91e8c;
+  border-radius: 50%;
+  animation: _op-spin .7s linear infinite;
+}

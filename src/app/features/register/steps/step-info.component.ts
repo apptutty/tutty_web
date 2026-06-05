@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, AsyncVal
 import { debounceTime, distinctUntilChanged, switchMap, map, catchError, of } from 'rxjs';
 import { RegisterService } from '../register.service';
 import { StoreCategory } from '../../../core/supabase/database.types';
-import { getSupabaseClient } from '../../../core/supabase/supabase.client';
 
 const SD_SECTORS = [
     'Naco', 'Piantini', 'Bella Vista', 'Gazcue', 'Zona Colonial', 'Los Prados',
@@ -359,7 +358,6 @@ export class RegisterStepInfoComponent implements OnInit {
     private readonly registerService = inject(RegisterService);
     private readonly router = inject(Router);
     private readonly fb = inject(FormBuilder);
-    private readonly supabase = getSupabaseClient();
 
     readonly categories = signal<StoreCategory[]>([]);
     readonly logoPreview = signal<string | null>(null);
@@ -449,14 +447,8 @@ export class RegisterStepInfoComponent implements OnInit {
     }
 
     private async loadCategories(commerceType: string): Promise<void> {
-        const { data } = await this.supabase
-            .from('restaurant_categories')
-            .select('*')
-            .eq('commerce_type', commerceType)
-            .eq('is_active', true)
-            .order('display_order');
-
-        this.categories.set((data ?? []) as StoreCategory[]);
+        const data = await this.registerService.getStoreCategories(commerceType);
+        this.categories.set(data);
     }
 
     async onLogoChange(event: Event): Promise<void> {

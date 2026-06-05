@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/auth/auth.guard';
 import { storeApprovedGuard } from './core/auth/store-approved.guard';
+import { operatorApprovedGuard } from './core/auth/operator-approved.guard';
 import { AdminShellComponent } from './layout/admin-shell/admin-shell.component';
 
 export const routes: Routes = [
@@ -81,7 +82,19 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
-        loadComponent: () => import('./features/settings/settings.page').then(m => m.SettingsPageComponent),
+        loadComponent: () => import('./features/settings/settings-shell.component').then(m => m.SettingsShellComponent),
+        children: [
+          { path: '', redirectTo: 'general', pathMatch: 'full' },
+          { path: 'general', loadComponent: () => import('./features/settings/pages/general.page').then(m => m.GeneralSettingsPageComponent) },
+          { path: 'delivery', loadComponent: () => import('./features/settings/pages/delivery.page').then(m => m.DeliverySettingsPageComponent) },
+          { path: 'feriados', loadComponent: () => import('./features/settings/pages/feriados.page').then(m => m.FeriadosPageComponent) },
+          { path: 'notificaciones', loadComponent: () => import('./features/settings/pages/notificaciones.page').then(m => m.NotifSettingsPageComponent) },
+          { path: 'usuarios', loadComponent: () => import('./features/settings/pages/usuarios.page').then(m => m.UsuariosPageComponent) },
+          { path: 'comercios', loadComponent: () => import('./features/settings/pages/comercios.page').then(m => m.ComerciosPageComponent) },
+          { path: 'categorias', loadComponent: () => import('./features/settings/pages/categorias.page').then(m => m.CategoriasPageComponent) },
+          { path: 'auditoria', loadComponent: () => import('./features/settings/pages/auditoria.page').then(m => m.AuditoriaPageComponent) },
+          { path: 'surcharge', loadComponent: () => import('./features/settings/pages/surcharge.page').then(m => m.SurchargePageComponent) },
+        ],
       },
     ],
   },
@@ -129,6 +142,35 @@ export const routes: Routes = [
       { path: 'reports', loadComponent: () => import('./features/store-admin/reports/store-reports.page').then(m => m.StoreReportsPageComponent) },
       { path: 'settings', loadComponent: () => import('./features/store-admin/settings/store-settings.page').then(m => m.StoreSettingsPageComponent) },
       { path: 'select-store', loadComponent: () => import('./features/store-admin/store-select.page').then(m => m.StoreSelectPageComponent) },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
+  },
+  {
+    path: 'register/operator',
+    loadComponent: () => import('./features/operator-register/operator-register-shell.component').then(m => m.OperatorRegisterShellComponent),
+    children: [
+      { path: '', loadComponent: () => import('./features/operator-register/steps/operator-step1.component').then(m => m.OperatorStep1Component) },
+      { path: 'tours', loadComponent: () => import('./features/operator-register/steps/operator-step2.component').then(m => m.OperatorStep2Component) },
+      { path: 'account', loadComponent: () => import('./features/operator-register/steps/operator-step3.component').then(m => m.OperatorStep3Component) },
+      { path: 'pending', loadComponent: () => import('./features/operator-register/operator-pending.component').then(m => m.OperatorPendingComponent) },
+    ],
+  },
+  {
+    path: 'operator',
+    loadComponent: () => import('./features/operator-admin/operator-shell.component').then(m => m.OperatorShellComponent),
+    canActivate: [authGuard, operatorApprovedGuard],
+    children: [
+      { path: 'dashboard', loadComponent: () => import('./features/operator-admin/dashboard/operator-dashboard.page').then(m => m.OperatorDashboardPageComponent) },
+      { path: 'excursions', loadComponent: () => import('./features/operator-admin/excursions/excursions-list.page').then(m => m.ExcursionsListPageComponent) },
+      { path: 'excursions/new', loadComponent: () => import('./features/operator-admin/excursions/excursion-form.page').then(m => m.ExcursionFormPageComponent) },
+      { path: 'excursions/:id', loadComponent: () => import('./features/operator-admin/excursions/excursion-detail.page').then(m => m.ExcursionDetailPageComponent) },
+      { path: 'excursions/:id/edit', loadComponent: () => import('./features/operator-admin/excursions/excursion-form.page').then(m => m.ExcursionFormPageComponent) },
+      { path: 'excursions/:id/dates', loadComponent: () => import('./features/operator-admin/excursions/excursion-dates.page').then(m => m.ExcursionDatesPageComponent) },
+      { path: 'bookings', loadComponent: () => import('./features/operator-admin/bookings/operator-bookings.page').then(m => m.OperatorBookingsPageComponent) },
+      { path: 'bookings/:id', loadComponent: () => import('./features/operator-admin/bookings/booking-detail.page').then(m => m.BookingDetailPageComponent) },
+      { path: 'calendar', loadComponent: () => import('./features/operator-admin/calendar/operator-calendar.page').then(m => m.OperatorCalendarPageComponent) },
+      { path: 'reports', loadComponent: () => import('./features/operator-admin/reports/operator-reports.page').then(m => m.OperatorReportsPageComponent) },
+      { path: 'settings', loadComponent: () => import('./features/operator-admin/settings/operator-settings.page').then(m => m.OperatorSettingsPageComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

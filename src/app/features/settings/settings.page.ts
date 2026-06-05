@@ -919,81 +919,82 @@ export class SettingsPageComponent implements OnInit {
     this.loadAuditLog();
   }
 
-  loadSettings() {
+  async loadSettings() {
     this.loadingSettings.set(true);
-    this.settingsService.getSettings().subscribe({
-      next: (settings) => {
-        const map: Record<string, string> = {};
-        settings.forEach(s => map[s.key] = s.value);
-        this.generalForm.min_order_amount = Number(map['min_order_amount'] ?? 150);
-        this.generalForm.default_delivery_fee = Number(map['default_delivery_fee'] ?? 75);
-        this.generalForm.default_commission_rate = Number(map['default_commission_rate'] ?? 15);
-        this.generalForm.itbis_rate = Number(map['itbis_rate'] ?? 18);
-        this.generalForm.max_items_per_order = Number(map['max_items_per_order'] ?? 20);
-        this.generalForm.max_orders_in_flight = Number(map['max_orders_in_flight'] ?? 50);
-        this.generalForm.referral_bonus_amount = Number(map['referral_bonus_amount'] ?? 200);
-        this.generalForm.order_auto_cancel_minutes = Number(map['order_auto_cancel_minutes'] ?? 30);
-        this.generalForm.free_delivery_threshold = Number(map['free_delivery_threshold'] ?? 0);
-        this.deliveryForm.weather_surcharge_enabled = map['weather_surcharge_enabled'] === 'true';
-        this.deliveryForm.weather_surcharge_rate = Number(map['weather_surcharge_rate'] ?? 10);
-        this.deliveryForm.surge_pricing_enabled = map['surge_pricing_enabled'] === 'true';
-        this.deliveryForm.peak_surcharge_rate = Number(map['peak_surcharge_rate'] ?? 20);
-        this.deliveryForm.night_surcharge_rate = Number(map['night_surcharge_rate'] ?? 15);
-        this.deliveryForm.peak_hours = map['peak_hours'] ?? '12:00-14:00,18:00-21:00';
-        this.notifForm.push_enabled = map['push_enabled'] !== 'false';
-        this.notifForm.whatsapp_enabled = map['whatsapp_enabled'] === 'true';
-        this.notifForm.new_order_alert = map['new_order_alert'] !== 'false';
-        this.notifForm.unassigned_alert = map['unassigned_alert'] !== 'false';
-        this.notifForm.unassigned_alert_minutes = Number(map['unassigned_alert_minutes'] ?? 10);
-        // SA-6.1 comercios
-        this.comerciosForm.store_auto_approve = map['store_auto_approve'] === 'true';
-        this.comerciosForm.repartidor_auto_approve = map['repartidor_auto_approve'] === 'true';
-        this.comerciosForm.store_onboarding_commission_days = Number(map['store_onboarding_commission_days'] ?? 30);
-        this.comerciosForm.store_onboarding_commission_rate = Number(map['store_onboarding_commission_rate'] ?? 5);
-        // SA-6.4 surcharge preview pre-populate from current settings
-        this.surchargePreviewForm.baseFee = Number(map['default_delivery_fee'] ?? 150);
-        this.surchargePreviewForm.weatherPct = Number(map['weather_surcharge_rate'] ?? 35);
-        this.surchargePreviewForm.peakPct = Number(map['peak_surcharge_rate'] ?? 20);
-        this.surchargePreviewForm.nightPct = Number(map['night_surcharge_rate'] ?? 15);
-        this.loadingSettings.set(false);
-      },
-      error: () => this.loadingSettings.set(false)
-    });
+    try {
+      const settings = await this.settingsService.getSettings();
+      const map: Record<string, string> = {};
+      settings.forEach(s => map[s.key] = s.value);
+      this.generalForm.min_order_amount = Number(map['min_order_amount'] ?? 150);
+      this.generalForm.default_delivery_fee = Number(map['default_delivery_fee'] ?? 75);
+      this.generalForm.default_commission_rate = Number(map['default_commission_rate'] ?? 15);
+      this.generalForm.itbis_rate = Number(map['itbis_rate'] ?? 18);
+      this.generalForm.max_items_per_order = Number(map['max_items_per_order'] ?? 20);
+      this.generalForm.max_orders_in_flight = Number(map['max_orders_in_flight'] ?? 50);
+      this.generalForm.referral_bonus_amount = Number(map['referral_bonus_amount'] ?? 200);
+      this.generalForm.order_auto_cancel_minutes = Number(map['order_auto_cancel_minutes'] ?? 30);
+      this.generalForm.free_delivery_threshold = Number(map['free_delivery_threshold'] ?? 0);
+      this.deliveryForm.weather_surcharge_enabled = map['weather_surcharge_enabled'] === 'true';
+      this.deliveryForm.weather_surcharge_rate = Number(map['weather_surcharge_rate'] ?? 10);
+      this.deliveryForm.surge_pricing_enabled = map['surge_pricing_enabled'] === 'true';
+      this.deliveryForm.peak_surcharge_rate = Number(map['peak_surcharge_rate'] ?? 20);
+      this.deliveryForm.night_surcharge_rate = Number(map['night_surcharge_rate'] ?? 15);
+      this.deliveryForm.peak_hours = map['peak_hours'] ?? '12:00-14:00,18:00-21:00';
+      this.notifForm.push_enabled = map['push_enabled'] !== 'false';
+      this.notifForm.whatsapp_enabled = map['whatsapp_enabled'] === 'true';
+      this.notifForm.new_order_alert = map['new_order_alert'] !== 'false';
+      this.notifForm.unassigned_alert = map['unassigned_alert'] !== 'false';
+      this.notifForm.unassigned_alert_minutes = Number(map['unassigned_alert_minutes'] ?? 10);
+      // SA-6.1 comercios
+      this.comerciosForm.store_auto_approve = map['store_auto_approve'] === 'true';
+      this.comerciosForm.repartidor_auto_approve = map['repartidor_auto_approve'] === 'true';
+      this.comerciosForm.store_onboarding_commission_days = Number(map['store_onboarding_commission_days'] ?? 30);
+      this.comerciosForm.store_onboarding_commission_rate = Number(map['store_onboarding_commission_rate'] ?? 5);
+      // SA-6.4 surcharge preview pre-populate from current settings
+      this.surchargePreviewForm.baseFee = Number(map['default_delivery_fee'] ?? 150);
+      this.surchargePreviewForm.weatherPct = Number(map['weather_surcharge_rate'] ?? 35);
+      this.surchargePreviewForm.peakPct = Number(map['peak_surcharge_rate'] ?? 20);
+      this.surchargePreviewForm.nightPct = Number(map['night_surcharge_rate'] ?? 15);
+    } catch { } finally {
+      this.loadingSettings.set(false);
+    }
   }
 
-  saveGeneralSettings() {
+  async saveGeneralSettings() {
     this.savingGeneral.set(true);
     const rows = Object.entries(this.generalForm).map(([key, value]) => ({ key, value: String(value) }));
-    this.settingsService.upsertSettings(rows).subscribe({
-      next: () => { this.toast.success('Configuración general guardada'); this.savingGeneral.set(false); },
-      error: () => { this.toast.error('Error al guardar'); this.savingGeneral.set(false); }
-    });
+    try {
+      await this.settingsService.upsertSettings(rows);
+      this.toast.success('Configuración general guardada');
+    } catch { this.toast.error('Error al guardar'); }
+    finally { this.savingGeneral.set(false); }
   }
 
-  saveDeliverySettings() {
+  async saveDeliverySettings() {
     this.savingDelivery.set(true);
     const rows = Object.entries(this.deliveryForm).map(([key, value]) => ({ key, value: String(value) }));
-    this.settingsService.upsertSettings(rows).subscribe({
-      next: () => { this.toast.success('Configuración de delivery guardada'); this.savingDelivery.set(false); },
-      error: () => { this.toast.error('Error al guardar'); this.savingDelivery.set(false); }
-    });
+    try {
+      await this.settingsService.upsertSettings(rows);
+      this.toast.success('Configuración de delivery guardada');
+    } catch { this.toast.error('Error al guardar'); }
+    finally { this.savingDelivery.set(false); }
   }
 
-  saveNotifSettings() {
+  async saveNotifSettings() {
     this.savingNotif.set(true);
     const rows = Object.entries(this.notifForm).map(([key, value]) => ({ key, value: String(value) }));
-    this.settingsService.upsertSettings(rows).subscribe({
-      next: () => { this.toast.success('Configuración de notificaciones guardada'); this.savingNotif.set(false); },
-      error: () => { this.toast.error('Error al guardar'); this.savingNotif.set(false); }
-    });
+    try {
+      await this.settingsService.upsertSettings(rows);
+      this.toast.success('Configuración de notificaciones guardada');
+    } catch { this.toast.error('Error al guardar'); }
+    finally { this.savingNotif.set(false); }
   }
 
-  loadHolidays() {
+  async loadHolidays() {
     this.loadingHolidays.set(true);
-    this.settingsService.getHolidays().subscribe({
-      next: (h) => { this.holidays.set(h); this.loadingHolidays.set(false); },
-      error: () => this.loadingHolidays.set(false)
-    });
+    try {
+      this.holidays.set(await this.settingsService.getHolidays());
+    } catch { } finally { this.loadingHolidays.set(false); }
   }
 
   openHolidayForm(h?: Holiday) {
@@ -1002,33 +1003,31 @@ export class SettingsPageComponent implements OnInit {
     this.showHolidayModal.set(true);
   }
 
-  saveHoliday() {
+  async saveHoliday() {
     this.savingHoliday.set(true);
     const payload = { ...this.holidayForm, id: this.editingHoliday()?.id };
-    this.settingsService.saveHoliday(payload).subscribe({
-      next: () => {
-        this.toast.success('Feriado guardado');
-        this.showHolidayModal.set(false);
-        this.savingHoliday.set(false);
-        this.loadHolidays();
-      },
-      error: () => { this.toast.error('Error al guardar feriado'); this.savingHoliday.set(false); }
-    });
+    try {
+      await this.settingsService.saveHoliday(payload);
+      this.toast.success('Feriado guardado');
+      this.showHolidayModal.set(false);
+      this.loadHolidays();
+    } catch { this.toast.error('Error al guardar feriado'); }
+    finally { this.savingHoliday.set(false); }
   }
 
-  deleteHoliday(id: string) {
-    this.settingsService.deleteHoliday(id).subscribe({
-      next: () => { this.toast.success('Feriado eliminado'); this.loadHolidays(); },
-      error: () => this.toast.error('Error al eliminar')
-    });
+  async deleteHoliday(id: string) {
+    try {
+      await this.settingsService.deleteHoliday(id);
+      this.toast.success('Feriado eliminado');
+      this.loadHolidays();
+    } catch { this.toast.error('Error al eliminar'); }
   }
 
-  loadUsers() {
+  async loadUsers() {
     this.loadingUsers.set(true);
-    this.settingsService.getAdminUsers().subscribe({
-      next: (u) => { this.adminUsers.set(u); this.loadingUsers.set(false); },
-      error: () => this.loadingUsers.set(false)
-    });
+    try {
+      this.adminUsers.set(await this.settingsService.getAdminUsers());
+    } catch { } finally { this.loadingUsers.set(false); }
   }
 
   openUserForm() {
@@ -1037,28 +1036,25 @@ export class SettingsPageComponent implements OnInit {
     this.showUserModal.set(true);
   }
 
-  createUser() {
+  async createUser() {
     this.creatingUser.set(true);
     this.createUserError.set('');
-    this.settingsService.createAdminUser(this.userForm).subscribe({
-      next: () => {
-        this.toast.success('Usuario creado exitosamente');
-        this.showUserModal.set(false);
-        this.creatingUser.set(false);
-        this.loadUsers();
-      },
-      error: (err) => {
-        this.createUserError.set(err?.message ?? 'Error al crear usuario');
-        this.creatingUser.set(false);
-      }
-    });
+    try {
+      await this.settingsService.createAdminUser(this.userForm);
+      this.toast.success('Usuario creado exitosamente');
+      this.showUserModal.set(false);
+      this.loadUsers();
+    } catch (err: unknown) {
+      this.createUserError.set((err as Error)?.message ?? 'Error al crear usuario');
+    } finally { this.creatingUser.set(false); }
   }
 
-  toggleUser(u: AdminUser) {
-    this.settingsService.toggleAdminUser(u.id, !u.is_active).subscribe({
-      next: () => { this.toast.success(`Usuario ${!u.is_active ? 'activado' : 'desactivado'}`); this.loadUsers(); },
-      error: () => this.toast.error('Error al actualizar usuario')
-    });
+  async toggleUser(u: AdminUser) {
+    try {
+      await this.settingsService.toggleAdminUser(u.id, !u.is_active);
+      this.toast.success(`Usuario ${!u.is_active ? 'activado' : 'desactivado'}`);
+      this.loadUsers();
+    } catch { this.toast.error('Error al actualizar usuario'); }
   }
 
   // ── SA-6 properties ────────────────────────────────────────────────────
@@ -1120,38 +1116,36 @@ export class SettingsPageComponent implements OnInit {
     }
   }
 
-  confirmAutoApprove() {
+  async confirmAutoApprove() {
     this.approvingAll.set(true);
     this.comerciosForm.store_auto_approve = true;
     this.showAutoApproveConfirm.set(false);
-    this.settingsService.approveAllPendingStores().subscribe({
-      next: () => {
-        this.toast.success('Todos los comercios pendientes han sido aprobados');
-        this.approvingAll.set(false);
-        this.saveComercios();
-      },
-      error: () => { this.toast.error('Error al aprobar comercios pendientes'); this.approvingAll.set(false); }
-    });
+    try {
+      await this.settingsService.approveAllPendingStores();
+      this.toast.success('Todos los comercios pendientes han sido aprobados');
+      this.saveComercios();
+    } catch { this.toast.error('Error al aprobar comercios pendientes'); }
+    finally { this.approvingAll.set(false); }
   }
 
-  saveComercios() {
+  async saveComercios() {
     this.savingComercios.set(true);
     const rows = Object.entries(this.comerciosForm).map(([key, value]) => ({ key, value: String(value) }));
-    this.settingsService.upsertSettings(rows).subscribe({
-      next: () => { this.toast.success('Configuración de comercios guardada'); this.savingComercios.set(false); },
-      error: () => { this.toast.error('Error al guardar'); this.savingComercios.set(false); }
-    });
+    try {
+      await this.settingsService.upsertSettings(rows);
+      this.toast.success('Configuración de comercios guardada');
+    } catch { this.toast.error('Error al guardar'); }
+    finally { this.savingComercios.set(false); }
   }
 
   // ── SA-6.2 methods ────────────────────────────────────────────────────
 
-  loadCategories() {
+  async loadCategories() {
     this.loadingCategories.set(true);
     const filter = this.categoryTypeFilter === 'all' ? undefined : this.categoryTypeFilter as CommerceType;
-    this.settingsService.getStoreCategories(filter).subscribe({
-      next: (cats) => { this.categories.set(cats); this.loadingCategories.set(false); },
-      error: () => this.loadingCategories.set(false)
-    });
+    try {
+      this.categories.set(await this.settingsService.getStoreCategories(filter));
+    } catch { } finally { this.loadingCategories.set(false); }
   }
 
   openCategoryForm(cat?: StoreCategory) {
@@ -1162,30 +1156,26 @@ export class SettingsPageComponent implements OnInit {
     this.showCategoryModal.set(true);
   }
 
-  saveCategory() {
+  async saveCategory() {
     this.savingCategory.set(true);
     const payload = { ...this.categoryForm, id: this.editingCategory()?.id };
-    this.settingsService.saveStoreCategory(payload).subscribe({
-      next: () => {
-        this.toast.success('Categoría guardada');
-        this.showCategoryModal.set(false);
-        this.savingCategory.set(false);
-        this.loadCategories();
-      },
-      error: () => { this.toast.error('Error al guardar categoría'); this.savingCategory.set(false); }
-    });
+    try {
+      await this.settingsService.saveStoreCategory(payload);
+      this.toast.success('Categoría guardada');
+      this.showCategoryModal.set(false);
+      this.loadCategories();
+    } catch { this.toast.error('Error al guardar categoría'); }
+    finally { this.savingCategory.set(false); }
   }
 
-  deleteCategory(id: string) {
+  async deleteCategory(id: string) {
     this.deletingCategoryId.set(id);
-    this.settingsService.deleteStoreCategory(id).subscribe({
-      next: () => {
-        this.toast.success('Categoría eliminada');
-        this.deletingCategoryId.set(null);
-        this.loadCategories();
-      },
-      error: () => { this.toast.error('Error al eliminar'); this.deletingCategoryId.set(null); }
-    });
+    try {
+      await this.settingsService.deleteStoreCategory(id);
+      this.toast.success('Categoría eliminada');
+      this.loadCategories();
+    } catch { this.toast.error('Error al eliminar'); }
+    finally { this.deletingCategoryId.set(null); }
   }
 
   generateSlug(name: string) {
@@ -1215,19 +1205,17 @@ export class SettingsPageComponent implements OnInit {
     const updated = cats.map((c, i) => ({ ...c, display_order: i }));
     this.categories.set(updated);
     this.draggedIndex.set(null);
-    this.settingsService.reorderCategories(updated.map((c, i) => ({ id: c.id, order: i }))).subscribe({
-      error: () => this.toast.error('Error al reordenar categorías')
-    });
+    this.settingsService.reorderCategories(updated.map((c, i) => ({ id: c.id, order: i })))
+      .catch(() => this.toast.error('Error al reordenar categorías'));
   }
 
   // ── SA-6.3 methods ────────────────────────────────────────────────────
 
-  loadAuditLog() {
+  async loadAuditLog() {
     this.loadingAudit.set(true);
-    this.settingsService.getAuditLog(this.auditFilter).subscribe({
-      next: (logs) => { this.auditLogs.set(logs); this.loadingAudit.set(false); },
-      error: () => this.loadingAudit.set(false)
-    });
+    try {
+      this.auditLogs.set(await this.settingsService.getAuditLog(this.auditFilter));
+    } catch { } finally { this.loadingAudit.set(false); }
   }
 
   exportAuditCsv() {
@@ -1297,7 +1285,7 @@ export class SettingsPageComponent implements OnInit {
     return false;
   }
 
-  saveSurchargeParams() {
+  async saveSurchargeParams() {
     this.savingSurcharge.set(true);
     const f = this.surchargePreviewForm;
     const rows = [
@@ -1306,16 +1294,14 @@ export class SettingsPageComponent implements OnInit {
       { key: 'peak_surcharge_rate', value: String(f.peakPct) },
       { key: 'night_surcharge_rate', value: String(f.nightPct) },
     ];
-    this.settingsService.upsertSettings(rows).subscribe({
-      next: () => {
-        // sync delivery form too
-        this.deliveryForm.weather_surcharge_rate = f.weatherPct;
-        this.deliveryForm.peak_surcharge_rate = f.peakPct;
-        this.deliveryForm.night_surcharge_rate = f.nightPct;
-        this.toast.success('Parámetros de tarifa guardados');
-        this.savingSurcharge.set(false);
-      },
-      error: () => { this.toast.error('Error al guardar'); this.savingSurcharge.set(false); }
-    });
+    try {
+      await this.settingsService.upsertSettings(rows);
+      // sync delivery form too
+      this.deliveryForm.weather_surcharge_rate = f.weatherPct;
+      this.deliveryForm.peak_surcharge_rate = f.peakPct;
+      this.deliveryForm.night_surcharge_rate = f.nightPct;
+      this.toast.success('Parámetros de tarifa guardados');
+    } catch { this.toast.error('Error al guardar'); }
+    finally { this.savingSurcharge.set(false); }
   }
 }

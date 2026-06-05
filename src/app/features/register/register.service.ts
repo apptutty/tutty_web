@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
-import { RegistrationDraft } from '../../core/supabase/database.types';
+import { RegistrationDraft, StoreCategory } from '../../core/supabase/database.types';
 
 const DEFAULT_DRAFT: RegistrationDraft = {
     commerce_type: null,
@@ -57,6 +57,16 @@ export class RegisterService {
 
         if (error) throw error;
         return data === null;
+    }
+
+    async getStoreCategories(commerceType: string): Promise<StoreCategory[]> {
+        const { data } = await this.supabase
+            .from('restaurant_categories')
+            .select('*')
+            .eq('commerce_type', commerceType)
+            .eq('is_active', true)
+            .order('display_order');
+        return (data ?? []) as StoreCategory[];
     }
 
     async uploadFile(file: File, bucket: string, path: string): Promise<string> {

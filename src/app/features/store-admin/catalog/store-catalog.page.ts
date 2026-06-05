@@ -15,6 +15,7 @@ import { StoreAdminService } from '../store-admin.service';
 import { StoreCatalogService } from './store-catalog.service';
 import { ProductCardComponent } from './product-card.component';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
 
 @Component({
@@ -371,6 +372,7 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
     private readonly storeService = inject(StoreAdminService);
     private readonly catalogService = inject(StoreCatalogService);
     private readonly toast = inject(ToastService);
+    private readonly confirmSvc = inject(ConfirmService);
     private readonly router = inject(Router);
     private sub?: Subscription;
 
@@ -523,7 +525,12 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
     }
 
     async deleteCategory(cat: MenuCategory) {
-        if (!confirm(`¿Eliminar categoría "${cat.name}"? Los productos quedarán sin categoría.`)) return;
+        const ok = await this.confirmSvc.confirm({
+            title: 'Eliminar categoría',
+            message: `¿Eliminar categoría "${cat.name}"? Los productos quedarán sin categoría.`,
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await this.catalogService.updateCategory(cat.id, { is_active: false });
             this.categories.update(list => list.filter(c => c.id !== cat.id));
@@ -566,7 +573,12 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
 
     async onDeleteProduct(id: string) {
         const prod = this.allProducts().find(p => p.id === id);
-        if (!confirm(`¿Eliminar "${prod?.name ?? 'este producto'}"? Esta acción no se puede deshacer.`)) return;
+        const ok = await this.confirmSvc.confirm({
+            title: 'Eliminar producto',
+            message: `¿Eliminar "${prod?.name ?? 'este producto'}"? Esta acción no se puede deshacer.`,
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await this.catalogService.deleteProduct(id);
             this.allProducts.update(list => list.filter(p => p.id !== id));

@@ -1,22 +1,819 @@
-import { Component } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    signal,
+    computed,
+    inject,
+    effect,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { StoreAdminService } from '../store-admin.service';
+import { StoreSettingsService, TeamMember, StoreNotifPrefs } from './store-settings.service';
+import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
+import { Restaurant, StoreCategory, Payout } from '../../../core/supabase/database.types';
+
+type Tab = 'perfil' | 'horarios' | 'delivery' | 'notificaciones' | 'equipo' | 'finanzas';
+
+const DAYS_LIST = [
+    { key: 'lunes', label: 'Lun' }, { key: 'martes', label: 'Mar' },
+    { key: 'miercoles', label: 'Mié' }, { key: 'jueves', label: 'Jue' },
+    { key: 'viernes', label: 'Vie' }, { key: 'sabado', label: 'Sáb' },
+    { key: 'domingo', label: 'Dom' },
+];
+
+interface ProfileForm {
+    name: string; description: string; whatsapp_number: string;
+    address: string; sector: string; city: string; category_id: string | null;
+    logo_url: string | null; banner_url: string | null;
+}
+
+interface ScheduleForm {
+    open_days: string[]; opening_time: string; closing_time: string;
+    special_hours: boolean; avg_service_time: number;
+    per_day: Record<string, { opening_time: string; closing_time: string }>;
+}
+
+interface DeliveryForm {
+    min_order_amount: number; free_delivery_enabled: boolean;
+    free_delivery_threshold: number; express_delivery: boolean; express_fee: number;
+}
 
 @Component({
     selector: 'app-store-settings',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
+    styles: [`
+    .tab-btn { padding: 8px 16px; border-bottom: 2px solid transparent; font-size: 0.875rem; font-weight: 500; color: #6b7280; transition: all 0.15s; white-space: nowrap; cursor: pointer; }
+    .tab-btn.active { border-bottom-color: #e91e8c; color: #e91e8c; }
+    .tab-btn:hover:not(.active) { color: #374151; border-bottom-color: #e5e7eb; }
+    .section-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 12px; }
+    .day-btn { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .day-btn.on { background: #e91e8c; border-color: #e91e8c; color: white; }
+    .day-btn:not(.on):hover { border-color: #e91e8c; color: #e91e8c; }
+    .toggle-track { position: relative; display: inline-flex; width: 44px; height: 24px; border-radius: 12px; background: #d1d5db; cursor: pointer; transition: background .3s; }
+    .toggle-track.on { background: #e91e8c; }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform .3s; }
+    .toggle-track.on .toggle-thumb { transform: translateX(20px); }
+  `],
     template: `
-    <div class="p-6 lg:p-8 space-y-6">
-      <h1 class="text-2xl font-bold text-gray-900">Configuración</h1>
-      <div class="card p-10 text-center text-gray-400">
-        <svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <p class="font-medium">Configuración del comercio</p>
-        <p class="text-sm mt-1">Esta sección estará disponible próximamente.</p>
+  <div class="min-h-screen bg-gray-50">
+
+    <!-- Header + Tabs -->
+    <div class="bg-white border-b border-gray-200 px-6 sticky top-0 z-10">
+      <div class="flex items-center justify-between pt-4 pb-0">
+        <h1 class="text-xl font-bold text-gray-900">Configuración del comercio</h1>
+        @if (isSaving()) {
+          <div class="flex items-center gap-2 text-sm text-gray-500">
+            <div class="w-4 h-4 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin"></div>
+            Guardando...
+          </div>
+        }
+      </div>
+      <div class="flex gap-0 overflow-x-auto mt-2 -mb-px">
+        @for (t of tabs; track t.key) {
+          <button class="tab-btn" [class.active]="activeTab() === t.key"
+            (click)="activeTab.set(t.key)">{{ t.label }}</button>
+        }
       </div>
     </div>
+
+    <div class="max-w-3xl mx-auto p-6 space-y-6">
+
+      <!-- ═══ TAB: PERFIL ═══════════════════════════════════════ -->
+      @if (activeTab() === 'perfil') {
+
+        <!-- Images -->
+        <div class="card p-5 space-y-4">
+          <p class="section-title">Imágenes</p>
+          <div class="flex gap-4 flex-wrap">
+            <!-- Logo -->
+            <div>
+              <p class="text-xs text-gray-500 mb-1">Logo (1:1)</p>
+              <div class="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
+                (click)="logoInput.click()">
+                @if (profileForm.logo_url) {
+                  <img [src]="profileForm.logo_url" class="w-full h-full object-cover" alt="Logo" />
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center text-gray-300 text-2xl">🏪</div>
+                }
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <span class="text-white text-xs">Cambiar</span>
+                </div>
+              </div>
+              <input #logoInput type="file" accept="image/*" class="hidden"
+                (change)="onImageSelected($event, 'logo')" />
+            </div>
+            <!-- Banner -->
+            <div class="flex-1 min-w-48">
+              <p class="text-xs text-gray-500 mb-1">Banner (16:9)</p>
+              <div class="h-24 rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
+                (click)="bannerInput.click()">
+                @if (profileForm.banner_url) {
+                  <img [src]="profileForm.banner_url" class="w-full h-full object-cover" alt="Banner" />
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center text-gray-300 text-sm">Banner del comercio</div>
+                }
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <span class="text-white text-xs">Cambiar</span>
+                </div>
+              </div>
+              <input #bannerInput type="file" accept="image/*" class="hidden"
+                (change)="onImageSelected($event, 'banner')" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Basic info -->
+        <div class="card p-5 space-y-4">
+          <p class="section-title">Información básica</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+              <label class="label">Nombre del comercio *</label>
+              <input [(ngModel)]="profileForm.name" class="input-field w-full" placeholder="Nombre" />
+            </div>
+            <div class="col-span-2">
+              <label class="label">Descripción</label>
+              <textarea [(ngModel)]="profileForm.description" rows="3"
+                class="input-field w-full resize-none" placeholder="Cuéntale a tus clientes sobre tu negocio..."></textarea>
+            </div>
+            <div>
+              <label class="label">WhatsApp de contacto</label>
+              <input [(ngModel)]="profileForm.whatsapp_number" class="input-field w-full" placeholder="+1809XXXXXXX" />
+            </div>
+            <div>
+              <label class="label">Categoría</label>
+              <select [(ngModel)]="profileForm.category_id" class="input-field w-full">
+                <option [value]="null">Sin categoría</option>
+                @for (cat of storeCategories(); track cat.id) {
+                  <option [value]="cat.id">{{ cat.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="card p-5 space-y-4">
+          <p class="section-title">Ubicación</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+              <label class="label">Dirección</label>
+              <input [(ngModel)]="profileForm.address" class="input-field w-full" placeholder="Calle, número, local..." />
+            </div>
+            <div>
+              <label class="label">Sector</label>
+              <input [(ngModel)]="profileForm.sector" class="input-field w-full" placeholder="Ej. Piantini" />
+            </div>
+            <div>
+              <label class="label">Ciudad</label>
+              <input [(ngModel)]="profileForm.city" class="input-field w-full" placeholder="Ej. Santo Domingo" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Slug (read-only) -->
+        <div class="card p-5">
+          <p class="section-title">Identificador (slug)</p>
+          <div class="flex items-center gap-3">
+            <span class="text-gray-500 text-sm">tutty.do/</span>
+            <code class="bg-gray-100 px-3 py-1.5 rounded-lg text-sm text-gray-700">{{ store()?.slug }}</code>
+            <span class="text-xs text-gray-400 italic">Solo superadmin puede modificarlo</span>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button (click)="saveProfile()" [disabled]="isSaving()"
+            class="btn-primary px-6 py-2 disabled:opacity-50">Guardar perfil</button>
+        </div>
+      }
+
+      <!-- ═══ TAB: HORARIOS ═══════════════════════════════════════ -->
+      @if (activeTab() === 'horarios') {
+        <div class="card p-5 space-y-5">
+          <p class="section-title">Días de apertura</p>
+          <div class="flex gap-2 flex-wrap">
+            @for (day of days; track day.key) {
+              <button type="button" class="day-btn"
+                [class.on]="scheduleForm.open_days.includes(day.key)"
+                (click)="toggleDay(day.key)">{{ day.label }}</button>
+            }
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label">Hora de apertura</label>
+              <input type="time" [(ngModel)]="scheduleForm.opening_time" class="input-field w-full" />
+            </div>
+            <div>
+              <label class="label">Hora de cierre</label>
+              <input type="time" [(ngModel)]="scheduleForm.closing_time" class="input-field w-full" />
+            </div>
+          </div>
+
+          <!-- Preview -->
+          @if (scheduleForm.open_days.length > 0) {
+            <div class="bg-blue-50 rounded-xl p-3 text-sm text-blue-800">
+              📅 {{ schedulePreview() }}
+            </div>
+          }
+
+          <!-- Avg service time -->
+          <div>
+            <label class="label">Tiempo promedio de preparación/servicio: <strong>{{ scheduleForm.avg_service_time }} min</strong></label>
+            <input type="range" [(ngModel)]="scheduleForm.avg_service_time" min="5" max="120" step="5"
+              class="w-full accent-pink-600" />
+            <div class="flex justify-between text-xs text-gray-400"><span>5 min</span><span>120 min</span></div>
+          </div>
+
+          <!-- Special hours per day -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-gray-700">¿Horarios especiales por día?</span>
+              <div class="toggle-track" [class.on]="scheduleForm.special_hours"
+                (click)="scheduleForm.special_hours = !scheduleForm.special_hours">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            @if (scheduleForm.special_hours) {
+              <div class="space-y-2 pl-2">
+                @for (day of openDaysList(); track day.key) {
+                  <div class="flex items-center gap-3 py-2 border-b border-gray-100">
+                    <span class="text-sm text-gray-600 w-10 font-medium">{{ day.label }}</span>
+                    <div class="grid grid-cols-2 gap-2 flex-1">
+                      <input type="time" [(ngModel)]="scheduleForm.per_day[day.key].opening_time"
+                        class="input-field py-1 text-sm" />
+                      <input type="time" [(ngModel)]="scheduleForm.per_day[day.key].closing_time"
+                        class="input-field py-1 text-sm" />
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <button (click)="saveSchedule()" [disabled]="isSaving()"
+            class="btn-primary px-6 py-2 disabled:opacity-50">Guardar horarios</button>
+        </div>
+      }
+
+      <!-- ═══ TAB: DELIVERY ═══════════════════════════════════════ -->
+      @if (activeTab() === 'delivery') {
+        <div class="card p-5 space-y-5">
+          <p class="section-title">Condiciones de pedido</p>
+
+          <div>
+            <label class="label">Monto mínimo de pedido (RD\$)</label>
+            <div class="relative max-w-xs">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RD\$</span>
+              <input type="number" [(ngModel)]="deliveryForm.min_order_amount"
+                min="0" step="50" class="input-field w-full pl-12" />
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-700">¿Delivery gratis por monto?</p>
+                <p class="text-xs text-gray-400">Al superar el umbral, el delivery es gratis para el cliente</p>
+              </div>
+              <div class="toggle-track" [class.on]="deliveryForm.free_delivery_enabled"
+                (click)="deliveryForm.free_delivery_enabled = !deliveryForm.free_delivery_enabled">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            @if (deliveryForm.free_delivery_enabled) {
+              <div class="pl-4">
+                <label class="label">Umbral para delivery gratis (RD\$)</label>
+                <div class="relative max-w-xs">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RD\$</span>
+                  <input type="number" [(ngModel)]="deliveryForm.free_delivery_threshold"
+                    min="0" step="100" class="input-field w-full pl-12" />
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="bg-amber-50 text-amber-800 text-sm rounded-xl p-3">
+            💡 El cargo de delivery lo controla Tutty según tus zonas de cobertura configuradas.
+          </div>
+
+          <!-- Express: farmacia only -->
+          @if (commerceType() === 'farmacia') {
+            <div class="border-t border-gray-100 pt-4 space-y-3">
+              <p class="section-title">Farmacia — Entregas express</p>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-gray-700">¿Acepta entregas express (&lt;20 min)?</p>
+                </div>
+                <div class="toggle-track" [class.on]="deliveryForm.express_delivery"
+                  (click)="deliveryForm.express_delivery = !deliveryForm.express_delivery">
+                  <div class="toggle-thumb"></div>
+                </div>
+              </div>
+              @if (deliveryForm.express_delivery) {
+                <div class="pl-4">
+                  <label class="label">Cargo adicional por express (RD\$)</label>
+                  <div class="relative max-w-xs">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RD\$</span>
+                    <input type="number" [(ngModel)]="deliveryForm.express_fee"
+                      min="0" step="50" class="input-field w-full pl-12" />
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="flex justify-end">
+          <button (click)="saveDelivery()" [disabled]="isSaving()"
+            class="btn-primary px-6 py-2 disabled:opacity-50">Guardar delivery</button>
+        </div>
+      }
+
+      <!-- ═══ TAB: NOTIFICACIONES ══════════════════════════════════ -->
+      @if (activeTab() === 'notificaciones') {
+        <div class="card p-5 space-y-5">
+          <p class="section-title">Preferencias de notificación</p>
+
+          <div class="flex items-center justify-between py-2">
+            <div>
+              <p class="text-sm font-medium text-gray-700">Sonido para nuevos pedidos</p>
+              <p class="text-xs text-gray-400">Reproduce un beep cuando entra un nuevo pedido</p>
+            </div>
+            <div class="toggle-track" [class.on]="notifPrefs().soundEnabled"
+              (click)="toggleNotif('soundEnabled')">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-100 pt-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-700">Notificaciones WhatsApp</p>
+                <p class="text-xs text-gray-400">Recibe un mensaje cuando llegue un nuevo pedido</p>
+              </div>
+              <div class="toggle-track" [class.on]="notifPrefs().whatsappEnabled"
+                (click)="toggleNotif('whatsappEnabled')">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            @if (notifPrefs().whatsappEnabled) {
+              <div class="pl-4">
+                <label class="label">Número de WhatsApp para notificaciones</label>
+                <input [ngModel]="notifPrefs().whatsappNumber"
+                  (ngModelChange)="updateNotif('whatsappNumber', $event)"
+                  class="input-field w-full max-w-xs" placeholder="+1809XXXXXXX" />
+              </div>
+            }
+          </div>
+
+          <div class="border-t border-gray-100 pt-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-700">Alertas de stock bajo</p>
+                <p class="text-xs text-gray-400">Notifica cuando un producto llega al umbral mínimo</p>
+              </div>
+              <div class="toggle-track" [class.on]="notifPrefs().lowStockEnabled"
+                (click)="toggleNotif('lowStockEnabled')">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            @if (notifPrefs().lowStockEnabled) {
+              <div class="pl-4">
+                <label class="label">Umbral de alerta (unidades)</label>
+                <input type="number" [ngModel]="notifPrefs().lowStockThreshold"
+                  (ngModelChange)="updateNotif('lowStockThreshold', +$event)"
+                  min="1" class="input-field w-full max-w-xs" />
+              </div>
+            }
+          </div>
+        </div>
+        <!-- No save button: auto-saved to localStorage on each toggle -->
+        <p class="text-center text-xs text-gray-400">Las preferencias se guardan automáticamente en este dispositivo.</p>
+      }
+
+      <!-- ═══ TAB: EQUIPO ══════════════════════════════════════════ -->
+      @if (activeTab() === 'equipo') {
+        <div class="card overflow-hidden">
+          <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800">Administradores del comercio</h3>
+            <button (click)="showInvitePanel.set(!showInvitePanel())"
+              class="btn-primary text-sm py-1.5 px-4 flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+              </svg>
+              Invitar admin
+            </button>
+          </div>
+
+          @if (showInvitePanel()) {
+            <div class="p-4 bg-blue-50 border-b border-blue-100 flex gap-2">
+              <input [(ngModel)]="inviteEmail" placeholder="correo@ejemplo.com"
+                (keyup.enter)="inviteAdmin()" class="input-field flex-1 text-sm py-1.5" />
+              <button (click)="inviteAdmin()" class="btn-primary text-sm px-4 py-1.5"
+                [disabled]="!inviteEmail || isInviting()">
+                {{ isInviting() ? 'Buscando...' : 'Vincular' }}
+              </button>
+              <button (click)="showInvitePanel.set(false)"
+                class="px-3 py-1.5 text-gray-500 hover:bg-gray-100 rounded-lg text-sm">✕</button>
+            </div>
+          }
+
+          @if (teamLoading()) {
+            <div class="p-8 text-center">
+              <div class="w-6 h-6 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin mx-auto"></div>
+            </div>
+          } @else if (teamMembers().length === 0) {
+            <div class="p-8 text-center text-gray-400 text-sm">No hay admins vinculados</div>
+          } @else {
+            <div class="divide-y divide-gray-100">
+              @for (member of teamMembers(); track member.user_id) {
+                <div class="flex items-center gap-3 px-4 py-3">
+                  <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    @if (member.avatar_url) {
+                      <img [src]="member.avatar_url" class="w-full h-full object-cover" [alt]="member.full_name" />
+                    } @else {
+                      <span class="text-gray-500 font-semibold text-sm">{{ member.full_name[0] | uppercase }}</span>
+                    }
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ member.full_name }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ member.email }}</p>
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    <p class="text-xs text-gray-400">Desde {{ member.joined_at | date:'dd/MM/yy' }}</p>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ member.role }}</span>
+                  </div>
+                  <button (click)="removeTeamMember(member)"
+                    class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-2"
+                    title="Eliminar acceso">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM4 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                    </svg>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ═══ TAB: FINANZAS ════════════════════════════════════════ -->
+      @if (activeTab() === 'finanzas') {
+        <!-- Commission info -->
+        <div class="card p-5 space-y-4">
+          <p class="section-title">Comisión y tier</p>
+          <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex-1">
+              <p class="text-xs text-gray-500 mb-1">Tasa de comisión actual</p>
+              <p class="text-3xl font-bold text-gray-900">{{ ((store()?.commission_rate ?? 0) * 100).toFixed(1) }}%</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 mb-1">Tier</p>
+              <span class="px-3 py-1 rounded-full text-white text-sm font-semibold"
+                [style.background]="tierColor()">{{ tierLabel() }}</span>
+            </div>
+          </div>
+          @if (store()?.commission_tier === 'onboarding') {
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+              ⏳ Días restantes en tarifa especial de onboarding:
+              <strong>{{ onboardingDaysLeft() }} días</strong>
+            </div>
+          }
+        </div>
+
+        <!-- Pending balance -->
+        <div class="card p-5">
+          <p class="section-title">Saldo pendiente de cobro</p>
+          @if (pendingBalanceLoading()) {
+            <div class="h-8 w-24 bg-gray-100 rounded animate-pulse"></div>
+          } @else {
+            <p class="text-3xl font-bold text-gray-900">RD\$ {{ pendingBalance() | number:'1.0-0' }}</p>
+            <p class="text-xs text-gray-400 mt-1">Pedidos entregados aún no liquidados</p>
+          }
+        </div>
+
+        <!-- Payouts table -->
+        <div class="card overflow-hidden">
+          <div class="p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">Historial de liquidaciones</h3>
+          </div>
+          @if (payoutsLoading()) {
+            <div class="p-8 text-center">
+              <div class="w-6 h-6 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin mx-auto"></div>
+            </div>
+          } @else if (payouts().length === 0) {
+            <div class="p-8 text-center text-gray-400 text-sm">No hay liquidaciones registradas</div>
+          } @else {
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+                <tr>
+                  <th class="px-4 py-2 text-left">Período</th>
+                  <th class="px-4 py-2 text-right">Ventas</th>
+                  <th class="px-4 py-2 text-right">Comisión</th>
+                  <th class="px-4 py-2 text-right">Neto</th>
+                  <th class="px-4 py-2 text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                @for (p of payouts(); track p.id) {
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2.5 text-gray-600">
+                      {{ p.period_from | date:'dd/MM' }} – {{ p.period_to | date:'dd/MM/yy' }}
+                    </td>
+                    <td class="px-4 py-2.5 text-right">RD\$ {{ p.gross_sales | number:'1.0-0' }}</td>
+                    <td class="px-4 py-2.5 text-right text-red-600">-RD\$ {{ p.commission_total | number:'1.0-0' }}</td>
+                    <td class="px-4 py-2.5 text-right font-semibold">RD\$ {{ p.net_amount | number:'1.0-0' }}</td>
+                    <td class="px-4 py-2.5 text-center">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                        [class]="payoutStatusClass(p.status)">{{ p.status }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
   `,
 })
-export class StoreSettingsPageComponent { }
+export class StoreSettingsPageComponent implements OnInit {
+    private readonly storeAdminSvc = inject(StoreAdminService);
+    private readonly settingsSvc = inject(StoreSettingsService);
+    private readonly toast = inject(ToastService);
+    private readonly confirmSvc = inject(ConfirmService);
+
+    readonly tabs: { key: Tab; label: string }[] = [
+        { key: 'perfil', label: 'Perfil' },
+        { key: 'horarios', label: 'Horarios' },
+        { key: 'delivery', label: 'Delivery' },
+        { key: 'notificaciones', label: 'Notificaciones' },
+        { key: 'equipo', label: 'Equipo' },
+        { key: 'finanzas', label: 'Finanzas' },
+    ];
+
+    readonly days = DAYS_LIST;
+    readonly activeTab = signal<Tab>('perfil');
+    readonly isSaving = computed(() => this.settingsSvc.isSaving());
+    readonly store = computed(() => this.storeAdminSvc.activeStore());
+    readonly commerceType = computed(() => this.store()?.commerce_type ?? 'otro');
+
+    // Profile
+    profileForm: ProfileForm = { name: '', description: '', whatsapp_number: '', address: '', sector: '', city: '', category_id: null, logo_url: null, banner_url: null };
+    readonly storeCategories = signal<StoreCategory[]>([]);
+    private logoFile: File | null = null;
+    private bannerFile: File | null = null;
+
+    // Schedule
+    scheduleForm: ScheduleForm = { open_days: [], opening_time: '09:00', closing_time: '22:00', special_hours: false, avg_service_time: 30, per_day: {} };
+
+    readonly openDaysList = computed(() =>
+        this.days.filter(d => this.scheduleForm.open_days.includes(d.key)),
+    );
+
+    readonly schedulePreview = computed(() => {
+        const days = this.scheduleForm.open_days;
+        if (!days.length) return '';
+        const dayLabels = days.map(d => DAYS_LIST.find(x => x.key === d)?.label ?? d);
+        const fmt = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            const suffix = h >= 12 ? 'pm' : 'am';
+            const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+            return `${h12}:${m.toString().padStart(2, '0')}${suffix}`;
+        };
+        return `Esta semana estarás abierto ${dayLabels.join('-')} de ${fmt(this.scheduleForm.opening_time)} a ${fmt(this.scheduleForm.closing_time)}`;
+    });
+
+    // Delivery
+    deliveryForm: DeliveryForm = { min_order_amount: 0, free_delivery_enabled: false, free_delivery_threshold: 500, express_delivery: false, express_fee: 100 };
+
+    // Notifications (reactive)
+    private readonly notifPrefsSignal = signal<StoreNotifPrefs>({ soundEnabled: true, whatsappEnabled: false, whatsappNumber: '', lowStockEnabled: false, lowStockThreshold: 5 });
+    readonly notifPrefs = this.notifPrefsSignal.asReadonly();
+
+    // Team
+    readonly teamMembers = signal<TeamMember[]>([]);
+    readonly teamLoading = signal(false);
+    readonly showInvitePanel = signal(false);
+    readonly isInviting = signal(false);
+    inviteEmail = '';
+
+    // Finances
+    readonly payouts = signal<Payout[]>([]);
+    readonly payoutsLoading = signal(false);
+    readonly pendingBalance = signal(0);
+    readonly pendingBalanceLoading = signal(false);
+
+    readonly tierLabel = computed(() => this.settingsSvc.tierLabel(this.store()?.commission_tier));
+    readonly tierColor = computed(() => this.settingsSvc.tierColor(this.store()?.commission_tier));
+    readonly onboardingDaysLeft = computed(() => this.settingsSvc.onboardingDaysLeft(this.store()?.activated_at));
+
+    constructor() {
+        effect(() => {
+            const s = this.store();
+            if (!s) return;
+            this.initFromStore(s);
+            this.loadStoreCategories(s.commerce_type);
+            this.notifPrefsSignal.set(this.settingsSvc.loadNotifPrefs(s.id));
+        });
+
+        effect(() => {
+            const tab = this.activeTab();
+            const storeId = this.storeAdminSvc.activeStoreId();
+            if (!storeId) return;
+            if (tab === 'equipo' && this.teamMembers().length === 0) this.loadTeam(storeId);
+            if (tab === 'finanzas' && this.payouts().length === 0) this.loadFinances(storeId);
+        });
+    }
+
+    ngOnInit() { }
+
+    private initFromStore(s: Restaurant) {
+        this.profileForm = {
+            name: s.name, description: s.description ?? '', whatsapp_number: s.whatsapp_number ?? '',
+            address: s.address ?? '', sector: s.sector ?? '', city: s.city,
+            category_id: s.category_id ?? null, logo_url: s.logo_url ?? null, banner_url: s.banner_url ?? null,
+        };
+        this.scheduleForm = {
+            open_days: s.open_days ?? [], opening_time: s.opening_time ?? '09:00',
+            closing_time: s.closing_time ?? '22:00', special_hours: false,
+            avg_service_time: s.avg_service_time ?? 30, per_day: {},
+        };
+        DAYS_LIST.forEach(d => {
+            this.scheduleForm.per_day[d.key] = {
+                opening_time: s.opening_time ?? '09:00',
+                closing_time: s.closing_time ?? '22:00',
+            };
+        });
+        this.deliveryForm = {
+            min_order_amount: s.min_order_amount ?? 0,
+            free_delivery_enabled: !!(s.free_delivery_threshold && s.free_delivery_threshold > 0),
+            free_delivery_threshold: s.free_delivery_threshold ?? 500,
+            express_delivery: false, express_fee: 100,
+        };
+    }
+
+    private loadStoreCategories(type: string) {
+        this.settingsSvc.getStoreCategories(type).subscribe({
+            next: cats => this.storeCategories.set(cats),
+            error: () => { },
+        });
+    }
+
+    private loadTeam(storeId: string) {
+        this.teamLoading.set(true);
+        this.settingsSvc.getTeamMembers(storeId).subscribe({
+            next: m => { this.teamMembers.set(m); this.teamLoading.set(false); },
+            error: () => this.teamLoading.set(false),
+        });
+    }
+
+    private loadFinances(storeId: string) {
+        this.payoutsLoading.set(true);
+        this.pendingBalanceLoading.set(true);
+        this.settingsSvc.getPayouts(storeId).subscribe({
+            next: p => { this.payouts.set(p); this.payoutsLoading.set(false); },
+            error: () => this.payoutsLoading.set(false),
+        });
+        this.settingsSvc.getPendingBalance(storeId).then(b => {
+            this.pendingBalance.set(b);
+            this.pendingBalanceLoading.set(false);
+        }).catch(() => this.pendingBalanceLoading.set(false));
+    }
+
+    // ─── Profile ────────────────────────────────────────────────────────────
+    async onImageSelected(event: Event, type: 'logo' | 'banner') {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        const preview = URL.createObjectURL(file);
+        if (type === 'logo') { this.logoFile = file; this.profileForm.logo_url = preview; }
+        else { this.bannerFile = file; this.profileForm.banner_url = preview; }
+    }
+
+    async saveProfile() {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        try {
+            const patch: Partial<Restaurant> = {
+                name: this.profileForm.name, description: this.profileForm.description || null,
+                whatsapp_number: this.profileForm.whatsapp_number || null,
+                address: this.profileForm.address, sector: this.profileForm.sector, city: this.profileForm.city,
+                category_id: this.profileForm.category_id,
+            };
+            if (this.logoFile) patch.logo_url = await this.settingsSvc.uploadImage(this.logoFile, storeId, 'logo');
+            if (this.bannerFile) patch.banner_url = await this.settingsSvc.uploadImage(this.bannerFile, storeId, 'banner');
+            await this.settingsSvc.updateStore(storeId, patch);
+            this.storeAdminSvc.stores.update(list => list.map(s => s.id === storeId ? { ...s, ...patch } : s));
+            this.logoFile = null; this.bannerFile = null;
+            this.toast.success('Perfil actualizado');
+        } catch { this.toast.error('Error al guardar perfil'); }
+    }
+
+    toggleDay(key: string) {
+        this.scheduleForm.open_days = this.scheduleForm.open_days.includes(key)
+            ? this.scheduleForm.open_days.filter(d => d !== key)
+            : [...this.scheduleForm.open_days, key];
+        if (!this.scheduleForm.per_day[key]) {
+            this.scheduleForm.per_day[key] = { opening_time: this.scheduleForm.opening_time, closing_time: this.scheduleForm.closing_time };
+        }
+    }
+
+    async saveSchedule() {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        try {
+            await this.settingsSvc.updateStore(storeId, {
+                open_days: this.scheduleForm.open_days,
+                opening_time: this.scheduleForm.opening_time,
+                closing_time: this.scheduleForm.closing_time,
+                avg_service_time: this.scheduleForm.avg_service_time,
+            });
+            this.storeAdminSvc.stores.update(list => list.map(s => s.id === storeId ? {
+                ...s, open_days: this.scheduleForm.open_days,
+                opening_time: this.scheduleForm.opening_time, closing_time: this.scheduleForm.closing_time,
+            } : s));
+            this.toast.success('Horarios actualizados');
+        } catch { this.toast.error('Error al guardar horarios'); }
+    }
+
+    async saveDelivery() {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        try {
+            await this.settingsSvc.updateStore(storeId, {
+                min_order_amount: this.deliveryForm.min_order_amount,
+                free_delivery_threshold: this.deliveryForm.free_delivery_enabled ? this.deliveryForm.free_delivery_threshold : null,
+            });
+            this.storeAdminSvc.stores.update(list => list.map(s => s.id === storeId ? {
+                ...s, min_order_amount: this.deliveryForm.min_order_amount,
+                free_delivery_threshold: this.deliveryForm.free_delivery_enabled ? this.deliveryForm.free_delivery_threshold : null,
+            } : s));
+            this.toast.success('Delivery actualizado');
+        } catch { this.toast.error('Error al guardar delivery'); }
+    }
+
+    // ─── Notifications ───────────────────────────────────────────────────────
+    toggleNotif(key: keyof StoreNotifPrefs) {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        this.notifPrefsSignal.update(p => ({ ...p, [key]: !p[key] }));
+        this.settingsSvc.saveNotifPrefs(storeId, this.notifPrefsSignal());
+    }
+
+    updateNotif(key: keyof StoreNotifPrefs, val: string | number | boolean) {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        this.notifPrefsSignal.update(p => ({ ...p, [key]: val }));
+        this.settingsSvc.saveNotifPrefs(storeId, this.notifPrefsSignal());
+    }
+
+    // ─── Team ────────────────────────────────────────────────────────────────
+    async inviteAdmin() {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        const email = this.inviteEmail.trim();
+        if (!storeId || !email) return;
+        this.isInviting.set(true);
+        try {
+            const result = await this.settingsSvc.inviteAdminByEmail(storeId, email);
+            if (result === 'linked') {
+                this.toast.success(`${email} vinculado como admin`);
+                this.inviteEmail = '';
+                this.showInvitePanel.set(false);
+                this.loadTeam(storeId);
+            } else {
+                this.toast.warning('Usuario no encontrado. Pídele que se registre primero en Tutty.');
+            }
+        } catch { this.toast.error('Error al vincular usuario'); }
+        finally { this.isInviting.set(false); }
+    }
+
+    async removeTeamMember(member: TeamMember) {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        const ok = await this.confirmSvc.confirm({
+            title: 'Eliminar acceso',
+            message: `¿Eliminar acceso de ${member.full_name}?`,
+            danger: true,
+        });
+        if (!ok) return;
+        try {
+            await this.settingsSvc.removeAdmin(storeId, member.user_id);
+            this.teamMembers.update(list => list.filter(m => m.user_id !== member.user_id));
+            this.toast.success('Acceso eliminado');
+        } catch { this.toast.error('Error al eliminar acceso'); }
+    }
+
+    // ─── Finances helpers ────────────────────────────────────────────────────
+    payoutStatusClass(status: string): string {
+        if (status === 'pagado') return 'bg-green-100 text-green-700';
+        if (status === 'pendiente') return 'bg-amber-100 text-amber-700';
+        return 'bg-red-100 text-red-700';
+    }
+}

@@ -235,6 +235,23 @@ export interface Courier {
   email?: string;
 }
 
+export interface ExcursionCategory {
+  id: string;
+  key: string;
+  label: string;
+  icon: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ExcursionOperatorNotifPrefs {
+  nuevaReservaWA: boolean;
+  cancelacionWA: boolean;
+  recordatorioAnterior: boolean;
+  notifWhatsapp: string;
+}
+
 export interface ExcursionOperator {
   id: string;
   name: string;
@@ -248,7 +265,16 @@ export interface ExcursionOperator {
   avg_rating: number;
   total_reviews: number;
   is_active: boolean;
+  approval_status?: ApprovalStatus;
+  // Extended operator fields
+  has_insurance: boolean;
+  has_tourism_license: boolean;
+  tourism_license_number?: string | null;
+  languages: string[];
+  notification_prefs?: ExcursionOperatorNotifPrefs | null;
+  years_experience?: string | null;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Excursion {
@@ -289,18 +315,23 @@ export interface Booking {
   booking_number?: string | null;
   excursion_date_id: string;
   user_id: string;
+  operator_id?: string;
   num_people: number;
   total: number;
   status: BookingStatus;
   special_requests?: string | null;
   cancellation_reason?: string | null;
+  reminder_sent_at?: string | null;
+  confirmed_at?: string | null;
+  cancelled_at?: string | null;
+  completed_at?: string | null;
   created_at: string;
 }
 
 export interface BookingDetail extends Booking {
-  excursion: { id: string; name: string; operator: { name: string } };
+  excursion: { id: string; name: string; price_per_person: number; meeting_point?: string | null; operator: { name: string } };
   excursion_date: { date: string; departure_time: string };
-  customer: { full_name: string; phone?: string };
+  customer: { full_name: string; phone?: string | null; email?: string | null };
   participants: BookingParticipant[];
 }
 
@@ -511,6 +542,39 @@ export interface AuditLogEntry {
 }
 
 // ── B-0 Registration flow ──────────────────────────────────────────────────
+
+export interface OperatorRegistrationDraft {
+  // Step 1 – profile
+  name: string;
+  slug: string;
+  description: string;
+  category: string | null;
+  whatsapp_number: string;
+  address: string;
+  logo_url: string | null;
+  banner_url: string | null;
+  years_experience: string;
+  has_insurance: boolean;
+  has_tourism_license: boolean;
+  tourism_license_number: string;
+  languages: string[];
+  // Step 2 – optional first tour
+  tour_enabled: boolean;
+  tour_name: string;
+  tour_short_description: string;
+  tour_price: number;
+  tour_duration_hours: number;
+  tour_difficulty: ExcursionDifficulty | null;
+  tour_meeting_point: string;
+  tour_min_people: number;
+  tour_max_people: number;
+  tour_photos: string[];
+  // Step 3 – account
+  email: string;
+  password: string;
+  full_name: string;
+  phone: string;
+}
 
 export interface RegistrationDraft {
   // Step 1 – commerce type
