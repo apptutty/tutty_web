@@ -5,10 +5,10 @@ import { SettingsService, AdminUser } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-  selector: 'app-settings-usuarios',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-settings-usuarios',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    template: `
     <div>
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">Usuarios Administradores</h3>
@@ -104,56 +104,56 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
   `,
 })
 export class UsuariosPageComponent implements OnInit {
-  private readonly svc = inject(SettingsService);
-  private readonly toast = inject(ToastService);
+    private readonly svc = inject(SettingsService);
+    private readonly toast = inject(ToastService);
 
-  readonly loading = signal(false);
-  readonly creating = signal(false);
-  readonly users = signal<AdminUser[]>([]);
-  readonly showModal = signal(false);
-  readonly createError = signal('');
-  form = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
+    readonly loading = signal(false);
+    readonly creating = signal(false);
+    readonly users = signal<AdminUser[]>([]);
+    readonly showModal = signal(false);
+    readonly createError = signal('');
+    form = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
 
-  readonly roleLabels: Record<string, string> = {
-    super_admin: 'Superadmin',
-    restaurant_admin: 'Admin Restaurante',
-    excursion_operator: 'Admin Operadora',
-    store_admin: 'Admin Tienda',
-  };
+    readonly roleLabels: Record<string, string> = {
+        super_admin: 'Superadmin',
+        restaurant_admin: 'Admin Restaurante',
+        excursion_operator: 'Admin Operadora',
+        store_admin: 'Admin Tienda',
+    };
 
-  ngOnInit() { this.load(); }
+    ngOnInit() { this.load(); }
 
-  private async load() {
-    this.loading.set(true);
-    try {
-      this.users.set(await this.svc.getAdminUsers());
-    } catch { } finally { this.loading.set(false); }
-  }
+    private async load() {
+        this.loading.set(true);
+        try {
+            this.users.set(await this.svc.getAdminUsers());
+        } catch { } finally { this.loading.set(false); }
+    }
 
-  openForm() {
-    this.form = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
-    this.createError.set('');
-    this.showModal.set(true);
-  }
+    openForm() {
+        this.form = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
+        this.createError.set('');
+        this.showModal.set(true);
+    }
 
-  async create() {
-    this.creating.set(true);
-    this.createError.set('');
-    try {
-      await this.svc.createAdminUser(this.form);
-      this.toast.success('Usuario creado exitosamente');
-      this.showModal.set(false);
-      this.load();
-    } catch (e: unknown) {
-      this.createError.set((e as Error)?.message ?? 'Error al crear usuario');
-    } finally { this.creating.set(false); }
-  }
+    async create() {
+        this.creating.set(true);
+        this.createError.set('');
+        try {
+            await this.svc.createAdminUser(this.form);
+            this.toast.success('Usuario creado exitosamente');
+            this.showModal.set(false);
+            this.load();
+        } catch (e: unknown) {
+            this.createError.set((e as Error)?.message ?? 'Error al crear usuario');
+        } finally { this.creating.set(false); }
+    }
 
-  async toggle(u: AdminUser) {
-    try {
-      await this.svc.toggleAdminUser(u.id, !u.is_active);
-      this.toast.success(`Usuario ${!u.is_active ? 'activado' : 'desactivado'}`);
-      this.load();
-    } catch { this.toast.error('Error al actualizar usuario'); }
-  }
+    async toggle(u: AdminUser) {
+        try {
+            await this.svc.toggleAdminUser(u.id, !u.is_active);
+            this.toast.success(`Usuario ${!u.is_active ? 'activado' : 'desactivado'}`);
+            this.load();
+        } catch { this.toast.error('Error al actualizar usuario'); }
+    }
 }

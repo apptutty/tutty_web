@@ -146,65 +146,65 @@ export class ExcursionService {
 
     // ─── Calendar ─────────────────────────────────────────────────────────────
 
-  async loadCalendarData(operatorId: string, dateFrom: string): Promise<CalendarData> {
-    const { data: excursions } = await this.supabase
-      .from('excursions')
-      .select('id, name, duration_hours')
-      .eq('operator_id', operatorId);
+    async loadCalendarData(operatorId: string, dateFrom: string): Promise<CalendarData> {
+        const { data: excursions } = await this.supabase
+            .from('excursions')
+            .select('id, name, duration_hours')
+            .eq('operator_id', operatorId);
 
-    if (!excursions || excursions.length === 0) return { events: [], excursions: [] };
+        if (!excursions || excursions.length === 0) return { events: [], excursions: [] };
 
-    const excMap = new Map(excursions.map(e => [e.id as string, e as { id: string; name: string; duration_hours: number }]));
-    const ids = excursions.map(e => e.id as string);
+        const excMap = new Map(excursions.map(e => [e.id as string, e as { id: string; name: string; duration_hours: number }]));
+        const ids = excursions.map(e => e.id as string);
 
-    const { data: dates } = await this.supabase
-      .from('excursion_dates')
-      .select('*')
-      .in('excursion_id', ids)
-      .gte('date', dateFrom)
-      .order('date')
-      .order('departure_time');
+        const { data: dates } = await this.supabase
+            .from('excursion_dates')
+            .select('*')
+            .in('excursion_id', ids)
+            .gte('date', dateFrom)
+            .order('date')
+            .order('departure_time');
 
-    if (!dates || dates.length === 0) {
-      return {
-        events: [],
-        excursions: excursions.map(e => ({ id: e.id as string, name: e.name as string })),
-      };
+        if (!dates || dates.length === 0) {
+            return {
+                events: [],
+                excursions: excursions.map(e => ({ id: e.id as string, name: e.name as string })),
+            };
+        }
+
+        const dateIds = dates.map(d => d.id as string);
+        const { data: bookings } = await this.supabase
+            .from('bookings')
+            .select('excursion_date_id, num_people')
+            .in('excursion_date_id', dateIds)
+            .eq('status', 'confirmada');
+
+        const confirmedMap = new Map<string, number>();
+        for (const b of bookings ?? []) {
+            const id = b.excursion_date_id as string;
+            confirmedMap.set(id, (confirmedMap.get(id) ?? 0) + (b.num_people as number));
+        }
+
+        const events: CalendarEvent[] = (dates as ExcursionDate[]).map(d => ({
+            dateRowId: d.id,
+            excursionId: d.excursion_id,
+            excursionName: excMap.get(d.excursion_id)?.name ?? '—',
+            date: d.date,
+            departureTime: d.departure_time,
+            totalSpots: d.total_spots,
+            spotsLeft: d.spots_left,
+            confirmedPeople: confirmedMap.get(d.id) ?? 0,
+            durationHours: excMap.get(d.excursion_id)?.duration_hours ?? 4,
+            isActive: d.is_active,
+        }));
+
+        return {
+            events,
+            excursions: excursions.map(e => ({ id: e.id as string, name: e.name as string })),
+        };
     }
 
-    const dateIds = dates.map(d => d.id as string);
-    const { data: bookings } = await this.supabase
-      .from('bookings')
-      .select('excursion_date_id, num_people')
-      .in('excursion_date_id', dateIds)
-      .eq('status', 'confirmada');
-
-    const confirmedMap = new Map<string, number>();
-    for (const b of bookings ?? []) {
-      const id = b.excursion_date_id as string;
-      confirmedMap.set(id, (confirmedMap.get(id) ?? 0) + (b.num_people as number));
-    }
-
-    const events: CalendarEvent[] = (dates as ExcursionDate[]).map(d => ({
-      dateRowId: d.id,
-      excursionId: d.excursion_id,
-      excursionName: excMap.get(d.excursion_id)?.name ?? '—',
-      date: d.date,
-      departureTime: d.departure_time,
-      totalSpots: d.total_spots,
-      spotsLeft: d.spots_left,
-      confirmedPeople: confirmedMap.get(d.id) ?? 0,
-      durationHours: excMap.get(d.excursion_id)?.duration_hours ?? 4,
-      isActive: d.is_active,
-    }));
-
-    return {
-      events,
-      excursions: excursions.map(e => ({ id: e.id as string, name: e.name as string })),
-    };
-  }
-
-  // ─── Dates ─────────────────────────────────────────────────────────────────
+    // ─── Dates ─────────────────────────────────────────────────────────────────
 
     async listDates(excursionId: string): Promise<ExcursionDateRow[]> {
         const today = new Date().toISOString().slice(0, 10);

@@ -5,10 +5,10 @@ import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-  selector: 'app-settings-general',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-settings-general',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="max-w-2xl">
       <div class="card p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-900">Configuración General</h3>
@@ -67,51 +67,51 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
   `,
 })
 export class GeneralSettingsPageComponent implements OnInit {
-  private readonly svc = inject(SettingsService);
-  private readonly toast = inject(ToastService);
+    private readonly svc = inject(SettingsService);
+    private readonly toast = inject(ToastService);
 
-  readonly loading = signal(true);
-  readonly saving = signal(false);
+    readonly loading = signal(true);
+    readonly saving = signal(false);
 
-  form = {
-    min_order_amount: 0,
-    default_delivery_fee: 0,
-    default_commission_rate: 0,
-    itbis_rate: 18,
-    max_items_per_order: 20,
-    max_orders_in_flight: 50,
-    referral_bonus_amount: 200,
-    order_auto_cancel_minutes: 30,
-    free_delivery_threshold: 0,
-  };
+    form = {
+        min_order_amount: 0,
+        default_delivery_fee: 0,
+        default_commission_rate: 0,
+        itbis_rate: 18,
+        max_items_per_order: 20,
+        max_orders_in_flight: 50,
+        referral_bonus_amount: 200,
+        order_auto_cancel_minutes: 30,
+        free_delivery_threshold: 0,
+    };
 
-  ngOnInit() { this.load(); }
+    ngOnInit() { this.load(); }
 
-  private async load() {
-    this.loading.set(true);
-    try {
-      const settings = await this.svc.getSettings();
-      const map: Record<string, string> = {};
-      settings.forEach(s => map[s.key] = s.value);
-      this.form.min_order_amount = Number(map['min_order_amount'] ?? 150);
-      this.form.default_delivery_fee = Number(map['default_delivery_fee'] ?? 75);
-      this.form.default_commission_rate = Number(map['default_commission_rate'] ?? 15);
-      this.form.itbis_rate = Number(map['itbis_rate'] ?? 18);
-      this.form.max_items_per_order = Number(map['max_items_per_order'] ?? 20);
-      this.form.max_orders_in_flight = Number(map['max_orders_in_flight'] ?? 50);
-      this.form.referral_bonus_amount = Number(map['referral_bonus_amount'] ?? 200);
-      this.form.order_auto_cancel_minutes = Number(map['order_auto_cancel_minutes'] ?? 30);
-      this.form.free_delivery_threshold = Number(map['free_delivery_threshold'] ?? 0);
-    } catch { } finally { this.loading.set(false); }
-  }
+    private async load() {
+        this.loading.set(true);
+        try {
+            const settings = await this.svc.getSettings();
+            const map: Record<string, string> = {};
+            settings.forEach(s => map[s.key] = s.value);
+            this.form.min_order_amount = Number(map['min_order_amount'] ?? 150);
+            this.form.default_delivery_fee = Number(map['default_delivery_fee'] ?? 75);
+            this.form.default_commission_rate = Number(map['default_commission_rate'] ?? 15);
+            this.form.itbis_rate = Number(map['itbis_rate'] ?? 18);
+            this.form.max_items_per_order = Number(map['max_items_per_order'] ?? 20);
+            this.form.max_orders_in_flight = Number(map['max_orders_in_flight'] ?? 50);
+            this.form.referral_bonus_amount = Number(map['referral_bonus_amount'] ?? 200);
+            this.form.order_auto_cancel_minutes = Number(map['order_auto_cancel_minutes'] ?? 30);
+            this.form.free_delivery_threshold = Number(map['free_delivery_threshold'] ?? 0);
+        } catch { } finally { this.loading.set(false); }
+    }
 
-  async save() {
-    this.saving.set(true);
-    const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
-    try {
-      await this.svc.upsertSettings(rows);
-      this.toast.success('Configuración general guardada');
-    } catch { this.toast.error('Error al guardar'); }
-    finally { this.saving.set(false); }
-  }
+    async save() {
+        this.saving.set(true);
+        const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
+        try {
+            await this.svc.upsertSettings(rows);
+            this.toast.success('Configuración general guardada');
+        } catch { this.toast.error('Error al guardar'); }
+        finally { this.saving.set(false); }
+    }
 }

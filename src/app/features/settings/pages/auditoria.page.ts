@@ -6,10 +6,10 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { AuditLogEntry } from '../../../core/supabase/database.types';
 
 @Component({
-  selector: 'app-settings-auditoria',
-  standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
-  template: `
+    selector: 'app-settings-auditoria',
+    standalone: true,
+    imports: [CommonModule, FormsModule, DatePipe],
+    template: `
     <div>
       <div class="flex flex-wrap items-center gap-3 mb-4">
         <input type="text" class="input-field w-44 text-sm" [(ngModel)]="filter.admin"
@@ -77,35 +77,35 @@ import { AuditLogEntry } from '../../../core/supabase/database.types';
   `,
 })
 export class AuditoriaPageComponent implements OnInit {
-  private readonly svc = inject(SettingsService);
-  private readonly toast = inject(ToastService);
+    private readonly svc = inject(SettingsService);
+    private readonly toast = inject(ToastService);
 
-  readonly loading = signal(false);
-  readonly logs = signal<AuditLogEntry[]>([]);
-  filter = { admin: '', dateFrom: '', dateTo: '', action: '' };
+    readonly loading = signal(false);
+    readonly logs = signal<AuditLogEntry[]>([]);
+    filter = { admin: '', dateFrom: '', dateTo: '', action: '' };
 
-  ngOnInit() { this.load(); }
+    ngOnInit() { this.load(); }
 
-  async load() {
-    this.loading.set(true);
-    try {
-      this.logs.set(await this.svc.getAuditLog(this.filter));
-    } catch { } finally { this.loading.set(false); }
-  }
+    async load() {
+        this.loading.set(true);
+        try {
+            this.logs.set(await this.svc.getAuditLog(this.filter));
+        } catch { } finally { this.loading.set(false); }
+    }
 
-  exportCsv() {
-    const data = this.logs();
-    if (!data.length) { this.toast.error('Sin datos para exportar'); return; }
-    const headers = ['Fecha', 'Admin', 'Acción', 'Tabla', 'Valor anterior', 'Valor nuevo'];
-    const rows = data.map(l => [
-      `"${l.created_at}"`, `"${l.admin_email ?? '—'}"`, `"${l.action}"`,
-      `"${l.table_name ?? '—'}"`, `"${l.previous_value ?? '—'}"`, `"${l.new_value ?? '—'}"`,
-    ].join(','));
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click(); URL.revokeObjectURL(url);
-  }
+    exportCsv() {
+        const data = this.logs();
+        if (!data.length) { this.toast.error('Sin datos para exportar'); return; }
+        const headers = ['Fecha', 'Admin', 'Acción', 'Tabla', 'Valor anterior', 'Valor nuevo'];
+        const rows = data.map(l => [
+            `"${l.created_at}"`, `"${l.admin_email ?? '—'}"`, `"${l.action}"`,
+            `"${l.table_name ?? '—'}"`, `"${l.previous_value ?? '—'}"`, `"${l.new_value ?? '—'}"`,
+        ].join(','));
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click(); URL.revokeObjectURL(url);
+    }
 }

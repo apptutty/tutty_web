@@ -3,10 +3,10 @@ import { RouterModule } from '@angular/router';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 
 @Component({
-  selector: 'app-settings-shell',
-  standalone: true,
-  imports: [RouterModule, PageHeaderComponent],
-  template: `
+    selector: 'app-settings-shell',
+    standalone: true,
+    imports: [RouterModule, PageHeaderComponent],
+    template: `
     <div class="p-6">
       <app-page-header title="Configuración" subtitle="Gestión de parámetros del sistema" />
 
@@ -26,15 +26,15 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
   `,
 })
 export class SettingsShellComponent {
-  readonly tabs = [
-    { path: 'general',        label: 'General' },
-    { path: 'delivery',       label: 'Delivery & Precios' },
-    { path: 'feriados',       label: 'Feriados' },
-    { path: 'notificaciones', label: 'Notificaciones' },
-    { path: 'usuarios',       label: 'Usuarios Admin' },
-    { path: 'comercios',      label: 'Comercios & Aprobación' },
-    { path: 'categorias',     label: 'Categorías' },
-    { path: 'auditoria',      label: 'Auditoría' },
-    { path: 'surcharge',      label: 'Simulador de Tarifas' },
-  ];
+    readonly tabs = [
+        { path: 'general', label: 'General' },
+        { path: 'delivery', label: 'Delivery & Precios' },
+        { path: 'feriados', label: 'Feriados' },
+        { path: 'notificaciones', label: 'Notificaciones' },
+        { path: 'usuarios', label: 'Usuarios Admin' },
+        { path: 'comercios', label: 'Comercios & Aprobación' },
+        { path: 'categorias', label: 'Categorías' },
+        { path: 'auditoria', label: 'Auditoría' },
+        { path: 'surcharge', label: 'Simulador de Tarifas' },
+    ];
 }

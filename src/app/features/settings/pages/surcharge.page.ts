@@ -5,10 +5,10 @@ import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-  selector: 'app-settings-surcharge',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-settings-surcharge',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="max-w-4xl">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <!-- Input panel -->
@@ -112,86 +112,86 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
   `,
 })
 export class SurchargePageComponent implements OnInit {
-  private readonly svc = inject(SettingsService);
-  private readonly toast = inject(ToastService);
+    private readonly svc = inject(SettingsService);
+    private readonly toast = inject(ToastService);
 
-  readonly saving = signal(false);
-  readonly peakHours = signal('12:00-14:00,18:00-21:00');
+    readonly saving = signal(false);
+    readonly peakHours = signal('12:00-14:00,18:00-21:00');
 
-  form = {
-    baseFee: 150, weatherPct: 35, peakPct: 20, nightPct: 15, holidayPct: 15,
-    hour: 19, minute: 30, isRaining: false, isHoliday: false,
-  };
+    form = {
+        baseFee: 150, weatherPct: 35, peakPct: 20, nightPct: 15, holidayPct: 15,
+        hour: 19, minute: 30, isRaining: false, isHoliday: false,
+    };
 
-  readonly calc = computed(() => {
-    const f = this.form;
-    const base = f.baseFee;
-    let total = base;
-    const breakdown: { label: string; amount: number }[] = [];
+    readonly calc = computed(() => {
+        const f = this.form;
+        const base = f.baseFee;
+        let total = base;
+        const breakdown: { label: string; amount: number }[] = [];
 
-    if (this.isPeak(f.hour, f.minute)) {
-      const amount = Math.round(base * f.peakPct / 100 * 100) / 100;
-      breakdown.push({ label: `Hora Pico (${f.peakPct}%)`, amount });
-      total += amount;
+        if (this.isPeak(f.hour, f.minute)) {
+            const amount = Math.round(base * f.peakPct / 100 * 100) / 100;
+            breakdown.push({ label: `Hora Pico (${f.peakPct}%)`, amount });
+            total += amount;
+        }
+        if (f.hour >= 22 || f.hour < 6) {
+            const amount = Math.round(base * f.nightPct / 100 * 100) / 100;
+            breakdown.push({ label: `Nocturno (${f.nightPct}%)`, amount });
+            total += amount;
+        }
+        if (f.isRaining) {
+            const amount = Math.round(base * f.weatherPct / 100 * 100) / 100;
+            breakdown.push({ label: `Clima/Lluvia (${f.weatherPct}%)`, amount });
+            total += amount;
+        }
+        if (f.isHoliday) {
+            const amount = Math.round(base * f.holidayPct / 100 * 100) / 100;
+            breakdown.push({ label: `Feriado (${f.holidayPct}%)`, amount });
+            total += amount;
+        }
+        return { base, breakdown, total: Math.round(total * 100) / 100 };
+    });
+
+    ngOnInit() { this.load(); }
+
+    private async load() {
+        try {
+            const settings = await this.svc.getSettings();
+            const map: Record<string, string> = {};
+            settings.forEach(s => map[s.key] = s.value);
+            this.form.baseFee = Number(map['default_delivery_fee'] ?? 150);
+            this.form.weatherPct = Number(map['weather_surcharge_rate'] ?? 35);
+            this.form.peakPct = Number(map['peak_surcharge_rate'] ?? 20);
+            this.form.nightPct = Number(map['night_surcharge_rate'] ?? 15);
+            this.peakHours.set(map['peak_hours'] ?? '12:00-14:00,18:00-21:00');
+        } catch { }
     }
-    if (f.hour >= 22 || f.hour < 6) {
-      const amount = Math.round(base * f.nightPct / 100 * 100) / 100;
-      breakdown.push({ label: `Nocturno (${f.nightPct}%)`, amount });
-      total += amount;
-    }
-    if (f.isRaining) {
-      const amount = Math.round(base * f.weatherPct / 100 * 100) / 100;
-      breakdown.push({ label: `Clima/Lluvia (${f.weatherPct}%)`, amount });
-      total += amount;
-    }
-    if (f.isHoliday) {
-      const amount = Math.round(base * f.holidayPct / 100 * 100) / 100;
-      breakdown.push({ label: `Feriado (${f.holidayPct}%)`, amount });
-      total += amount;
-    }
-    return { base, breakdown, total: Math.round(total * 100) / 100 };
-  });
 
-  ngOnInit() { this.load(); }
-
-  private async load() {
-    try {
-      const settings = await this.svc.getSettings();
-      const map: Record<string, string> = {};
-      settings.forEach(s => map[s.key] = s.value);
-      this.form.baseFee = Number(map['default_delivery_fee'] ?? 150);
-      this.form.weatherPct = Number(map['weather_surcharge_rate'] ?? 35);
-      this.form.peakPct = Number(map['peak_surcharge_rate'] ?? 20);
-      this.form.nightPct = Number(map['night_surcharge_rate'] ?? 15);
-      this.peakHours.set(map['peak_hours'] ?? '12:00-14:00,18:00-21:00');
-    } catch { }
-  }
-
-  private isPeak(hour: number, minute: number): boolean {
-    const time = hour * 60 + minute;
-    for (const range of this.peakHours().split(',')) {
-      const parts = range.trim().split('-');
-      if (parts.length !== 2) continue;
-      const [sh, sm] = parts[0].split(':').map(Number);
-      const [eh, em] = parts[1].split(':').map(Number);
-      if (time >= (sh * 60 + (sm || 0)) && time <= (eh * 60 + (em || 0))) return true;
+    private isPeak(hour: number, minute: number): boolean {
+        const time = hour * 60 + minute;
+        for (const range of this.peakHours().split(',')) {
+            const parts = range.trim().split('-');
+            if (parts.length !== 2) continue;
+            const [sh, sm] = parts[0].split(':').map(Number);
+            const [eh, em] = parts[1].split(':').map(Number);
+            if (time >= (sh * 60 + (sm || 0)) && time <= (eh * 60 + (em || 0))) return true;
+        }
+        return false;
     }
-    return false;
-  }
 
-  async save() {
-    this.saving.set(true);
-    const f = this.form;
-    const rows = [
-      { key: 'default_delivery_fee', value: String(f.baseFee) },
-      { key: 'weather_surcharge_rate', value: String(f.weatherPct) },
-      { key: 'peak_surcharge_rate', value: String(f.peakPct) },
-      { key: 'night_surcharge_rate', value: String(f.nightPct) },
-    ];
-    try {
-      await this.svc.upsertSettings(rows);
-      this.toast.success('Parámetros de tarifa guardados');
-    } catch { this.toast.error('Error al guardar'); }
-    finally { this.saving.set(false); }
-  }
+    async save() {
+        this.saving.set(true);
+        const f = this.form;
+        const rows = [
+            { key: 'default_delivery_fee', value: String(f.baseFee) },
+            { key: 'weather_surcharge_rate', value: String(f.weatherPct) },
+            { key: 'peak_surcharge_rate', value: String(f.peakPct) },
+            { key: 'night_surcharge_rate', value: String(f.nightPct) },
+        ];
+        try {
+            await this.svc.upsertSettings(rows);
+            this.toast.success('Parámetros de tarifa guardados');
+        } catch { this.toast.error('Error al guardar'); }
+        finally { this.saving.set(false); }
+    }
 }

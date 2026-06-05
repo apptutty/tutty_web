@@ -5,10 +5,10 @@ import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-  selector: 'app-settings-notificaciones',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-settings-notificaciones',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="max-w-2xl">
       <div class="card p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-900">Notificaciones del Sistema</h3>
@@ -88,43 +88,43 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
   `,
 })
 export class NotifSettingsPageComponent implements OnInit {
-  private readonly svc = inject(SettingsService);
-  private readonly toast = inject(ToastService);
+    private readonly svc = inject(SettingsService);
+    private readonly toast = inject(ToastService);
 
-  readonly loading = signal(true);
-  readonly saving = signal(false);
+    readonly loading = signal(true);
+    readonly saving = signal(false);
 
-  form = {
-    push_enabled: true,
-    whatsapp_enabled: false,
-    new_order_alert: true,
-    unassigned_alert: true,
-    unassigned_alert_minutes: 10,
-  };
+    form = {
+        push_enabled: true,
+        whatsapp_enabled: false,
+        new_order_alert: true,
+        unassigned_alert: true,
+        unassigned_alert_minutes: 10,
+    };
 
-  ngOnInit() { this.load(); }
+    ngOnInit() { this.load(); }
 
-  private async load() {
-    this.loading.set(true);
-    try {
-      const settings = await this.svc.getSettings();
-      const map: Record<string, string> = {};
-      settings.forEach(s => map[s.key] = s.value);
-      this.form.push_enabled = map['push_enabled'] !== 'false';
-      this.form.whatsapp_enabled = map['whatsapp_enabled'] === 'true';
-      this.form.new_order_alert = map['new_order_alert'] !== 'false';
-      this.form.unassigned_alert = map['unassigned_alert'] !== 'false';
-      this.form.unassigned_alert_minutes = Number(map['unassigned_alert_minutes'] ?? 10);
-    } catch { } finally { this.loading.set(false); }
-  }
+    private async load() {
+        this.loading.set(true);
+        try {
+            const settings = await this.svc.getSettings();
+            const map: Record<string, string> = {};
+            settings.forEach(s => map[s.key] = s.value);
+            this.form.push_enabled = map['push_enabled'] !== 'false';
+            this.form.whatsapp_enabled = map['whatsapp_enabled'] === 'true';
+            this.form.new_order_alert = map['new_order_alert'] !== 'false';
+            this.form.unassigned_alert = map['unassigned_alert'] !== 'false';
+            this.form.unassigned_alert_minutes = Number(map['unassigned_alert_minutes'] ?? 10);
+        } catch { } finally { this.loading.set(false); }
+    }
 
-  async save() {
-    this.saving.set(true);
-    const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
-    try {
-      await this.svc.upsertSettings(rows);
-      this.toast.success('Configuración de notificaciones guardada');
-    } catch { this.toast.error('Error al guardar'); }
-    finally { this.saving.set(false); }
-  }
+    async save() {
+        this.saving.set(true);
+        const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
+        try {
+            await this.svc.upsertSettings(rows);
+            this.toast.success('Configuración de notificaciones guardada');
+        } catch { this.toast.error('Error al guardar'); }
+        finally { this.saving.set(false); }
+    }
 }

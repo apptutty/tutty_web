@@ -5,10 +5,10 @@ import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-  selector: 'app-settings-delivery',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-settings-delivery',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="max-w-2xl">
       <div class="card p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-900">Tarifas Especiales</h3>
@@ -78,45 +78,45 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
   `,
 })
 export class DeliverySettingsPageComponent implements OnInit {
-  private readonly svc = inject(SettingsService);
-  private readonly toast = inject(ToastService);
+    private readonly svc = inject(SettingsService);
+    private readonly toast = inject(ToastService);
 
-  readonly loading = signal(true);
-  readonly saving = signal(false);
+    readonly loading = signal(true);
+    readonly saving = signal(false);
 
-  form = {
-    weather_surcharge_enabled: false,
-    weather_surcharge_rate: 10,
-    surge_pricing_enabled: false,
-    peak_surcharge_rate: 20,
-    night_surcharge_rate: 15,
-    peak_hours: '12:00-14:00,18:00-21:00',
-  };
+    form = {
+        weather_surcharge_enabled: false,
+        weather_surcharge_rate: 10,
+        surge_pricing_enabled: false,
+        peak_surcharge_rate: 20,
+        night_surcharge_rate: 15,
+        peak_hours: '12:00-14:00,18:00-21:00',
+    };
 
-  ngOnInit() { this.load(); }
+    ngOnInit() { this.load(); }
 
-  private async load() {
-    this.loading.set(true);
-    try {
-      const settings = await this.svc.getSettings();
-      const map: Record<string, string> = {};
-      settings.forEach(s => map[s.key] = s.value);
-      this.form.weather_surcharge_enabled = map['weather_surcharge_enabled'] === 'true';
-      this.form.weather_surcharge_rate = Number(map['weather_surcharge_rate'] ?? 10);
-      this.form.surge_pricing_enabled = map['surge_pricing_enabled'] === 'true';
-      this.form.peak_surcharge_rate = Number(map['peak_surcharge_rate'] ?? 20);
-      this.form.night_surcharge_rate = Number(map['night_surcharge_rate'] ?? 15);
-      this.form.peak_hours = map['peak_hours'] ?? '12:00-14:00,18:00-21:00';
-    } catch { } finally { this.loading.set(false); }
-  }
+    private async load() {
+        this.loading.set(true);
+        try {
+            const settings = await this.svc.getSettings();
+            const map: Record<string, string> = {};
+            settings.forEach(s => map[s.key] = s.value);
+            this.form.weather_surcharge_enabled = map['weather_surcharge_enabled'] === 'true';
+            this.form.weather_surcharge_rate = Number(map['weather_surcharge_rate'] ?? 10);
+            this.form.surge_pricing_enabled = map['surge_pricing_enabled'] === 'true';
+            this.form.peak_surcharge_rate = Number(map['peak_surcharge_rate'] ?? 20);
+            this.form.night_surcharge_rate = Number(map['night_surcharge_rate'] ?? 15);
+            this.form.peak_hours = map['peak_hours'] ?? '12:00-14:00,18:00-21:00';
+        } catch { } finally { this.loading.set(false); }
+    }
 
-  async save() {
-    this.saving.set(true);
-    const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
-    try {
-      await this.svc.upsertSettings(rows);
-      this.toast.success('Configuración de delivery guardada');
-    } catch { this.toast.error('Error al guardar'); }
-    finally { this.saving.set(false); }
-  }
+    async save() {
+        this.saving.set(true);
+        const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
+        try {
+            await this.svc.upsertSettings(rows);
+            this.toast.success('Configuración de delivery guardada');
+        } catch { this.toast.error('Error al guardar'); }
+        finally { this.saving.set(false); }
+    }
 }

@@ -6,10 +6,10 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { Holiday } from '../../../core/supabase/database.types';
 
 @Component({
-  selector: 'app-settings-feriados',
-  standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
-  template: `
+    selector: 'app-settings-feriados',
+    standalone: true,
+    imports: [CommonModule, FormsModule, DatePipe],
+    template: `
     <div class="max-w-2xl">
       <div class="card p-6">
         <div class="flex items-center justify-between mb-4">
@@ -74,47 +74,47 @@ import { Holiday } from '../../../core/supabase/database.types';
   `,
 })
 export class FeriadosPageComponent implements OnInit {
-  private readonly svc = inject(SettingsService);
-  private readonly toast = inject(ToastService);
+    private readonly svc = inject(SettingsService);
+    private readonly toast = inject(ToastService);
 
-  readonly loading = signal(false);
-  readonly saving = signal(false);
-  readonly holidays = signal<Holiday[]>([]);
-  readonly showModal = signal(false);
-  readonly editing = signal<Holiday | null>(null);
-  form: { name: string; date: string; surcharge: number } = { name: '', date: '', surcharge: 0 };
+    readonly loading = signal(false);
+    readonly saving = signal(false);
+    readonly holidays = signal<Holiday[]>([]);
+    readonly showModal = signal(false);
+    readonly editing = signal<Holiday | null>(null);
+    form: { name: string; date: string; surcharge: number } = { name: '', date: '', surcharge: 0 };
 
-  ngOnInit() { this.load(); }
+    ngOnInit() { this.load(); }
 
-  private async load() {
-    this.loading.set(true);
-    try {
-      this.holidays.set(await this.svc.getHolidays());
-    } catch { } finally { this.loading.set(false); }
-  }
+    private async load() {
+        this.loading.set(true);
+        try {
+            this.holidays.set(await this.svc.getHolidays());
+        } catch { } finally { this.loading.set(false); }
+    }
 
-  openForm(h?: Holiday) {
-    this.editing.set(h ?? null);
-    this.form = h ? { name: h.name, date: h.date, surcharge: h.surcharge ?? 0 } : { name: '', date: '', surcharge: 0 };
-    this.showModal.set(true);
-  }
+    openForm(h?: Holiday) {
+        this.editing.set(h ?? null);
+        this.form = h ? { name: h.name, date: h.date, surcharge: h.surcharge ?? 0 } : { name: '', date: '', surcharge: 0 };
+        this.showModal.set(true);
+    }
 
-  async save() {
-    this.saving.set(true);
-    try {
-      await this.svc.saveHoliday({ ...this.form, id: this.editing()?.id });
-      this.toast.success('Feriado guardado');
-      this.showModal.set(false);
-      this.load();
-    } catch { this.toast.error('Error al guardar feriado'); }
-    finally { this.saving.set(false); }
-  }
+    async save() {
+        this.saving.set(true);
+        try {
+            await this.svc.saveHoliday({ ...this.form, id: this.editing()?.id });
+            this.toast.success('Feriado guardado');
+            this.showModal.set(false);
+            this.load();
+        } catch { this.toast.error('Error al guardar feriado'); }
+        finally { this.saving.set(false); }
+    }
 
-  async delete(id: string) {
-    try {
-      await this.svc.deleteHoliday(id);
-      this.toast.success('Feriado eliminado');
-      this.load();
-    } catch { this.toast.error('Error al eliminar'); }
-  }
+    async delete(id: string) {
+        try {
+            await this.svc.deleteHoliday(id);
+            this.toast.success('Feriado eliminado');
+            this.load();
+        } catch { this.toast.error('Error al eliminar'); }
+    }
 }
