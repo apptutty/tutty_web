@@ -5,10 +5,10 @@ import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-    selector: 'app-settings-commerce',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-settings-commerce',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div class="max-w-2xl space-y-4">
       <div class="card p-6 border-2 transition-colors"
         [class]="form.store_auto_approve ? 'border-warning-400 bg-warning-50' : 'border-gray-200 bg-white'">
@@ -104,61 +104,61 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
   `,
 })
 export class CommercePageComponent implements OnInit {
-    private readonly svc = inject(SettingsService);
-    private readonly toast = inject(ToastService);
+  private readonly svc = inject(SettingsService);
+  private readonly toast = inject(ToastService);
 
-    readonly saving = signal(false);
-    readonly approvingAll = signal(false);
-    readonly showConfirm = signal(false);
+  readonly saving = signal(false);
+  readonly approvingAll = signal(false);
+  readonly showConfirm = signal(false);
 
-    form = {
-        store_auto_approve: false,
-        repartidor_auto_approve: false,
-        store_onboarding_commission_days: 30,
-        store_onboarding_commission_rate: 5,
-    };
+  form = {
+    store_auto_approve: false,
+    repartidor_auto_approve: false,
+    store_onboarding_commission_days: 30,
+    store_onboarding_commission_rate: 5,
+  };
 
-    ngOnInit() { this.load(); }
+  ngOnInit() { this.load(); }
 
-    private async load() {
-        try {
-            const settings = await this.svc.getSettings();
-            const map: Record<string, string> = {};
-            settings.forEach(s => map[s.key] = s.value);
-            this.form.store_auto_approve = map['store_auto_approve'] === 'true';
-            this.form.repartidor_auto_approve = map['repartidor_auto_approve'] === 'true';
-            this.form.store_onboarding_commission_days = Number(map['store_onboarding_commission_days'] ?? 30);
-            this.form.store_onboarding_commission_rate = Number(map['store_onboarding_commission_rate'] ?? 5);
-        } catch { }
+  private async load() {
+    try {
+      const settings = await this.svc.getSettings();
+      const map: Record<string, string> = {};
+      settings.forEach(s => map[s.key] = s.value);
+      this.form.store_auto_approve = map['store_auto_approve'] === 'true';
+      this.form.repartidor_auto_approve = map['repartidor_auto_approve'] === 'true';
+      this.form.store_onboarding_commission_days = Number(map['store_onboarding_commission_days'] ?? 30);
+      this.form.store_onboarding_commission_rate = Number(map['store_onboarding_commission_rate'] ?? 5);
+    } catch { }
+  }
+
+  onAutoApproveToggle() {
+    if (!this.form.store_auto_approve) {
+      this.showConfirm.set(true);
+    } else {
+      this.form.store_auto_approve = false;
     }
+  }
 
-    onAutoApproveToggle() {
-        if (!this.form.store_auto_approve) {
-            this.showConfirm.set(true);
-        } else {
-            this.form.store_auto_approve = false;
-        }
-    }
+  async confirmAutoApprove() {
+    this.approvingAll.set(true);
+    this.form.store_auto_approve = true;
+    this.showConfirm.set(false);
+    try {
+      await this.svc.approveAllPendingStores();
+      this.toast.success('Todos los comercios pendientes han sido aprobados');
+      this.save();
+    } catch { this.toast.error('Error al aprobar comercios pendientes'); }
+    finally { this.approvingAll.set(false); }
+  }
 
-    async confirmAutoApprove() {
-        this.approvingAll.set(true);
-        this.form.store_auto_approve = true;
-        this.showConfirm.set(false);
-        try {
-            await this.svc.approveAllPendingStores();
-            this.toast.success('Todos los comercios pendientes han sido aprobados');
-            this.save();
-        } catch { this.toast.error('Error al aprobar comercios pendientes'); }
-        finally { this.approvingAll.set(false); }
-    }
-
-    async save() {
-        this.saving.set(true);
-        const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
-        try {
-            await this.svc.upsertSettings(rows);
-            this.toast.success('Configuración de comercios guardada');
-        } catch { this.toast.error('Error al guardar'); }
-        finally { this.saving.set(false); }
-    }
+  async save() {
+    this.saving.set(true);
+    const rows = Object.entries(this.form).map(([key, value]) => ({ key, value: String(value) }));
+    try {
+      await this.svc.upsertSettings(rows);
+      this.toast.success('Configuración de comercios guardada');
+    } catch { this.toast.error('Error al guardar'); }
+    finally { this.saving.set(false); }
+  }
 }

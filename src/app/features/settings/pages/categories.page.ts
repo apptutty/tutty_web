@@ -6,10 +6,10 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { StoreCategory, CommerceType } from '../../../core/supabase/database.types';
 
 @Component({
-    selector: 'app-settings-categories',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-settings-categories',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div>
       <div class="flex flex-wrap items-center gap-3 mb-4">
         <select class="input-field w-auto text-sm" [(ngModel)]="typeFilter" (ngModelChange)="load()">
@@ -143,94 +143,94 @@ import { StoreCategory, CommerceType } from '../../../core/supabase/database.typ
   `,
 })
 export class CategoriesPageComponent implements OnInit {
-    private readonly svc = inject(SettingsService);
-    private readonly toast = inject(ToastService);
+  private readonly svc = inject(SettingsService);
+  private readonly toast = inject(ToastService);
 
-    readonly loading = signal(false);
-    readonly saving = signal(false);
-    readonly deleting = signal<string | null>(null);
-    readonly categories = signal<StoreCategory[]>([]);
-    readonly showModal = signal(false);
-    readonly editing = signal<StoreCategory | null>(null);
-    readonly draggedIndex = signal<number | null>(null);
-    typeFilter: CommerceType | 'all' = 'all';
-    form: { name: string; slug: string; commerce_type: CommerceType; icon: string; display_order: number; is_active: boolean } = {
-        name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: 0, is_active: true,
-    };
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly deleting = signal<string | null>(null);
+  readonly categories = signal<StoreCategory[]>([]);
+  readonly showModal = signal(false);
+  readonly editing = signal<StoreCategory | null>(null);
+  readonly draggedIndex = signal<number | null>(null);
+  typeFilter: CommerceType | 'all' = 'all';
+  form: { name: string; slug: string; commerce_type: CommerceType; icon: string; display_order: number; is_active: boolean } = {
+    name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: 0, is_active: true,
+  };
 
-    readonly commerceTypes: { value: CommerceType; label: string }[] = [
-        { value: 'restaurante', label: 'Restaurante' },
-        { value: 'farmacia', label: 'Farmacia' },
-        { value: 'bodega', label: 'Bodega' },
-        { value: 'colmado', label: 'Colmado' },
-        { value: 'tienda_ropa', label: 'Tienda de Ropa' },
-        { value: 'supermercado', label: 'Supermercado' },
-        { value: 'electronica', label: 'Electrónica' },
-        { value: 'otro', label: 'Otro' },
-    ];
+  readonly commerceTypes: { value: CommerceType; label: string }[] = [
+    { value: 'restaurante', label: 'Restaurante' },
+    { value: 'farmacia', label: 'Farmacia' },
+    { value: 'bodega', label: 'Bodega' },
+    { value: 'colmado', label: 'Colmado' },
+    { value: 'tienda_ropa', label: 'Tienda de Ropa' },
+    { value: 'supermercado', label: 'Supermercado' },
+    { value: 'electronica', label: 'Electrónica' },
+    { value: 'otro', label: 'Otro' },
+  ];
 
-    ngOnInit() { this.load(); }
+  ngOnInit() { this.load(); }
 
-    async load() {
-        this.loading.set(true);
-        const filter = this.typeFilter === 'all' ? undefined : this.typeFilter as CommerceType;
-        try {
-            this.categories.set(await this.svc.getStoreCategories(filter));
-        } catch { } finally { this.loading.set(false); }
-    }
+  async load() {
+    this.loading.set(true);
+    const filter = this.typeFilter === 'all' ? undefined : this.typeFilter as CommerceType;
+    try {
+      this.categories.set(await this.svc.getStoreCategories(filter));
+    } catch { } finally { this.loading.set(false); }
+  }
 
-    openForm(cat?: StoreCategory) {
-        this.editing.set(cat ?? null);
-        this.form = cat
-            ? { name: cat.name, slug: cat.slug, commerce_type: cat.commerce_type, icon: cat.icon ?? '', display_order: cat.display_order, is_active: cat.is_active }
-            : { name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: this.categories().length, is_active: true };
-        this.showModal.set(true);
-    }
+  openForm(cat?: StoreCategory) {
+    this.editing.set(cat ?? null);
+    this.form = cat
+      ? { name: cat.name, slug: cat.slug, commerce_type: cat.commerce_type, icon: cat.icon ?? '', display_order: cat.display_order, is_active: cat.is_active }
+      : { name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: this.categories().length, is_active: true };
+    this.showModal.set(true);
+  }
 
-    async save() {
-        this.saving.set(true);
-        try {
-            await this.svc.saveStoreCategory({ ...this.form, id: this.editing()?.id });
-            this.toast.success('Categoría guardada');
-            this.showModal.set(false);
-            this.load();
-        } catch { this.toast.error('Error al guardar categoría'); }
-        finally { this.saving.set(false); }
-    }
+  async save() {
+    this.saving.set(true);
+    try {
+      await this.svc.saveStoreCategory({ ...this.form, id: this.editing()?.id });
+      this.toast.success('Categoría guardada');
+      this.showModal.set(false);
+      this.load();
+    } catch { this.toast.error('Error al guardar categoría'); }
+    finally { this.saving.set(false); }
+  }
 
-    async delete(id: string) {
-        this.deleting.set(id);
-        try {
-            await this.svc.deleteStoreCategory(id);
-            this.toast.success('Categoría eliminada');
-            this.load();
-        } catch { this.toast.error('Error al eliminar'); }
-        finally { this.deleting.set(null); }
-    }
+  async delete(id: string) {
+    this.deleting.set(id);
+    try {
+      await this.svc.deleteStoreCategory(id);
+      this.toast.success('Categoría eliminada');
+      this.load();
+    } catch { this.toast.error('Error al eliminar'); }
+    finally { this.deleting.set(null); }
+  }
 
-    autoSlug(name: string) {
-        this.form.slug = name.toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-            .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    }
+  autoSlug(name: string) {
+    this.form.slug = name.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
 
-    typeLabel(type: CommerceType): string {
-        return this.commerceTypes.find(ct => ct.value === type)?.label ?? type;
-    }
+  typeLabel(type: CommerceType): string {
+    return this.commerceTypes.find(ct => ct.value === type)?.label ?? type;
+  }
 
-    onDragStart(index: number) { this.draggedIndex.set(index); }
-    onDragOver(e: DragEvent) { e.preventDefault(); }
+  onDragStart(index: number) { this.draggedIndex.set(index); }
+  onDragOver(e: DragEvent) { e.preventDefault(); }
 
-    onDrop(targetIndex: number) {
-        const from = this.draggedIndex();
-        if (from === null || from === targetIndex) { this.draggedIndex.set(null); return; }
-        const cats = [...this.categories()];
-        const [moved] = cats.splice(from, 1);
-        cats.splice(targetIndex, 0, moved);
-        const updated = cats.map((c, i) => ({ ...c, display_order: i }));
-        this.categories.set(updated);
-        this.draggedIndex.set(null);
-        this.svc.reorderCategories(updated.map((c, i) => ({ id: c.id, order: i })))
-            .catch(() => this.toast.error('Error al reordenar categorías'));
-    }
+  onDrop(targetIndex: number) {
+    const from = this.draggedIndex();
+    if (from === null || from === targetIndex) { this.draggedIndex.set(null); return; }
+    const cats = [...this.categories()];
+    const [moved] = cats.splice(from, 1);
+    cats.splice(targetIndex, 0, moved);
+    const updated = cats.map((c, i) => ({ ...c, display_order: i }));
+    this.categories.set(updated);
+    this.draggedIndex.set(null);
+    this.svc.reorderCategories(updated.map((c, i) => ({ id: c.id, order: i })))
+      .catch(() => this.toast.error('Error al reordenar categorías'));
+  }
 }

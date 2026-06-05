@@ -12,10 +12,10 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 type SettingsTab = 'perfil' | 'financiero' | 'notificaciones' | 'equipo';
 
 @Component({
-    selector: 'app-operator-settings',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-operator-settings',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
   <div class="page">
     <div class="page-header">
       <h1 class="page-title">⚙️ Perfil y Configuración</h1>
@@ -297,7 +297,7 @@ type SettingsTab = 'perfil' | 'financiero' | 'notificaciones' | 'equipo';
     }
   </div>
   `,
-    styles: [`
+  styles: [`
     .page { max-width:900px; margin:0 auto; }
     .page-header { margin-bottom:1.25rem; }
     .page-title { font-size:1.5rem; font-weight:800; color:#111827; margin:0; }
@@ -364,175 +364,175 @@ type SettingsTab = 'perfil' | 'financiero' | 'notificaciones' | 'equipo';
   `],
 })
 export class OperatorSettingsPageComponent implements OnInit {
-    private readonly operatorSvc = inject(OperatorAdminService);
-    private readonly authSvc = inject(AuthService);
-    private readonly profileSvc = inject(OperatorProfileService);
-    private readonly confirmSvc = inject(ConfirmService);
-    private readonly toast = inject(ToastService);
-    readonly configSvc = inject(AppConfigService);
+  private readonly operatorSvc = inject(OperatorAdminService);
+  private readonly authSvc = inject(AuthService);
+  private readonly profileSvc = inject(OperatorProfileService);
+  private readonly confirmSvc = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
+  readonly configSvc = inject(AppConfigService);
 
-    readonly activeTab = signal<SettingsTab>('perfil');
-    readonly tabs: { key: SettingsTab; label: string }[] = [
-        { key: 'perfil', label: '🏢 Perfil' },
-        { key: 'financiero', label: '💰 Financiero' },
-        { key: 'notificaciones', label: '🔔 Notificaciones' },
-        { key: 'equipo', label: '👥 Equipo' },
-    ];
+  readonly activeTab = signal<SettingsTab>('perfil');
+  readonly tabs: { key: SettingsTab; label: string }[] = [
+    { key: 'perfil', label: '🏢 Perfil' },
+    { key: 'financiero', label: '💰 Financiero' },
+    { key: 'notificaciones', label: '🔔 Notificaciones' },
+    { key: 'equipo', label: '👥 Equipo' },
+  ];
 
-    readonly categories = this.configSvc.categories;
-    readonly languageOptions = this.configSvc.languages;
+  readonly categories = this.configSvc.categories;
+  readonly languageOptions = this.configSvc.languages;
 
-    // Perfil
-    profile = {
-        name: '', description: '', whatsapp_number: '', address: '',
-        category: '', logo_url: '', banner_url: '',
-        has_insurance: false, has_tourism_license: false, tourism_license_number: '',
-        languages: [] as string[],
-    };
-    private logoFile: File | null = null;
-    private bannerFile: File | null = null;
-    private notifSettings: ExcursionOperatorNotifPrefs = { newBookingWA: true, cancellationWA: true, dayBeforeReminder: true, whatsappNumber: '' };
+  // Perfil
+  profile = {
+    name: '', description: '', whatsapp_number: '', address: '',
+    category: '', logo_url: '', banner_url: '',
+    has_insurance: false, has_tourism_license: false, tourism_license_number: '',
+    languages: [] as string[],
+  };
+  private logoFile: File | null = null;
+  private bannerFile: File | null = null;
+  private notifSettings: ExcursionOperatorNotifPrefs = { newBookingWA: true, cancellationWA: true, dayBeforeReminder: true, whatsappNumber: '' };
 
-    readonly saving = signal(false);
+  readonly saving = signal(false);
 
-    readonly profileLanguages = computed(() => this.profile.languages);
+  readonly profileLanguages = computed(() => this.profile.languages);
 
-    // Notificaciones
-    get notifPrefs() { return this.notifSettings; }
+  // Notificaciones
+  get notifPrefs() { return this.notifSettings; }
 
-    // Financiero
-    readonly finLoading = signal(false);
-    readonly commissionRate = signal(10);
-    readonly finBookings = signal<{ id: string; created_at: string; clientName: string; excursionName: string; total: number }[]>([]);
-    readonly finStats = computed(() => {
-        const gross = this.finBookings().reduce((s, b) => s + b.total, 0);
-        const rate = this.commissionRate() / 100;
-        return { gross, commission: gross * rate, net: gross * (1 - rate) };
+  // Financiero
+  readonly finLoading = signal(false);
+  readonly commissionRate = signal(10);
+  readonly finBookings = signal<{ id: string; created_at: string; clientName: string; excursionName: string; total: number }[]>([]);
+  readonly finStats = computed(() => {
+    const gross = this.finBookings().reduce((s, b) => s + b.total, 0);
+    const rate = this.commissionRate() / 100;
+    return { gross, commission: gross * rate, net: gross * (1 - rate) };
+  });
+
+  // Equipo
+  readonly teamLoading = signal(false);
+  readonly teamMembers = signal<TeamMember[]>([]);
+  readonly inviteModal = signal(false);
+  inviteEmail = '';
+  inviteRole = 'admin';
+  readonly inviteError = signal<string | null>(null);
+
+  ngOnInit() {
+    this.configSvc.load();
+    this.loadProfile();
+    this.loadFinancials();
+    this.loadTeam();
+  }
+
+  private async loadProfile() {
+    const op = this.operatorSvc.activeOperator();
+    if (!op) return;
+    const data = await this.profileSvc.loadProfile(op.id);
+    if (!data) return;
+    Object.assign(this.profile, {
+      name: data.name, description: data.description,
+      whatsapp_number: data.whatsapp_number, address: data.address,
+      category: data.category, logo_url: data.logo_url, banner_url: data.banner_url,
+      has_insurance: data.has_insurance, has_tourism_license: data.has_tourism_license,
+      tourism_license_number: data.tourism_license_number, languages: data.languages,
     });
-
-    // Equipo
-    readonly teamLoading = signal(false);
-    readonly teamMembers = signal<TeamMember[]>([]);
-    readonly inviteModal = signal(false);
-    inviteEmail = '';
-    inviteRole = 'admin';
-    readonly inviteError = signal<string | null>(null);
-
-    ngOnInit() {
-        this.configSvc.load();
-        this.loadProfile();
-        this.loadFinancials();
-        this.loadTeam();
-    }
-
-    private async loadProfile() {
-        const op = this.operatorSvc.activeOperator();
-        if (!op) return;
-        const data = await this.profileSvc.loadProfile(op.id);
-        if (!data) return;
-        Object.assign(this.profile, {
-            name: data.name, description: data.description,
-            whatsapp_number: data.whatsapp_number, address: data.address,
-            category: data.category, logo_url: data.logo_url, banner_url: data.banner_url,
-            has_insurance: data.has_insurance, has_tourism_license: data.has_tourism_license,
-            tourism_license_number: data.tourism_license_number, languages: data.languages,
-        });
-        Object.assign(this.notifSettings, data.notification_prefs);
+    Object.assign(this.notifSettings, data.notification_prefs);
     if (!this.notifSettings.whatsappNumber) this.notifSettings.whatsappNumber = op.whatsapp_number ?? '';
-    }
+  }
 
-    private async loadFinancials() {
-        const opId = this.operatorSvc.activeOperatorId();
-        if (!opId) return;
-        this.finLoading.set(true);
-        try {
-            this.commissionRate.set(this.configSvc.commissionRate());
-            const rows = await this.profileSvc.loadFinancials(opId);
-            this.finBookings.set(rows);
-        } finally { this.finLoading.set(false); }
-    }
+  private async loadFinancials() {
+    const opId = this.operatorSvc.activeOperatorId();
+    if (!opId) return;
+    this.finLoading.set(true);
+    try {
+      this.commissionRate.set(this.configSvc.commissionRate());
+      const rows = await this.profileSvc.loadFinancials(opId);
+      this.finBookings.set(rows);
+    } finally { this.finLoading.set(false); }
+  }
 
-    private async loadTeam() {
-        const opId = this.operatorSvc.activeOperatorId();
-        if (!opId) return;
-        this.teamLoading.set(true);
-        try {
-            this.teamMembers.set(await this.profileSvc.loadTeam(opId));
-        } finally { this.teamLoading.set(false); }
-    }
+  private async loadTeam() {
+    const opId = this.operatorSvc.activeOperatorId();
+    if (!opId) return;
+    this.teamLoading.set(true);
+    try {
+      this.teamMembers.set(await this.profileSvc.loadTeam(opId));
+    } finally { this.teamLoading.set(false); }
+  }
 
-    toggleLanguage(lang: string) {
-        if (this.profile.languages.includes(lang)) {
-            this.profile.languages = this.profile.languages.filter(l => l !== lang);
-        } else {
-            this.profile.languages = [...this.profile.languages, lang];
-        }
+  toggleLanguage(lang: string) {
+    if (this.profile.languages.includes(lang)) {
+      this.profile.languages = this.profile.languages.filter(l => l !== lang);
+    } else {
+      this.profile.languages = [...this.profile.languages, lang];
     }
+  }
 
-    onLogoChange(event: Event) {
-        const f = (event.target as HTMLInputElement).files?.[0];
-        if (f) { this.logoFile = f; this.profile.logo_url = URL.createObjectURL(f); }
-    }
+  onLogoChange(event: Event) {
+    const f = (event.target as HTMLInputElement).files?.[0];
+    if (f) { this.logoFile = f; this.profile.logo_url = URL.createObjectURL(f); }
+  }
 
-    onBannerChange(event: Event) {
-        const f = (event.target as HTMLInputElement).files?.[0];
-        if (f) { this.bannerFile = f; this.profile.banner_url = URL.createObjectURL(f); }
-    }
+  onBannerChange(event: Event) {
+    const f = (event.target as HTMLInputElement).files?.[0];
+    if (f) { this.bannerFile = f; this.profile.banner_url = URL.createObjectURL(f); }
+  }
 
-    async saveProfile() {
-        const op = this.operatorSvc.activeOperator();
-        if (!op) return;
-        this.saving.set(true);
-        try {
-            const { logo_url, banner_url } = await this.profileSvc.saveProfile(
-                op.id, this.profile, this.logoFile, this.bannerFile, op.slug,
-            );
-            this.profile.logo_url = logo_url;
-            this.profile.banner_url = banner_url;
-            this.logoFile = null;
-            this.bannerFile = null;
-            await this.operatorSvc.loadUserOperators(this.authSvc.currentUser()?.id ?? '');
-            this.toast.success('✔ Cambios guardados');
-        } catch (e: unknown) {
-            this.toast.error((e as Error).message ?? 'Error al guardar el perfil.');
-        } finally { this.saving.set(false); }
-    }
+  async saveProfile() {
+    const op = this.operatorSvc.activeOperator();
+    if (!op) return;
+    this.saving.set(true);
+    try {
+      const { logo_url, banner_url } = await this.profileSvc.saveProfile(
+        op.id, this.profile, this.logoFile, this.bannerFile, op.slug,
+      );
+      this.profile.logo_url = logo_url;
+      this.profile.banner_url = banner_url;
+      this.logoFile = null;
+      this.bannerFile = null;
+      await this.operatorSvc.loadUserOperators(this.authSvc.currentUser()?.id ?? '');
+      this.toast.success('✔ Cambios guardados');
+    } catch (e: unknown) {
+      this.toast.error((e as Error).message ?? 'Error al guardar el perfil.');
+    } finally { this.saving.set(false); }
+  }
 
-    async saveNotificationPrefs() {
-        const op = this.operatorSvc.activeOperator();
-        if (!op) return;
-        this.saving.set(true);
-        try {
-            await this.profileSvc.saveNotificationPrefs(op.id, this.notifSettings);
-            this.toast.success('✔ Preferencias guardadas');
-        } catch (e: unknown) {
-            this.toast.error((e as Error).message ?? 'Error al guardar preferencias.');
-        } finally { this.saving.set(false); }
-    }
+  async saveNotificationPrefs() {
+    const op = this.operatorSvc.activeOperator();
+    if (!op) return;
+    this.saving.set(true);
+    try {
+      await this.profileSvc.saveNotificationPrefs(op.id, this.notifSettings);
+      this.toast.success('✔ Preferencias guardadas');
+    } catch (e: unknown) {
+      this.toast.error((e as Error).message ?? 'Error al guardar preferencias.');
+    } finally { this.saving.set(false); }
+  }
 
-    async inviteMember() {
-        const opId = this.operatorSvc.activeOperatorId();
-        if (!opId || !this.inviteEmail.trim()) { this.inviteError.set('Ingresa un email válido.'); return; }
-        this.saving.set(true); this.inviteError.set(null);
-        try {
-            await this.profileSvc.inviteMember(opId, this.inviteEmail, this.inviteRole);
-            this.toast.success('✔ Administrador agregado');
-            this.inviteEmail = '';
-            this.inviteModal.set(false);
-            await this.loadTeam();
-        } catch (e: unknown) {
-            this.inviteError.set((e as Error).message);
-        } finally { this.saving.set(false); }
-    }
+  async inviteMember() {
+    const opId = this.operatorSvc.activeOperatorId();
+    if (!opId || !this.inviteEmail.trim()) { this.inviteError.set('Ingresa un email válido.'); return; }
+    this.saving.set(true); this.inviteError.set(null);
+    try {
+      await this.profileSvc.inviteMember(opId, this.inviteEmail, this.inviteRole);
+      this.toast.success('✔ Administrador agregado');
+      this.inviteEmail = '';
+      this.inviteModal.set(false);
+      await this.loadTeam();
+    } catch (e: unknown) {
+      this.inviteError.set((e as Error).message);
+    } finally { this.saving.set(false); }
+  }
 
-    async removeMember(member: TeamMember) {
-        const ok = await this.confirmSvc.confirm({
-            title: `¿Quitar a ${member.name}?`,
-            message: 'El usuario perderá acceso al panel de este operador.',
-            danger: true, confirmText: 'Quitar',
-        });
-        if (!ok) return;
-        await this.profileSvc.removeMember(member.id);
-        await this.loadTeam();
-    }
+  async removeMember(member: TeamMember) {
+    const ok = await this.confirmSvc.confirm({
+      title: `¿Quitar a ${member.name}?`,
+      message: 'El usuario perderá acceso al panel de este operador.',
+      danger: true, confirmText: 'Quitar',
+    });
+    if (!ok) return;
+    await this.profileSvc.removeMember(member.id);
+    await this.loadTeam();
+  }
 }
