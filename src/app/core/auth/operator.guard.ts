@@ -7,11 +7,11 @@ import { AuthService } from './auth.service';
  * Redirects store_admin to /store; all other roles pass through.
  */
 export const operatorGuard: CanActivateFn = () => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
+  const auth = inject(AuthService);
+  const router = inject(Router);
 
-    const user = auth.currentUser();
-    if (!user) return router.createUrlTree(['/login']);
-    if (user.role === 'store_admin') return router.createUrlTree(['/store']);
-    return true;
+  const user = auth.currentUser();
+  if (!user) return router.createUrlTree(['/login']);
+  if (user.role === 'store_admin') return router.createUrlTree(['/store']);
+  return true;
 };
