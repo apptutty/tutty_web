@@ -40,7 +40,7 @@ export class StoreReportsService {
     const { data, error } = await this.supabase
       .from('orders')
       .select('status, total, subtotal')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .gte('created_at', from)
       .lte('created_at', to);
 
@@ -73,7 +73,7 @@ export class StoreReportsService {
     const { data, error } = await this.supabase
       .from('orders')
       .select('created_at, total, status')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .eq('status', 'entregado')
       .gte('created_at', from)
       .lte('created_at', to)
@@ -97,7 +97,7 @@ export class StoreReportsService {
     const { data: orders, error: oErr } = await this.supabase
       .from('orders')
       .select('id')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .eq('status', 'entregado')
       .gte('created_at', from)
       .lte('created_at', to);
@@ -137,7 +137,7 @@ export class StoreReportsService {
     const { data, error } = await this.supabase
       .from('orders')
       .select('created_at')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .gte('created_at', from)
       .lte('created_at', to);
 
@@ -171,7 +171,7 @@ export class StoreReportsService {
     const { data, error } = await this.supabase
       .from('orders')
       .select('id, order_number, status, total, subtotal, delivery_fee, discount_amount, itbis_amount, created_at, user_id')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .gte('created_at', from)
       .lte('created_at', to)
       .order('created_at', { ascending: false });

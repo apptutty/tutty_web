@@ -8,6 +8,6 @@ export interface User {
     avatar_url?: string | null;
     is_active: boolean;
     created_at: string;
-    restaurant_id?: string | null;
+    commerce_id?: string | null;
     operator_id?: string | null;
 }

@@ -5,7 +5,7 @@ import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-    selector: 'app-settings-notificaciones',
+    selector: 'app-settings-notifications',
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
@@ -87,7 +87,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
     </div>
   `,
 })
-export class NotifSettingsPageComponent implements OnInit {
+export class NotificationsSettingsPageComponent implements OnInit {
     private readonly svc = inject(SettingsService);
     private readonly toast = inject(ToastService);
 

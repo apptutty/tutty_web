@@ -45,7 +45,7 @@ export class StoreSettingsService {
   async updateStore(id: string, patch: Partial<Restaurant>): Promise<void> {
     this.isSaving.set(true);
     try {
-      const { error } = await this.supabase.from('restaurants').update(patch).eq('id', id);
+      const { error } = await this.supabase.from('commerces').update(patch).eq('id', id);
       if (error) throw error;
     } finally {
       this.isSaving.set(false);
@@ -84,9 +84,9 @@ export class StoreSettingsService {
   getTeamMembers(storeId: string): Observable<TeamMember[]> {
     return from(
       this.supabase
-        .from('restaurant_admins')
+        .from('commerce_admins')
         .select('user_id, created_at, role, users(full_name, email, avatar_url)')
-        .eq('restaurant_id', storeId)
+        .eq('commerce_id', storeId)
         .then(({ data, error }) => {
           if (error) throw error;
           return ((data ?? []) as any[]).map(row => ({
@@ -112,8 +112,8 @@ export class StoreSettingsService {
     if (!user) return 'not_found';
 
     const { error } = await this.supabase
-      .from('restaurant_admins')
-      .upsert({ restaurant_id: storeId, user_id: user.id, role: 'admin' }, { onConflict: 'restaurant_id,user_id' });
+      .from('commerce_admins')
+      .upsert({ commerce_id: storeId, user_id: user.id, role: 'admin' }, { onConflict: 'commerce_id,user_id' });
 
     if (error) throw error;
     return 'linked';
@@ -121,9 +121,9 @@ export class StoreSettingsService {
 
   async removeAdmin(storeId: string, userId: string): Promise<void> {
     const { error } = await this.supabase
-      .from('restaurant_admins')
+      .from('commerce_admins')
       .delete()
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .eq('user_id', userId);
     if (error) throw error;
   }
@@ -148,8 +148,8 @@ export class StoreSettingsService {
   async getPendingBalance(storeId: string): Promise<number> {
     const { data } = await this.supabase
       .from('orders')
-      .select('total, commission_rate:restaurants!inner(commission_rate)')
-      .eq('restaurant_id', storeId)
+      .select('total, commission_rate:commerces!inner(commission_rate)')
+      .eq('commerce_id', storeId)
       .eq('status', 'entregado')
       .is('payout_id', null);
 

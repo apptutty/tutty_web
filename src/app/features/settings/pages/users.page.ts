@@ -5,7 +5,7 @@ import { SettingsService, AdminUser } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-    selector: 'app-settings-usuarios',
+    selector: 'app-settings-users',
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
@@ -103,7 +103,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
     }
   `,
 })
-export class UsuariosPageComponent implements OnInit {
+export class UsersPageComponent implements OnInit {
     private readonly svc = inject(SettingsService);
     private readonly toast = inject(ToastService);
 

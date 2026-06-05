@@ -192,7 +192,7 @@ type SettingsTab = 'perfil' | 'financiero' | 'notificaciones' | 'equipo';
               <p class="info-text muted" style="margin:0">Notificación al recibir una reserva</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" [(ngModel)]="notifPrefs.nuevaReservaWA" />
+              <input type="checkbox" [(ngModel)]="notifPrefs.newBookingWA" />
               <span class="toggle-track"></span>
             </label>
           </div>
@@ -202,7 +202,7 @@ type SettingsTab = 'perfil' | 'financiero' | 'notificaciones' | 'equipo';
               <p class="info-text muted" style="margin:0">Cuando un cliente cancela</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" [(ngModel)]="notifPrefs.cancelacionWA" />
+              <input type="checkbox" [(ngModel)]="notifPrefs.cancellationWA" />
               <span class="toggle-track"></span>
             </label>
           </div>
@@ -212,7 +212,7 @@ type SettingsTab = 'perfil' | 'financiero' | 'notificaciones' | 'equipo';
               <p class="info-text muted" style="margin:0">Lista de pasajeros del día siguiente</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" [(ngModel)]="notifPrefs.recordatorioAnterior" />
+              <input type="checkbox" [(ngModel)]="notifPrefs.dayBeforeReminder" />
               <span class="toggle-track"></span>
             </label>
           </div>
@@ -223,12 +223,12 @@ type SettingsTab = 'perfil' | 'financiero' | 'notificaciones' | 'equipo';
           <p class="info-text muted">Puede ser diferente al número público del operador.</p>
           <div class="form-group">
             <label class="label">WhatsApp (con código de país)</label>
-            <input class="input-field" type="text" [(ngModel)]="notifPrefs.notifWhatsapp" placeholder="+1 809 000 0000" />
+            <input class="input-field" type="text" [(ngModel)]="notifPrefs.whatsappNumber" placeholder="+1 809 000 0000" />
           </div>
         </section>
 
         <div class="form-footer">
-          <button class="btn-primary" (click)="saveNotifPrefs()" [disabled]="saving()">
+          <button class="btn-primary" (click)="saveNotificationPrefs()" [disabled]="saving()">
             {{ saving() ? 'Guardando…' : 'Guardar preferencias' }}
           </button>
         </div>
@@ -391,14 +391,14 @@ export class OperatorSettingsPageComponent implements OnInit {
     };
     private logoFile: File | null = null;
     private bannerFile: File | null = null;
-    private notifPrefsObj: ExcursionOperatorNotifPrefs = { nuevaReservaWA: true, cancelacionWA: true, recordatorioAnterior: true, notifWhatsapp: '' };
+    private notifSettings: ExcursionOperatorNotifPrefs = { newBookingWA: true, cancellationWA: true, dayBeforeReminder: true, whatsappNumber: '' };
 
     readonly saving = signal(false);
 
     readonly profileLanguages = computed(() => this.profile.languages);
 
     // Notificaciones
-    get notifPrefs() { return this.notifPrefsObj; }
+    get notifPrefs() { return this.notifSettings; }
 
     // Financiero
     readonly finLoading = signal(false);
@@ -421,7 +421,7 @@ export class OperatorSettingsPageComponent implements OnInit {
     ngOnInit() {
         this.configSvc.load();
         this.loadProfile();
-        this.loadFinanciero();
+        this.loadFinancials();
         this.loadTeam();
     }
 
@@ -437,11 +437,11 @@ export class OperatorSettingsPageComponent implements OnInit {
             has_insurance: data.has_insurance, has_tourism_license: data.has_tourism_license,
             tourism_license_number: data.tourism_license_number, languages: data.languages,
         });
-        Object.assign(this.notifPrefsObj, data.notification_prefs);
-        if (!this.notifPrefsObj.notifWhatsapp) this.notifPrefsObj.notifWhatsapp = op.whatsapp_number ?? '';
+        Object.assign(this.notifSettings, data.notification_prefs);
+    if (!this.notifSettings.whatsappNumber) this.notifSettings.whatsappNumber = op.whatsapp_number ?? '';
     }
 
-    private async loadFinanciero() {
+    private async loadFinancials() {
         const opId = this.operatorSvc.activeOperatorId();
         if (!opId) return;
         this.finLoading.set(true);
@@ -498,12 +498,12 @@ export class OperatorSettingsPageComponent implements OnInit {
         } finally { this.saving.set(false); }
     }
 
-    async saveNotifPrefs() {
+    async saveNotificationPrefs() {
         const op = this.operatorSvc.activeOperator();
         if (!op) return;
         this.saving.set(true);
         try {
-            await this.profileSvc.saveNotifPrefs(op.id, this.notifPrefsObj);
+            await this.profileSvc.saveNotificationPrefs(op.id, this.notifSettings);
             this.toast.success('✔ Preferencias guardadas');
         } catch (e: unknown) {
             this.toast.error((e as Error).message ?? 'Error al guardar preferencias.');

@@ -6,7 +6,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { Holiday } from '../../../core/supabase/database.types';
 
 @Component({
-    selector: 'app-settings-feriados',
+    selector: 'app-settings-holidays',
     standalone: true,
     imports: [CommonModule, FormsModule, DatePipe],
     template: `
@@ -73,7 +73,7 @@ import { Holiday } from '../../../core/supabase/database.types';
     }
   `,
 })
-export class FeriadosPageComponent implements OnInit {
+export class HolidaysPageComponent implements OnInit {
     private readonly svc = inject(SettingsService);
     private readonly toast = inject(ToastService);
 

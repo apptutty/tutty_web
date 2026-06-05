@@ -29,7 +29,7 @@ const DEFAULT_DRAFT: RegistrationDraft = {
 
 export interface SubmitResult {
     approved: boolean;
-    restaurantId: string;
+    commerceId: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,7 +37,7 @@ export class RegisterService {
     private readonly supabase = getSupabaseClient();
 
     readonly registrationData = signal<RegistrationDraft>({ ...DEFAULT_DRAFT });
-    readonly lastRestaurantId = signal<string | null>(null);
+    readonly lastCommerceId = signal<string | null>(null);
 
     update(patch: Partial<RegistrationDraft>): void {
         this.registrationData.update(current => ({ ...current, ...patch }));
@@ -45,12 +45,12 @@ export class RegisterService {
 
     reset(): void {
         this.registrationData.set({ ...DEFAULT_DRAFT });
-        this.lastRestaurantId.set(null);
+        this.lastCommerceId.set(null);
     }
 
     async checkSlugAvailable(slug: string): Promise<boolean> {
         const { data, error } = await this.supabase
-            .from('restaurants')
+            .from('commerces')
             .select('id')
             .eq('slug', slug)
             .maybeSingle();
@@ -109,7 +109,7 @@ export class RegisterService {
 
         if (userError) throw userError;
 
-        // 3. Insert restaurant
+        // 3. Insert commerce
         const restaurantPayload: Record<string, unknown> = {
             name: draft.name,
             slug: draft.slug,
@@ -144,20 +144,20 @@ export class RegisterService {
         }
 
         const { data: restaurant, error: restaurantError } = await this.supabase
-            .from('restaurants')
+            .from('commerces')
             .insert(restaurantPayload)
             .select('id')
             .single();
 
         if (restaurantError || !restaurant) throw restaurantError ?? new Error('No se pudo crear el comercio');
 
-        const restaurantId = restaurant.id;
-        this.lastRestaurantId.set(restaurantId);
+        const commerceId = restaurant.id;
+        this.lastCommerceId.set(commerceId);
 
-        // 4. Link restaurant admin
+        // 4. Link commerce admin
         const { error: adminError } = await this.supabase
-            .from('restaurant_admins')
-            .insert({ user_id: userId, restaurant_id: restaurantId });
+            .from('commerce_admins')
+            .insert({ user_id: userId, commerce_id: commerceId });
 
         if (adminError) throw adminError;
 
@@ -172,19 +172,19 @@ export class RegisterService {
 
         if (autoApprove) {
             await this.supabase
-                .from('restaurants')
+                .from('commerces')
                 .update({ approval_status: 'aprobado', is_active: true, activated_at: new Date().toISOString() })
-                .eq('id', restaurantId);
+                .eq('id', commerceId);
         }
 
-        return { approved: autoApprove, restaurantId };
+        return { approved: autoApprove, commerceId };
     }
 
-    async getMyStoreStatus(restaurantId: string): Promise<{ approval_status: string; rejection_reason: string | null } | null> {
+    async getMyStoreStatus(commerceId: string): Promise<{ approval_status: string; rejection_reason: string | null } | null> {
         const { data, error } = await this.supabase
-            .from('restaurants')
+            .from('commerces')
             .select('approval_status, rejection_reason')
-            .eq('id', restaurantId)
+            .eq('id', commerceId)
             .single();
 
         if (error) return null;
@@ -228,19 +228,19 @@ export class RegisterService {
         }
 
         const { data: restaurant, error: restaurantError } = await this.supabase
-            .from('restaurants')
+            .from('commerces')
             .insert(restaurantPayload)
             .select('id')
             .single();
 
         if (restaurantError || !restaurant) throw restaurantError ?? new Error('No se pudo crear el comercio');
 
-        const restaurantId = restaurant.id;
-        this.lastRestaurantId.set(restaurantId);
+        const commerceId = restaurant.id;
+        this.lastCommerceId.set(commerceId);
 
         const { error: adminError } = await this.supabase
-            .from('restaurant_admins')
-            .insert({ user_id: userId, restaurant_id: restaurantId });
+            .from('commerce_admins')
+            .insert({ user_id: userId, commerce_id: commerceId });
 
         if (adminError) throw adminError;
 
@@ -254,11 +254,11 @@ export class RegisterService {
 
         if (autoApprove) {
             await this.supabase
-                .from('restaurants')
+                .from('commerces')
                 .update({ approval_status: 'aprobado', is_active: true, activated_at: new Date().toISOString() })
-                .eq('id', restaurantId);
+                .eq('id', commerceId);
         }
 
-        return { approved: autoApprove, restaurantId };
+        return { approved: autoApprove, commerceId };
     }
 }

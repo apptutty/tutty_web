@@ -44,7 +44,7 @@ export interface Order {
   itbis_amount: number;
   created_at: string;
   updated_at: string;
-  restaurant_id: string;
+  commerce_id: string;
   user_id: string;
   repartidor_id?: string | null;
   delivery_address: string;
@@ -146,7 +146,7 @@ export interface StoreApproval {
 
 export interface MenuCategory {
   id: string;
-  restaurant_id: string;
+  commerce_id: string;
   name: string;
   description?: string | null;
   display_order: number;
@@ -155,7 +155,7 @@ export interface MenuCategory {
 
 export interface MenuItem {
   id: string;
-  restaurant_id: string;
+  commerce_id: string;
   category_id?: string | null;
   name: string;
   description?: string | null;
@@ -202,7 +202,7 @@ export interface ProductVariant {
 
 export interface DeliveryZone {
   id: string;
-  restaurant_id: string;
+  commerce_id: string;
   name: string;
   sector_list: string[];
   delivery_fee: number;
@@ -246,10 +246,10 @@ export interface ExcursionCategory {
 }
 
 export interface ExcursionOperatorNotifPrefs {
-  nuevaReservaWA: boolean;
-  cancelacionWA: boolean;
-  recordatorioAnterior: boolean;
-  notifWhatsapp: string;
+  newBookingWA: boolean;
+  cancellationWA: boolean;
+  dayBeforeReminder: boolean;
+  whatsappNumber: string;
 }
 
 export interface ExcursionOperator {
@@ -356,7 +356,7 @@ export interface Promotion {
   current_uses: number;
   valid_from?: string | null;
   valid_until?: string | null;
-  restaurant_id?: string | null;
+  commerce_id?: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -437,12 +437,12 @@ export interface DashboardKPIs {
   ventas_hoy: number;
   pedidos_hoy: number;
   pedidos_activos: number;
-  restaurantes_abiertos: number;
+  active_commerces: number;
 }
 
 export interface OrderFilters {
   status?: OrderStatus | 'activos' | null;
-  restaurant_id?: string | null;
+  commerce_id?: string | null;
   date_from?: string | null;
   date_to?: string | null;
   search?: string | null;

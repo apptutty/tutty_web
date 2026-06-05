@@ -8,10 +8,10 @@ import { getSupabaseClient } from '../supabase/supabase.client';
 async function checkApproval(userId: string): Promise<boolean> {
     const supabase = getSupabaseClient();
     const { data } = await supabase
-        .from('restaurant_admins')
-        .select('restaurant_id, restaurants!inner(approval_status)')
+        .from('commerce_admins')
+        .select('commerce_id, commerces!inner(approval_status)')
         .eq('user_id', userId)
-        .eq('restaurants.approval_status', 'aprobado')
+        .eq('commerces.approval_status', 'aprobado')
         .limit(1)
         .maybeSingle();
 

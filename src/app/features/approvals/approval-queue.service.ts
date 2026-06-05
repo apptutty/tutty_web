@@ -12,12 +12,12 @@ export class ApprovalQueueService {
   getStoresByStatus(status: ApprovalStatus): Observable<StoreApproval[]> {
     return from(
       this.supabase
-        .from('restaurants')
+        .from('commerces')
         .select(`
                     id, name, commerce_type, logo_url, address, city,
                     approval_status, rejection_reason, approval_notes,
                     approved_by, approved_at, submitted_at,
-                    restaurant_admins(users(id, email, full_name))
+                    commerce_admins(users(id, email, full_name))
                 `)
         .eq('approval_status', status)
         .order('submitted_at', { ascending: true })
@@ -25,7 +25,7 @@ export class ApprovalQueueService {
       map(({ data, error }) => {
         if (error) throw error;
         return (data ?? []).map((row: any) => {
-          const adminUser = row.restaurant_admins?.[0]?.users;
+          const adminUser = row.commerce_admins?.[0]?.users;
           return {
             id: row.id,
             name: row.name,
@@ -56,7 +56,7 @@ export class ApprovalQueueService {
         .channel('approval-pending')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'restaurants' },
+          { event: '*', schema: 'public', table: 'commerces' },
           () => {
             this.getStoresByStatus('pendiente').subscribe(data => observer.next(data));
           }
@@ -70,7 +70,7 @@ export class ApprovalQueueService {
   async approveStore(storeId: string, notes?: string): Promise<void> {
     const adminId = this.authService.currentUser()?.id;
     const { error } = await this.supabase
-      .from('restaurants')
+      .from('commerces')
       .update({
         approval_status: 'aprobado',
         is_active: true,
@@ -86,7 +86,7 @@ export class ApprovalQueueService {
   async rejectStore(storeId: string, reason: string): Promise<void> {
     const adminId = this.authService.currentUser()?.id;
     const { error } = await this.supabase
-      .from('restaurants')
+      .from('commerces')
       .update({
         approval_status: 'rechazado',
         is_active: false,
@@ -101,7 +101,7 @@ export class ApprovalQueueService {
 
   async suspendStore(storeId: string, reason: string): Promise<void> {
     const { error } = await this.supabase
-      .from('restaurants')
+      .from('commerces')
       .update({
         approval_status: 'suspendido',
         is_active: false,
@@ -130,7 +130,7 @@ export class ApprovalQueueService {
       const adminId = this.authService.currentUser()?.id;
       // Approve all currently pending stores
       await this.supabase
-        .from('restaurants')
+        .from('commerces')
         .update({
           approval_status: 'aprobado',
           is_active: true,
@@ -144,9 +144,9 @@ export class ApprovalQueueService {
 
   private async _notifyStoreAdmin(storeId: string, message: string): Promise<void> {
     const { data: admins } = await this.supabase
-      .from('restaurant_admins')
+      .from('commerce_admins')
       .select('user_id')
-      .eq('restaurant_id', storeId);
+      .eq('commerce_id', storeId);
 
     if (!admins?.length) return;
 

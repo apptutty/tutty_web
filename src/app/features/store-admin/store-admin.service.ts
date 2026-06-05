@@ -30,8 +30,8 @@ export class StoreAdminService {
     async loadUserStores(userId: string): Promise<void> {
         this.isLoading.set(true);
         const { data, error } = await this.supabase
-            .from('restaurant_admins')
-            .select('restaurants(*)')
+            .from('commerce_admins')
+            .select('commerces(*)')
             .eq('user_id', userId);
 
         if (error || !data) {
@@ -40,7 +40,7 @@ export class StoreAdminService {
         }
 
         const restaurants = (data as any[])
-            .map(row => row.restaurants)
+            .map(row => row.commerces)
             .filter(Boolean) as Restaurant[];
 
         this.stores.set(restaurants);
@@ -71,7 +71,7 @@ export class StoreAdminService {
         const { count } = await this.supabase
             .from('orders')
             .select('id', { count: 'exact', head: true })
-            .eq('restaurant_id', storeId)
+            .eq('commerce_id', storeId)
             .in('status', ['recibido', 'confirmado', 'en_preparacion']);
         this.activeOrdersCount.set(count ?? 0);
     }
@@ -81,7 +81,7 @@ export class StoreAdminService {
         if (!store) return;
         const newVal = !store.is_open;
         const { error } = await this.supabase
-            .from('restaurants')
+            .from('commerces')
             .update({ is_open: newVal })
             .eq('id', store.id);
         if (!error) {

@@ -65,7 +65,7 @@ export class StoreOrdersService {
 
                 { count: 'exact' },
             )
-            .eq('restaurant_id', storeId);
+            .eq('commerce_id', storeId);
 
         const ACTIVE: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion', 'en_camino'];
         if (status === 'activos') {
@@ -118,7 +118,7 @@ export class StoreOrdersService {
                 .from('orders')
                 .select(`
           *,
-          restaurant:restaurants(id, name, address, phone),
+          commerce:commerces(id, name, address, phone),
           customer:users(id, full_name, phone),
           repartidor:repartidores(id, vehicle_type, plate, rating, user:users(full_name)),
           items:order_items(*),
@@ -185,7 +185,7 @@ export class StoreOrdersService {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'orders',
-                    filter: `restaurant_id=eq.${storeId}`,
+                    filter: `commerce_id=eq.${storeId}`,
                 },
                 (payload: any) => {
                     const order = payload.new as { order_number: string; total: number };

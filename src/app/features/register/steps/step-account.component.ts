@@ -407,7 +407,7 @@ export class RegisterStepAccountComponent implements OnInit {
         this.errorMessage.set(null);
         try {
             const result = await this.registerService.submitRegistrationForExistingUser(user.id);
-            this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.restaurantId } });
+            this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
         } catch (err: unknown) {
             this.errorMessage.set(err instanceof Error ? err.message : 'Error al registrar.');
         } finally {
@@ -431,7 +431,7 @@ export class RegisterStepAccountComponent implements OnInit {
 
         try {
             const result = await this.registerService.submitRegistration();
-            this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.restaurantId } });
+            this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error al registrar. Por favor intenta de nuevo.';
             this.errorMessage.set(message);

@@ -63,7 +63,7 @@ export class OperatorProfileService {
             tourism_license_number: row.tourism_license_number ?? '',
             languages: row.languages ?? ['Español'],
             notification_prefs: row.notification_prefs ?? {
-                nuevaReservaWA: true, cancelacionWA: true, recordatorioAnterior: true, notifWhatsapp: '',
+                newBookingWA: true, cancellationWA: true, dayBeforeReminder: true, whatsappNumber: '',
             },
         };
     }
@@ -114,7 +114,7 @@ export class OperatorProfileService {
         return { logo_url: logoUrl, banner_url: bannerUrl };
     }
 
-    async saveNotifPrefs(operatorId: string, prefs: ExcursionOperatorNotifPrefs): Promise<void> {
+    async saveNotificationPrefs(operatorId: string, prefs: ExcursionOperatorNotifPrefs): Promise<void> {
         const { error } = await this.supabase
             .from('excursion_operators')
             .update({ notification_prefs: prefs } as Record<string, unknown>)

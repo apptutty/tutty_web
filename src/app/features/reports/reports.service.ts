@@ -91,7 +91,7 @@ export class ReportsService {
         return from(
             this.supabase
                 .from('orders')
-                .select('total, commission_amount, restaurants(name)')
+                .select('total, commission_amount, commerces(name)')
                 .eq('status', 'entregado')
                 .gte('created_at', from_date)
                 .lte('created_at', to_date + 'T23:59:59')
@@ -99,7 +99,7 @@ export class ReportsService {
                     if (error) throw error;
                     const map: Record<string, RestaurantSales> = {};
                     (data ?? []).forEach((o: any) => {
-                        const name = o.restaurants?.name ?? 'Sin nombre';
+                        const name = o.commerces?.name ?? 'Sin nombre';
                         if (!map[name]) map[name] = { restaurant_name: name, orders: 0, revenue: 0, commission: 0 };
                         map[name].orders += 1;
                         map[name].revenue += Number(o.total) || 0;
@@ -114,7 +114,7 @@ export class ReportsService {
         return from(
             this.supabase
                 .from('order_items')
-                .select('quantity, subtotal, menu_items(name, restaurants(name)), orders!inner(created_at, status)')
+                .select('quantity, subtotal, menu_items(name, commerces(name)), orders!inner(created_at, status)')
                 .eq('orders.status', 'entregado')
                 .gte('orders.created_at', from_date)
                 .lte('orders.created_at', to_date + 'T23:59:59')
@@ -123,7 +123,7 @@ export class ReportsService {
                     const map: Record<string, TopProduct> = {};
                     (data ?? []).forEach((item: any) => {
                         const name = item.menu_items?.name ?? 'Sin nombre';
-                        const rest = item.menu_items?.restaurants?.name ?? '';
+                        const rest = item.menu_items?.commerces?.name ?? '';
                         const key = `${name}__${rest}`;
                         if (!map[key]) map[key] = { product_name: name, restaurant_name: rest, quantity: 0, revenue: 0 };
                         map[key].quantity += Number(item.quantity) || 0;
@@ -188,14 +188,14 @@ export class ReportsService {
     private async fetchCommerceTypeComparison(from_date: string, to_date: string): Promise<CommerceTypeRow[]> {
         const { data: orders, error: oErr } = await this.supabase
             .from('orders')
-            .select('subtotal, commission_amount, restaurants!inner(commerce_type)')
+            .select('subtotal, commission_amount, commerces!inner(commerce_type)')
             .eq('status', 'entregado')
             .gte('created_at', from_date)
             .lte('created_at', to_date + 'T23:59:59');
         if (oErr) throw oErr;
 
         const { data: stores, error: sErr } = await this.supabase
-            .from('restaurants')
+            .from('commerces')
             .select('commerce_type')
             .eq('is_active', true);
         if (sErr) throw sErr;
@@ -208,7 +208,7 @@ export class ReportsService {
 
         const map: Record<string, { orders: number; revenue: number; commission: number }> = {};
         (orders ?? []).forEach((o: any) => {
-            const ct: string = (o.restaurants as any)?.commerce_type ?? 'otro';
+            const ct: string = (o.commerces as any)?.commerce_type ?? 'otro';
             if (!map[ct]) map[ct] = { orders: 0, revenue: 0, commission: 0 };
             map[ct].orders += 1;
             map[ct].revenue += Number(o.subtotal) || 0;

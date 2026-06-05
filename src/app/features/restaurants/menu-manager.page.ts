@@ -13,7 +13,7 @@ import { MenuCategory, MenuItem } from '../../core/supabase/database.types';
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
-    <app-page-header [title]="'Menú — ' + restaurantId" subtitle="Gestión de categorías e ítems">
+    <app-page-header [title]="'Menú — ' + commerceId" subtitle="Gestión de categorías e ítems">
       <button class="btn-secondary" (click)="openCategoryModal()">+ Categoría</button>
     </app-page-header>
 
@@ -191,7 +191,7 @@ export class MenuManagerPageComponent implements OnInit {
   private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
-  readonly restaurantId = this.route.snapshot.paramMap.get('id')!;
+  readonly commerceId = this.route.snapshot.paramMap.get('id')!;
 
   readonly categories = signal<MenuCategory[]>([]);
   readonly items = signal<MenuItem[]>([]);
@@ -219,7 +219,7 @@ export class MenuManagerPageComponent implements OnInit {
   ngOnInit(): void { this.loadCategories(); }
 
   loadCategories(): void {
-    this.service.getCategories(this.restaurantId).subscribe(cats => {
+    this.service.getCategories(this.commerceId).subscribe(cats => {
       this.categories.set(cats);
       this.categoriesLoading.set(false);
     });
@@ -243,7 +243,7 @@ export class MenuManagerPageComponent implements OnInit {
     if (!this.categoryName.trim()) return;
     try {
       await this.service.saveCategory({
-        restaurant_id: this.restaurantId,
+        commerce_id: this.commerceId,
         name: this.categoryName.trim(),
         display_order: this.categories().length,
         is_active: true,
@@ -269,7 +269,7 @@ export class MenuManagerPageComponent implements OnInit {
     const val = this.itemForm.getRawValue();
     const payload: Partial<MenuItem> = {
       ...(this.editingItem() ? { id: this.editingItem()!.id } : {}),
-      restaurant_id: this.restaurantId,
+      commerce_id: this.commerceId,
       category_id: this.selectedCategoryId()!,
       name: val.name!,
       description: val.description ?? null,

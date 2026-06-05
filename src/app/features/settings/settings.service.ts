@@ -9,7 +9,7 @@ export interface AdminUser {
     role: string;
     is_active: boolean;
     created_at: string;
-    restaurant_id?: string;
+    commerce_id?: string;
     operator_id?: string;
 }
 
@@ -75,7 +75,7 @@ export class SettingsService {
         return (data ?? []) as AdminUser[];
     }
 
-    async createAdminUser(userData: { email: string; password: string; full_name: string; role: string; restaurant_id?: string; operator_id?: string }): Promise<void> {
+    async createAdminUser(userData: { email: string; password: string; full_name: string; role: string; commerce_id?: string; operator_id?: string }): Promise<void> {
         const { data, error } = await this.supabase.auth.admin.createUser({
             email: userData.email,
             password: userData.password,
@@ -89,7 +89,7 @@ export class SettingsService {
                 email: userData.email,
                 full_name: userData.full_name,
                 role: userData.role,
-                restaurant_id: userData.restaurant_id ?? null,
+                commerce_id: userData.commerce_id ?? null,
                 operator_id: userData.operator_id ?? null,
                 is_active: true
             });
@@ -109,7 +109,7 @@ export class SettingsService {
 
     async approveAllPendingStores(): Promise<void> {
         const { error } = await this.supabase
-            .from('restaurants')
+            .from('commerces')
             .update({ approval_status: 'aprobado', is_active: true })
             .eq('approval_status', 'pendiente');
         if (error) throw error;

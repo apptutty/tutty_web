@@ -63,11 +63,11 @@ export class StoreDashboardService {
             this.supabase
                 .from('orders')
                 .select('id, status, total')
-                .eq('restaurant_id', storeId)
+                .eq('commerce_id', storeId)
                 .gte('created_at', todayStart.toISOString())
                 .lte('created_at', todayEnd.toISOString()),
             this.supabase
-                .from('restaurants')
+                .from('commerces')
                 .select('avg_rating')
                 .eq('id', storeId)
                 .single(),
@@ -91,7 +91,7 @@ export class StoreDashboardService {
             const { data: stockItems } = await this.supabase
                 .from('menu_items')
                 .select('stock_count, low_stock_alert')
-                .eq('restaurant_id', storeId)
+                .eq('commerce_id', storeId)
                 .eq('track_stock', true)
                 .eq('is_available', true);
 
@@ -124,7 +124,7 @@ export class StoreDashboardService {
         users!user_id(full_name),
         order_items(quantity, menu_item_snapshot)
       `)
-            .eq('restaurant_id', storeId)
+            .eq('commerce_id', storeId)
             .in('status', ['recibido', 'confirmado', 'en_preparacion', 'en_camino'])
             .order('created_at', { ascending: true });
 
@@ -156,9 +156,9 @@ export class StoreDashboardService {
             .from('order_items')
             .select(`
         quantity, unit_price, subtotal, menu_item_snapshot,
-        orders!inner(restaurant_id, status, created_at)
+        orders!inner(commerce_id, status, created_at)
       `)
-            .eq('orders.restaurant_id', storeId)
+            .eq('orders.commerce_id', storeId)
             .neq('orders.status', 'cancelado')
             .gte('orders.created_at', todayStart.toISOString());
 
@@ -197,7 +197,7 @@ export class StoreDashboardService {
             const { data } = await this.supabase
                 .from('orders')
                 .select('total, status')
-                .eq('restaurant_id', storeId)
+                .eq('commerce_id', storeId)
                 .gte('created_at', start.toISOString())
                 .lte('created_at', end.toISOString());
 
@@ -221,7 +221,7 @@ export class StoreDashboardService {
         const { data: items } = await this.supabase
             .from('menu_items')
             .select('id, name, stock_count, low_stock_alert')
-            .eq('restaurant_id', storeId)
+            .eq('commerce_id', storeId)
             .eq('track_stock', true)
             .order('stock_count', { ascending: true });
 

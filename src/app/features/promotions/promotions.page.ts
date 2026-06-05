@@ -104,7 +104,7 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
                       {{ p.valid_from ?? '—' }} → {{ p.valid_until ?? '—' }}
                     } @else { Sin límite }
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-600">{{ p.restaurant_id }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">{{ p.commerce_id }}</td>
                   <td class="px-4 py-3">
                     <button
                       class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"

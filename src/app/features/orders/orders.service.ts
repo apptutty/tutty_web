@@ -16,11 +16,11 @@ export class OrdersService {
     }
 
     private async fetchOrders(filters: OrderFilters) {
-        const { page = 1, pageSize = 20, status, restaurant_id, date_from, date_to, search } = filters;
+        const { page = 1, pageSize = 20, status, commerce_id, date_from, date_to, search } = filters;
 
         let query = this.supabase
             .from('orders')
-            .select('*, restaurant:restaurants(name), customer:users(full_name, phone), repartidor:repartidores(user:users(full_name))', { count: 'exact' });
+            .select('*, commerce:commerces(name), customer:users(full_name, phone), repartidor:repartidores(user:users(full_name))', { count: 'exact' });
 
         if (status === 'activos') {
             query = query.in('status', ACTIVE_STATUSES);
@@ -28,7 +28,7 @@ export class OrdersService {
             query = query.eq('status', status);
         }
 
-        if (restaurant_id) query = query.eq('restaurant_id', restaurant_id);
+        if (commerce_id) query = query.eq('commerce_id', commerce_id);
         if (date_from) query = query.gte('created_at', `${date_from}T00:00:00`);
         if (date_to) query = query.lte('created_at', `${date_to}T23:59:59`);
         if (search) query = query.ilike('order_number', `%${search}%`);
@@ -47,7 +47,7 @@ export class OrdersService {
     private mapOrder(o: any) {
         return {
             ...o,
-            restaurant_name: o.restaurant?.name ?? '—',
+            restaurant_name: o.commerce?.name ?? '—',
             customer_name: o.customer?.full_name ?? '—',
             customer_phone: o.customer?.phone ?? '—',
             repartidor_name: o.repartidor?.user?.full_name ?? '—',
@@ -60,7 +60,7 @@ export class OrdersService {
                 .from('orders')
                 .select(`
           *,
-          restaurant:restaurants(id, name, address, phone),
+          commerce:commerces(id, name, address, phone),
           customer:users(id, full_name, phone),
           repartidor:repartidores(id, vehicle_type, plate, rating, user:users(full_name)),
           items:order_items(*),

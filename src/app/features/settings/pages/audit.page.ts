@@ -6,7 +6,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { AuditLogEntry } from '../../../core/supabase/database.types';
 
 @Component({
-    selector: 'app-settings-auditoria',
+    selector: 'app-settings-audit',
     standalone: true,
     imports: [CommonModule, FormsModule, DatePipe],
     template: `
@@ -76,7 +76,7 @@ import { AuditLogEntry } from '../../../core/supabase/database.types';
     </div>
   `,
 })
-export class AuditoriaPageComponent implements OnInit {
+export class AuditPageComponent implements OnInit {
     private readonly svc = inject(SettingsService);
     private readonly toast = inject(ToastService);
 

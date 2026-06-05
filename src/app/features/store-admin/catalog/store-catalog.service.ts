@@ -30,7 +30,7 @@ export class StoreCatalogService {
       this.supabase
         .from('menu_categories')
         .select('*')
-        .eq('restaurant_id', storeId)
+        .eq('commerce_id', storeId)
         .order('display_order', { ascending: true })
         .then(({ data, error }) => {
           if (error) throw error;
@@ -43,7 +43,7 @@ export class StoreCatalogService {
     const { data: existing } = await this.supabase
       .from('menu_categories')
       .select('display_order')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .order('display_order', { ascending: false })
       .limit(1)
       .single();
@@ -52,7 +52,7 @@ export class StoreCatalogService {
 
     const { data, error } = await this.supabase
       .from('menu_categories')
-      .insert({ restaurant_id: storeId, name, display_order: nextOrder, is_active: true })
+      .insert({ commerce_id: storeId, name, display_order: nextOrder, is_active: true })
       .select()
       .single();
 
@@ -86,7 +86,7 @@ export class StoreCatalogService {
     let query = this.supabase
       .from('menu_items')
       .select('*')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .order('display_order', { ascending: true });
 
     if (filters.categoryId) query = query.eq('category_id', filters.categoryId);
@@ -118,7 +118,7 @@ export class StoreCatalogService {
   async createProduct(storeId: string, payload: Partial<MenuItem>): Promise<MenuItem> {
     const { data, error } = await this.supabase
       .from('menu_items')
-      .insert({ ...payload, restaurant_id: storeId })
+      .insert({ ...payload, commerce_id: storeId })
       .select()
       .single();
     if (error) throw error;
@@ -204,7 +204,7 @@ export class StoreCatalogService {
 
     const toInsert = valid.map(r => ({
       ...r,
-      restaurant_id: storeId,
+      commerce_id: storeId,
       is_available: r.is_available ?? true,
       is_featured: r.is_featured ?? false,
       track_stock: r.track_stock ?? false,

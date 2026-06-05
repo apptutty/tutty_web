@@ -216,30 +216,30 @@ export class RegisterPendingComponent implements OnInit {
     ngOnInit(): void {
         const params = this.route.snapshot.queryParamMap;
         const approved = params.get('approved');
-        const restaurantId = params.get('id') ?? this.registerService.lastRestaurantId();
+        const commerceId = params.get('id') ?? this.registerService.lastCommerceId();
 
         if (approved === 'true') {
             this.state.set('approved');
             return;
         }
 
-        if (restaurantId) {
-            this.loadStatus(restaurantId);
+        if (commerceId) {
+            this.loadStatus(commerceId);
         } else {
             this.state.set('pending');
         }
     }
 
     async checkStatus(): Promise<void> {
-        const restaurantId = this.route.snapshot.queryParamMap.get('id') ?? this.registerService.lastRestaurantId();
-        if (restaurantId) {
+        const commerceId = this.route.snapshot.queryParamMap.get('id') ?? this.registerService.lastCommerceId();
+        if (commerceId) {
             this.state.set('loading');
-            await this.loadStatus(restaurantId);
+            await this.loadStatus(commerceId);
         }
     }
 
-    private async loadStatus(restaurantId: string): Promise<void> {
-        const data = await this.registerService.getMyStoreStatus(restaurantId);
+    private async loadStatus(commerceId: string): Promise<void> {
+        const data = await this.registerService.getMyStoreStatus(commerceId);
         if (!data) {
             this.state.set('pending');
             return;

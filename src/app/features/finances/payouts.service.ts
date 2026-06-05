@@ -33,7 +33,7 @@ export class PayoutsService {
     // Aggregate delivered orders per store in the period
     const { data: orders, error } = await this.supabase
       .from('orders')
-      .select('restaurant_id, subtotal, commission_amount, delivery_fee, restaurant:restaurants(name)')
+      .select('commerce_id, subtotal, commission_amount, delivery_fee, commerce:commerces(name)')
       .eq('status', 'entregado')
       .gte('created_at', fromDate)
       .lte('created_at', toDate);
@@ -43,8 +43,8 @@ export class PayoutsService {
     const map: Record<string, PayoutSummary> = {};
     for (const o of (orders ?? [])) {
       const raw = o as any;
-      const storeId: string = raw.restaurant_id;
-      const storeName: string = raw.restaurant?.name ?? storeId;
+      const storeId: string = raw.commerce_id;
+      const storeName: string = raw.commerce?.name ?? storeId;
       if (!map[storeId]) {
         map[storeId] = {
           store_id: storeId,
@@ -94,7 +94,7 @@ export class PayoutsService {
     const { data: orders, error: oErr } = await this.supabase
       .from('orders')
       .select('subtotal, commission_amount, delivery_fee')
-      .eq('restaurant_id', storeId)
+      .eq('commerce_id', storeId)
       .eq('status', 'entregado')
       .gte('created_at', fromDate)
       .lte('created_at', toDate);

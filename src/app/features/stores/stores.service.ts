@@ -24,10 +24,10 @@ export class StoresService {
 
     private async fetchStores(filters: StoreFilters): Promise<Restaurant[]> {
         let query = this.supabase
-            .from('restaurants')
+            .from('commerces')
             .select(`
                 *,
-                restaurant_admins(
+                commerce_admins(
                     user:users(full_name, email)
                 )
             `)
@@ -43,24 +43,24 @@ export class StoresService {
         if (error) throw error;
         return (data ?? []).map((r: any) => ({
             ...r,
-            admin_name: r.restaurant_admins?.[0]?.user?.full_name ?? null,
-            admin_email: r.restaurant_admins?.[0]?.user?.email ?? null,
+            admin_name: r.commerce_admins?.[0]?.user?.full_name ?? null,
+            admin_email: r.commerce_admins?.[0]?.user?.email ?? null,
         })) as Restaurant[];
     }
 
     getStoreById(id: string): Observable<Restaurant> {
         return from(
-            this.supabase.from('restaurants')
-                .select(`*, restaurant_admins(user:users(full_name, email, phone))`)
+            this.supabase.from('commerces')
+                .select(`*, commerce_admins(user:users(full_name, email, phone))`)
                 .eq('id', id).single()
                 .then(({ data, error }) => {
                     if (error) throw error;
                     const raw = data as any;
                     return {
                         ...raw,
-                        admin_name: raw.restaurant_admins?.[0]?.user?.full_name ?? null,
-                        admin_email: raw.restaurant_admins?.[0]?.user?.email ?? null,
-                        admin_phone: raw.restaurant_admins?.[0]?.user?.phone ?? null,
+                        admin_name: raw.commerce_admins?.[0]?.user?.full_name ?? null,
+                        admin_email: raw.commerce_admins?.[0]?.user?.email ?? null,
+                        admin_phone: raw.commerce_admins?.[0]?.user?.phone ?? null,
                     } as Restaurant;
                 })
         );
@@ -69,24 +69,24 @@ export class StoresService {
     async saveStore(data: Partial<Restaurant>): Promise<Restaurant> {
         if (data.id) {
             const { data: res, error } = await this.supabase
-                .from('restaurants').update(data).eq('id', data.id).select().single();
+                .from('commerces').update(data).eq('id', data.id).select().single();
             if (error) throw error;
             return res as Restaurant;
         } else {
             const { data: res, error } = await this.supabase
-                .from('restaurants').insert(data).select().single();
+                .from('commerces').insert(data).select().single();
             if (error) throw error;
             return res as Restaurant;
         }
     }
 
     async toggleOpen(id: string, isOpen: boolean): Promise<void> {
-        const { error } = await this.supabase.from('restaurants').update({ is_open: isOpen }).eq('id', id);
+        const { error } = await this.supabase.from('commerces').update({ is_open: isOpen }).eq('id', id);
         if (error) throw error;
     }
 
     async toggleActive(id: string, isActive: boolean): Promise<void> {
-        const { error } = await this.supabase.from('restaurants').update({ is_active: isActive }).eq('id', id);
+        const { error } = await this.supabase.from('commerces').update({ is_active: isActive }).eq('id', id);
         if (error) throw error;
     }
 
@@ -94,35 +94,35 @@ export class StoresService {
         const payload: any = { approval_status: status };
         if (status === 'aprobado') payload.approved_at = new Date().toISOString();
         if (notes) payload.rejection_reason = notes;
-        const { error } = await this.supabase.from('restaurants').update(payload).eq('id', id);
+        const { error } = await this.supabase.from('commerces').update(payload).eq('id', id);
         if (error) throw error;
     }
 
     async updateCommission(id: string, rate: number, tier: CommissionTier): Promise<void> {
-        const { error } = await this.supabase.from('restaurants')
+        const { error } = await this.supabase.from('commerces')
             .update({ commission_rate: rate, commission_tier: tier }).eq('id', id);
         if (error) throw error;
     }
 
     async deleteStore(id: string): Promise<void> {
-        const { error } = await this.supabase.from('restaurants').delete().eq('id', id);
+        const { error } = await this.supabase.from('commerces').delete().eq('id', id);
         if (error) throw error;
     }
 
     // ── Catalog ──────────────────────────────────────────────────────────────
 
-    getCategories(restaurantId: string): Observable<MenuCategory[]> {
+    getCategories(commerceId: string): Observable<MenuCategory[]> {
         return from(
             this.supabase.from('menu_categories').select('*')
-                .eq('restaurant_id', restaurantId).order('display_order')
+                .eq('commerce_id', commerceId).order('display_order')
                 .then(({ data }) => (data ?? []) as MenuCategory[])
         );
     }
 
-    getMenuItems(restaurantId: string): Observable<MenuItem[]> {
+    getMenuItems(commerceId: string): Observable<MenuItem[]> {
         return from(
             this.supabase.from('menu_items').select('*')
-                .eq('restaurant_id', restaurantId).order('display_order')
+                .eq('commerce_id', commerceId).order('display_order')
                 .then(({ data }) => (data ?? []) as MenuItem[])
         );
     }
@@ -144,14 +144,14 @@ export class StoresService {
 
     // ── Finance KPIs ─────────────────────────────────────────────────────────
 
-    getFinanceKpi(restaurantId: string, fromDate: string, toDate: string): Observable<StoreFinanceKpi> {
-        return from(this.fetchFinanceKpi(restaurantId, fromDate, toDate));
+    getFinanceKpi(commerceId: string, fromDate: string, toDate: string): Observable<StoreFinanceKpi> {
+        return from(this.fetchFinanceKpi(commerceId, fromDate, toDate));
     }
 
-    private async fetchFinanceKpi(restaurantId: string, fromDate: string, toDate: string): Promise<StoreFinanceKpi> {
+    private async fetchFinanceKpi(commerceId: string, fromDate: string, toDate: string): Promise<StoreFinanceKpi> {
         const { data, error } = await this.supabase.from('orders')
             .select('subtotal, commission_amount, delivery_fee, status, created_at')
-            .eq('restaurant_id', restaurantId)
+            .eq('commerce_id', commerceId)
             .in('status', ['entregado'])
             .gte('created_at', fromDate)
             .lte('created_at', toDate);
@@ -164,11 +164,11 @@ export class StoresService {
         return { totalOrders, grossSales, commission, deliveryFees, netPayout: grossSales - commission };
     }
 
-    getOrderSummaries(restaurantId: string, fromDate: string, toDate: string): Observable<StoreOrderSummary[]> {
+    getOrderSummaries(commerceId: string, fromDate: string, toDate: string): Observable<StoreOrderSummary[]> {
         return from(
             this.supabase.from('orders')
                 .select('id, order_number, subtotal, commission_amount, delivery_fee, total, status, created_at')
-                .eq('restaurant_id', restaurantId)
+                .eq('commerce_id', commerceId)
                 .eq('status', 'entregado')
                 .gte('created_at', fromDate)
                 .lte('created_at', toDate)
@@ -177,14 +177,14 @@ export class StoresService {
         );
     }
 
-    getTodayStats(restaurantId: string): Observable<{ orders: number; revenue: number }> {
+    getTodayStats(commerceId: string): Observable<{ orders: number; revenue: number }> {
         const today = new Date();
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
         const startOfTomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
         return from(
             this.supabase.from('orders')
                 .select('subtotal, status')
-                .eq('restaurant_id', restaurantId)
+                .eq('commerce_id', commerceId)
                 .gte('created_at', startOfDay)
                 .lt('created_at', startOfTomorrow)
                 .then(({ data }) => {
@@ -200,13 +200,13 @@ export class StoresService {
 
     // ── Approval History (from order_status_history pattern) ─────────────────
 
-    getApprovalHistory(restaurantId: string): Observable<StoreApprovalHistory[]> {
+    getApprovalHistory(commerceId: string): Observable<StoreApprovalHistory[]> {
         // Stored in a dedicated audit log or derived from field changes
-        // Using a simple query on the restaurant's approval fields as placeholder
+        // Using a simple query on the commerce's approval fields as placeholder
         return from(
-            this.supabase.from('restaurants')
+            this.supabase.from('commerces')
                 .select('approval_status, approved_at, approved_by, rejection_reason, submitted_at')
-                .eq('id', restaurantId)
+                .eq('id', commerceId)
                 .then(({ data }) => {
                     const r = data?.[0] as any;
                     if (!r) return [] as StoreApprovalHistory[];

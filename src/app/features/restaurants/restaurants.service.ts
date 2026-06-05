@@ -13,7 +13,7 @@ export class RestaurantsService {
 
     private async fetchRestaurants(search?: string) {
         let query = this.supabase
-            .from('restaurants')
+            .from('commerces')
             .select('*', { count: 'exact' })
             .order('name');
         if (search) query = query.ilike('name', `%${search}%`);
@@ -24,7 +24,7 @@ export class RestaurantsService {
 
     getRestaurantById(id: string): Observable<Restaurant> {
         return from(
-            this.supabase.from('restaurants').select('*').eq('id', id).single()
+            this.supabase.from('commerces').select('*').eq('id', id).single()
                 .then(({ data, error }) => {
                     if (error) throw error;
                     return data as Restaurant;
@@ -35,32 +35,32 @@ export class RestaurantsService {
     async saveRestaurant(data: Partial<Restaurant>): Promise<Restaurant> {
         if (data.id) {
             const { data: res, error } = await this.supabase
-                .from('restaurants').update(data).eq('id', data.id).select().single();
+                .from('commerces').update(data).eq('id', data.id).select().single();
             if (error) throw error;
             return res as Restaurant;
         } else {
             const { data: res, error } = await this.supabase
-                .from('restaurants').insert(data).select().single();
+                .from('commerces').insert(data).select().single();
             if (error) throw error;
             return res as Restaurant;
         }
     }
 
     async toggleRestaurantOpen(id: string, isOpen: boolean): Promise<void> {
-        const { error } = await this.supabase.from('restaurants').update({ is_open: isOpen }).eq('id', id);
+        const { error } = await this.supabase.from('commerces').update({ is_open: isOpen }).eq('id', id);
         if (error) throw error;
     }
 
     async toggleRestaurantActive(id: string, isActive: boolean): Promise<void> {
-        const { error } = await this.supabase.from('restaurants').update({ is_active: isActive }).eq('id', id);
+        const { error } = await this.supabase.from('commerces').update({ is_active: isActive }).eq('id', id);
         if (error) throw error;
     }
 
     // Menu
-    getCategories(restaurantId: string): Observable<MenuCategory[]> {
+    getCategories(commerceId: string): Observable<MenuCategory[]> {
         return from(
             this.supabase.from('menu_categories').select('*')
-                .eq('restaurant_id', restaurantId).order('display_order')
+                .eq('commerce_id', commerceId).order('display_order')
                 .then(({ data }) => (data ?? []) as MenuCategory[])
         );
     }
@@ -99,10 +99,10 @@ export class RestaurantsService {
     }
 
     // Delivery zones
-    getDeliveryZones(restaurantId: string): Observable<DeliveryZone[]> {
+    getDeliveryZones(commerceId: string): Observable<DeliveryZone[]> {
         return from(
             this.supabase.from('delivery_zones').select('*')
-                .eq('restaurant_id', restaurantId).order('priority')
+                .eq('commerce_id', commerceId).order('priority')
                 .then(({ data }) => (data ?? []) as DeliveryZone[])
         );
     }

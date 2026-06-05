@@ -6,7 +6,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { StoreCategory, CommerceType } from '../../../core/supabase/database.types';
 
 @Component({
-    selector: 'app-settings-categorias',
+    selector: 'app-settings-categories',
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
@@ -142,7 +142,7 @@ import { StoreCategory, CommerceType } from '../../../core/supabase/database.typ
     }
   `,
 })
-export class CategoriasPageComponent implements OnInit {
+export class CategoriesPageComponent implements OnInit {
     private readonly svc = inject(SettingsService);
     private readonly toast = inject(ToastService);
 

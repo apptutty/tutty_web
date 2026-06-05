@@ -5,7 +5,7 @@ import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 
 @Component({
-    selector: 'app-settings-comercios',
+    selector: 'app-settings-commerce',
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
@@ -103,7 +103,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
     }
   `,
 })
-export class ComerciosPageComponent implements OnInit {
+export class CommercePageComponent implements OnInit {
     private readonly svc = inject(SettingsService);
     private readonly toast = inject(ToastService);
 

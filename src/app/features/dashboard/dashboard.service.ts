@@ -21,7 +21,7 @@ export class DashboardService {
     private async fetchKPIs(): Promise<DashboardKPIs> {
         const today = new Date().toISOString().split('T')[0];
 
-        const [ventasRes, pedidosRes, activosRes, restaurantesRes] = await Promise.all([
+        const [ventasRes, pedidosRes, activosRes, commercesRes] = await Promise.all([
             this.supabase
                 .from('orders')
                 .select('total')
@@ -37,7 +37,7 @@ export class DashboardService {
                 .select('id', { count: 'exact', head: true })
                 .in('status', ['recibido', 'confirmado', 'en_preparacion', 'en_camino']),
             this.supabase
-                .from('restaurants')
+                .from('commerces')
                 .select('id', { count: 'exact', head: true })
                 .eq('is_open', true)
                 .eq('is_active', true),
@@ -49,7 +49,7 @@ export class DashboardService {
             ventas_hoy: ventas,
             pedidos_hoy: pedidosRes.count ?? 0,
             pedidos_activos: activosRes.count ?? 0,
-            restaurantes_abiertos: restaurantesRes.count ?? 0,
+            active_commerces: commercesRes.count ?? 0,
         };
     }
 
@@ -57,7 +57,7 @@ export class DashboardService {
         return from(
             this.supabase
                 .from('orders')
-                .select('*, restaurant:restaurants(name), customer:users(full_name)')
+                .select('*, commerce:commerces(name), customer:users(full_name)')
                 .order('created_at', { ascending: false })
                 .limit(limit)
                 .then(({ data }) => (data ?? []) as any[])

@@ -201,7 +201,7 @@ export class DeliveryZonesPageComponent implements OnInit {
     readonly saveLoading = signal(false);
     sectors: string[] = [];
 
-    private restaurantId = '';
+    private commerceId = '';
 
     readonly zoneForm = this.fb.group({
         name: ['', Validators.required],
@@ -217,18 +217,18 @@ export class DeliveryZonesPageComponent implements OnInit {
     });
 
     ngOnInit(): void {
-        this.restaurantId = this.route.snapshot.paramMap.get('id') ?? '';
+        this.commerceId = this.route.snapshot.paramMap.get('id') ?? '';
         this.loadRestaurant();
         this.loadZones();
     }
 
     loadRestaurant(): void {
-        this.service.getRestaurantById(this.restaurantId).subscribe(r => this.restaurant.set(r));
+        this.service.getRestaurantById(this.commerceId).subscribe(r => this.restaurant.set(r));
     }
 
     loadZones(): void {
         this.loading.set(true);
-        this.service.getDeliveryZones(this.restaurantId).subscribe(zones => {
+        this.service.getDeliveryZones(this.commerceId).subscribe(zones => {
             this.zones.set(zones);
             this.loading.set(false);
         });
@@ -270,7 +270,7 @@ export class DeliveryZonesPageComponent implements OnInit {
             const val = this.zoneForm.getRawValue();
             await this.service.saveDeliveryZone({
                 ...(this.editingZone() ? { id: this.editingZone()!.id } : {}),
-                restaurant_id: this.restaurantId,
+                commerce_id: this.commerceId,
                 name: val.name!,
                 sector_list: this.sectors,
                 delivery_fee: val.delivery_fee ?? 0,

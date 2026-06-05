@@ -50,7 +50,7 @@ const STATUS_ORDER = ['recibido', 'confirmado', 'en_preparacion', 'en_camino', '
       />
       <app-stat-card
         title="Restaurantes Abiertos"
-        [value]="kpis()?.restaurantes_abiertos ?? 0"
+        [value]="kpis()?.active_commerces ?? 0"
         icon="🏪"
         color="purple"
         trend="neutral"
