@@ -82,6 +82,42 @@ export const routes: Routes = [
         loadComponent: () => import('./features/finances/finances.page').then(m => m.FinancesPageComponent),
       },
       {
+        path: 'support',
+        loadComponent: () => import('./features/support/support.page').then(m => m.SupportPageComponent),
+      },
+      {
+        path: 'support-dashboard',
+        loadComponent: () => import('./features/support/support-dashboard.page').then(m => m.SupportDashboardPageComponent),
+      },
+      {
+        path: 'support/templates',
+        loadComponent: () => import('./features/support/templates/ticket-templates.page').then(m => m.TicketTemplatesPageComponent),
+      },
+      {
+        path: 'catalog',
+        loadComponent: () => import('./features/catalog-admin/catalog-manager.page').then(m => m.CatalogManagerPageComponent),
+      },
+      {
+        path: 'catalog/search',
+        loadComponent: () => import('./features/catalog-admin/catalog-global-search.page').then(m => m.CatalogGlobalSearchPageComponent),
+      },
+      {
+        path: 'catalog/price-approvals',
+        loadComponent: () => import('./features/catalog-admin/price-approval-dashboard.page').then(m => m.PriceApprovalDashboardComponent),
+      },
+      {
+        path: 'catalog/:storeId',
+        loadComponent: () => import('./features/catalog-admin/store-product-manager.page').then(m => m.StoreProductManagerPageComponent),
+      },
+      {
+        path: 'catalog/:storeId/products/new',
+        loadComponent: () => import('./features/catalog-admin/product-form.page').then(m => m.ProductFormPageComponent),
+      },
+      {
+        path: 'catalog/:storeId/products/:productId',
+        loadComponent: () => import('./features/catalog-admin/product-form.page').then(m => m.ProductFormPageComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./features/settings/settings-shell.component').then(m => m.SettingsShellComponent),
         children: [
