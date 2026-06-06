@@ -477,8 +477,8 @@ export class CatalogAdminService {
                 const title = status === 'retirado'
                     ? 'Producto retirado'
                     : status === 'bajo_revision'
-                    ? 'Producto bajo revisión'
-                    : 'Producto aprobado';
+                        ? 'Producto bajo revisión'
+                        : 'Producto aprobado';
                 await this.notifyStoreAdmin(item.commerce_id, title, `"${item.name}" fue marcado como ${status}. ${notes ? `Notas: ${notes}` : ''}`, { product_id: productId });
             }
         }

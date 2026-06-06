@@ -14,20 +14,20 @@ import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIES: { value: TemplateCategory; label: string; icon: string; color: string }[] = [
-    { value: 'seguimiento',  label: 'Seguimiento',  icon: '📋', color: 'bg-blue-100 text-blue-700' },
-    { value: 'reembolso',    label: 'Reembolso',    icon: '💰', color: 'bg-success-100 text-success-700' },
+    { value: 'seguimiento', label: 'Seguimiento', icon: '📋', color: 'bg-blue-100 text-blue-700' },
+    { value: 'reembolso', label: 'Reembolso', icon: '💰', color: 'bg-success-100 text-success-700' },
     { value: 'compensacion', label: 'Compensación', icon: '🎁', color: 'bg-purple-100 text-purple-700' },
-    { value: 'cierre',       label: 'Cierre',       icon: '✅', color: 'bg-gray-100 text-gray-700' },
+    { value: 'cierre', label: 'Cierre', icon: '✅', color: 'bg-gray-100 text-gray-700' },
 ];
 
 const TEMPLATE_VARIABLES: { key: string; example: string; label: string }[] = [
-    { key: '{{nombre_cliente}}',  example: 'Juan Pérez',     label: 'Nombre cliente' },
-    { key: '{{numero_ticket}}',   example: 'TKT-00042',      label: '# Ticket' },
-    { key: '{{numero_pedido}}',   example: 'TUT-1234',       label: '# Pedido' },
-    { key: '{{monto}}',           example: '350',             label: 'Monto RD$' },
-    { key: '{{codigo_promo}}',    example: 'SORRY50',         label: 'Código promo' },
-    { key: '{{sla_horas}}',       example: '24',              label: 'SLA horas' },
-    { key: '{{descuento}}',       example: '100',             label: 'Descuento RD$' },
+    { key: '{{nombre_cliente}}', example: 'Juan Pérez', label: 'Nombre cliente' },
+    { key: '{{numero_ticket}}', example: 'TKT-00042', label: '# Ticket' },
+    { key: '{{numero_pedido}}', example: 'TUT-1234', label: '# Pedido' },
+    { key: '{{monto}}', example: '350', label: 'Monto RD$' },
+    { key: '{{codigo_promo}}', example: 'SORRY50', label: 'Código promo' },
+    { key: '{{sla_horas}}', example: '24', label: 'SLA horas' },
+    { key: '{{descuento}}', example: '100', label: 'Descuento RD$' },
 ];
 
 function extractVariables(body: string): string[] {

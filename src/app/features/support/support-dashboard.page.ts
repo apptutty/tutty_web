@@ -24,13 +24,13 @@ const TYPE_LABELS: Partial<Record<string, string>> = {
 };
 
 const TYPE_COLORS: Partial<Record<string, string>> = {
-    pedido:     '#EF4444',
-    pago:       '#F59E0B',
+    pedido: '#EF4444',
+    pago: '#F59E0B',
     repartidor: '#8B5CF6',
-    comercio:   '#3B82F6',
-    cuenta:     '#10B981',
-    excursion:  '#06B6D4',
-    otro:       '#9CA3AF',
+    comercio: '#3B82F6',
+    cuenta: '#10B981',
+    excursion: '#06B6D4',
+    otro: '#9CA3AF',
 };
 
 const DONUT_COLORS = ['#3B82F6', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444'];
@@ -419,12 +419,12 @@ export class SupportDashboardPageComponent implements OnInit, AfterViewInit, OnD
     readonly typeStats = signal<TypeStats[]>([]);
     readonly agents = signal<AgentPerformance[]>([]);
 
-    readonly loadingKpis    = signal(true);
-    readonly loadingVolume  = signal(true);
+    readonly loadingKpis = signal(true);
+    readonly loadingVolume = signal(true);
     readonly loadingBreached = signal(true);
-    readonly loadingTypes   = signal(true);
-    readonly loadingAgents  = signal(false);
-    readonly savingTicket   = signal<string | null>(null);
+    readonly loadingTypes = signal(true);
+    readonly loadingAgents = signal(false);
+    readonly savingTicket = signal<string | null>(null);
 
     readonly activePeriod = signal<7 | 30 | 90>(30);
 

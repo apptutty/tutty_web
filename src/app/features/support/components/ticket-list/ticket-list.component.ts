@@ -7,44 +7,44 @@ import { TimeAgoPipe } from '../../../../shared/pipes/time-ago.pipe';
 
 const PRIORITY_BAR: Record<TicketPriority, string> = {
     urgente: 'bg-error-500',
-    alta:    'bg-orange-500',
-    media:   'bg-warning-400',
-    baja:    'bg-success-500',
+    alta: 'bg-orange-500',
+    media: 'bg-warning-400',
+    baja: 'bg-success-500',
 };
 
 const REPORTER_AVATAR_BG: Record<string, string> = {
-    cliente:             'bg-blue-500',
-    store_admin:         'bg-orange-500',
-    repartidor:          'bg-purple-500',
-    excursion_operator:  'bg-success-600',
+    cliente: 'bg-blue-500',
+    store_admin: 'bg-orange-500',
+    repartidor: 'bg-purple-500',
+    excursion_operator: 'bg-success-600',
 };
 
 const TICKET_STATUS_LABEL: Record<TicketStatus, string> = {
-    abierto:              'Abierto',
-    en_revision:          'En revisión',
-    esperando_respuesta:  'Esperando resp.',
-    escalado:             'Escalado',
-    resuelto:             'Resuelto',
-    cerrado:              'Cerrado',
+    abierto: 'Abierto',
+    en_revision: 'En revisión',
+    esperando_respuesta: 'Esperando resp.',
+    escalado: 'Escalado',
+    resuelto: 'Resuelto',
+    cerrado: 'Cerrado',
 };
 
 const TICKET_STATUS_CLASS: Record<TicketStatus, string> = {
-    abierto:              'bg-blue-100 text-blue-700',
-    en_revision:          'bg-yellow-100 text-yellow-700',
-    esperando_respuesta:  'bg-orange-100 text-orange-700',
-    escalado:             'bg-error-100 text-error-700',
-    resuelto:             'bg-success-100 text-success-700',
-    cerrado:              'bg-gray-100 text-gray-500',
+    abierto: 'bg-blue-100 text-blue-700',
+    en_revision: 'bg-yellow-100 text-yellow-700',
+    esperando_respuesta: 'bg-orange-100 text-orange-700',
+    escalado: 'bg-error-100 text-error-700',
+    resuelto: 'bg-success-100 text-success-700',
+    cerrado: 'bg-gray-100 text-gray-500',
 };
 
 const TICKET_TYPE_LABEL: Record<TicketType, string> = {
-    pedido:     'Pedido',
-    pago:       'Pago',
+    pedido: 'Pedido',
+    pago: 'Pago',
     repartidor: 'Repartidor',
-    comercio:   'Comercio',
-    cuenta:     'Cuenta',
-    excursion:  'Excursión',
-    otro:       'Otro',
+    comercio: 'Comercio',
+    cuenta: 'Cuenta',
+    excursion: 'Excursión',
+    otro: 'Otro',
 };
 
 function initials(name: string): string {
@@ -84,7 +84,7 @@ function initials(name: string): string {
       </div>
     `,
 })
-export class TicketRowSkeletonComponent {}
+export class TicketRowSkeletonComponent { }
 
 // ─── TicketRowComponent ───────────────────────────────────────────────────────
 

@@ -22,17 +22,17 @@ interface TicketTypeOption {
 }
 
 const TICKET_TYPE_OPTIONS: TicketTypeOption[] = [
-    { icon: '🛒', label: 'Queja pedido',      type: 'pedido',    contextType: 'order' },
-    { icon: '🏍️', label: 'Queja repartidor',  type: 'repartidor', contextType: 'courier' },
-    { icon: '🏪', label: 'Queja comercio',     type: 'comercio',  contextType: 'store' },
-    { icon: '💻', label: 'Problema técnico',   type: 'cuenta' },
-    { icon: '💰', label: 'Sol. reembolso',     type: 'pago',      subtype: 'reembolso' },
-    { icon: '🚩', label: 'Reporte fraude',     type: 'otro',      subtype: 'fraude' },
-    { icon: '💳', label: 'Problema pago',      type: 'pago' },
-    { icon: '🧭', label: 'Queja excursión',    type: 'excursion', contextType: 'booking' },
-    { icon: '❌', label: 'Cancelación exc.',   type: 'excursion', subtype: 'cancelacion', contextType: 'booking' },
-    { icon: '❓', label: 'Duda general',       type: 'otro' },
-    { icon: '📝', label: 'Otro',              type: 'otro' },
+    { icon: '🛒', label: 'Queja pedido', type: 'pedido', contextType: 'order' },
+    { icon: '🏍️', label: 'Queja repartidor', type: 'repartidor', contextType: 'courier' },
+    { icon: '🏪', label: 'Queja comercio', type: 'comercio', contextType: 'store' },
+    { icon: '💻', label: 'Problema técnico', type: 'cuenta' },
+    { icon: '💰', label: 'Sol. reembolso', type: 'pago', subtype: 'reembolso' },
+    { icon: '🚩', label: 'Reporte fraude', type: 'otro', subtype: 'fraude' },
+    { icon: '💳', label: 'Problema pago', type: 'pago' },
+    { icon: '🧭', label: 'Queja excursión', type: 'excursion', contextType: 'booking' },
+    { icon: '❌', label: 'Cancelación exc.', type: 'excursion', subtype: 'cancelacion', contextType: 'booking' },
+    { icon: '❓', label: 'Duda general', type: 'otro' },
+    { icon: '📝', label: 'Otro', type: 'otro' },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -558,9 +558,9 @@ export class NewTicketModalComponent implements OnChanges, OnDestroy {
 
     readonly priorityOptions: { value: TicketPriority; icon: string; label: string; selectedClass: string }[] = [
         { value: 'urgente', icon: '🔴', label: 'Urgente', selectedClass: 'border-error-500 bg-error-50 text-error-700' },
-        { value: 'alta',    icon: '🟠', label: 'Alta',    selectedClass: 'border-orange-400 bg-orange-50 text-orange-700' },
-        { value: 'media',   icon: '🟡', label: 'Media',   selectedClass: 'border-yellow-400 bg-yellow-50 text-yellow-700' },
-        { value: 'baja',    icon: '🟢', label: 'Baja',    selectedClass: 'border-success-400 bg-success-50 text-success-700' },
+        { value: 'alta', icon: '🟠', label: 'Alta', selectedClass: 'border-orange-400 bg-orange-50 text-orange-700' },
+        { value: 'media', icon: '🟡', label: 'Media', selectedClass: 'border-yellow-400 bg-yellow-50 text-yellow-700' },
+        { value: 'baja', icon: '🟢', label: 'Baja', selectedClass: 'border-success-400 bg-success-50 text-success-700' },
     ];
 
     private userTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -683,21 +683,21 @@ export class NewTicketModalComponent implements OnChanges, OnDestroy {
 
     contextSectionLabel(): string {
         switch (this.activeContextType()) {
-            case 'order':   return 'Pedido relacionado';
+            case 'order': return 'Pedido relacionado';
             case 'booking': return 'Reserva relacionada';
-            case 'store':   return 'Comercio relacionado';
+            case 'store': return 'Comercio relacionado';
             case 'courier': return 'Repartidor relacionado';
-            default:        return '';
+            default: return '';
         }
     }
 
     contextPlaceholder(): string {
         switch (this.activeContextType()) {
-            case 'order':   return '# Pedido (ej: TUT-1234)…';
+            case 'order': return '# Pedido (ej: TUT-1234)…';
             case 'booking': return '# Reserva…';
-            case 'store':   return 'Nombre del comercio…';
+            case 'store': return 'Nombre del comercio…';
             case 'courier': return 'Nombre del repartidor…';
-            default:        return 'Buscar…';
+            default: return 'Buscar…';
         }
     }
 
@@ -721,10 +721,10 @@ export class NewTicketModalComponent implements OnChanges, OnDestroy {
                 this.contextSearching.set(false);
             };
             const onError = () => this.contextSearching.set(false);
-            if (ct === 'order')        this.svc.searchOrders(q).subscribe({ next: onNext, error: onError });
+            if (ct === 'order') this.svc.searchOrders(q).subscribe({ next: onNext, error: onError });
             else if (ct === 'booking') this.svc.searchBookings(q).subscribe({ next: onNext, error: onError });
-            else if (ct === 'store')   this.svc.searchCommerces(q).subscribe({ next: onNext, error: onError });
-            else                       this.svc.searchCouriers(q).subscribe({ next: onNext, error: onError });
+            else if (ct === 'store') this.svc.searchCommerces(q).subscribe({ next: onNext, error: onError });
+            else this.svc.searchCouriers(q).subscribe({ next: onNext, error: onError });
         }, 300);
     }
 
@@ -736,9 +736,9 @@ export class NewTicketModalComponent implements OnChanges, OnDestroy {
         this.selectedContext.set(item);
         this.showContextDropdown.set(false);
         const ct = this.activeContextType();
-        if (ct === 'order')        this.contextQuery = `#${item.order_number}`;
+        if (ct === 'order') this.contextQuery = `#${item.order_number}`;
         else if (ct === 'booking') this.contextQuery = `#${item.booking_number}`;
-        else if (ct === 'store')   this.contextQuery = item.name;
+        else if (ct === 'store') this.contextQuery = item.name;
         else if (ct === 'courier') this.contextQuery = item.full_name;
     }
 
@@ -750,18 +750,18 @@ export class NewTicketModalComponent implements OnChanges, OnDestroy {
 
     contextItemPrimary(item: any): string {
         const ct = this.activeContextType();
-        if (ct === 'order')   return `#${item.order_number} · ${item.store_name}`;
+        if (ct === 'order') return `#${item.order_number} · ${item.store_name}`;
         if (ct === 'booking') return `#${item.booking_number} · ${item.excursion_name}`;
-        if (ct === 'store')   return item.name;
+        if (ct === 'store') return item.name;
         if (ct === 'courier') return item.full_name;
         return '';
     }
 
     contextItemSecondary(item: any): string {
         const ct = this.activeContextType();
-        if (ct === 'order')   return `RD$ ${(item.total ?? 0).toLocaleString()} · ${item.status}`;
+        if (ct === 'order') return `RD$ ${(item.total ?? 0).toLocaleString()} · ${item.status}`;
         if (ct === 'booking') return `${item.booking_date ?? '—'} · RD$ ${(item.total ?? 0).toLocaleString()}`;
-        if (ct === 'store')   return item.commerce_type ?? '';
+        if (ct === 'store') return item.commerce_type ?? '';
         if (ct === 'courier') return item.phone ?? '';
         return '';
     }
@@ -863,13 +863,13 @@ export class NewTicketModalComponent implements OnChanges, OnDestroy {
                 subtype: opt.subtype ?? null,
                 subject: this.subject.trim(),
                 description: this.description.trim(),
-                order_id:      opt.contextType === 'order'   ? ctx?.id : undefined,
-                booking_id:    opt.contextType === 'booking' ? ctx?.id : undefined,
-                store_id:      opt.contextType === 'store'   ? ctx?.id : undefined,
+                order_id: opt.contextType === 'order' ? ctx?.id : undefined,
+                booking_id: opt.contextType === 'booking' ? ctx?.id : undefined,
+                store_id: opt.contextType === 'store' ? ctx?.id : undefined,
                 repartidor_id: opt.contextType === 'courier' ? ctx?.id : undefined,
-                assigned_to:   this.selectedAgent || undefined,
-                priority:      this.selectedPriority() ?? undefined,
-                attachments:   this.attachments(),
+                assigned_to: this.selectedAgent || undefined,
+                priority: this.selectedPriority() ?? undefined,
+                attachments: this.attachments(),
             };
 
             const ticket = await this.svc.createTicket(payload);

@@ -67,7 +67,7 @@ function slaTimeLeft(deadline: string): { label: string; urgent: boolean } {
     const h = Math.floor(ms / 3_600_000);
     const m = Math.floor((ms % 3_600_000) / 60_000);
     if (h === 0) return { label: `SLA vence en ${m}min`, urgent: true };
-    if (h < 3)   return { label: `SLA vence en ${h}h ${m}min`, urgent: true };
+    if (h < 3) return { label: `SLA vence en ${h}h ${m}min`, urgent: true };
     return { label: `SLA vence en ${h}h`, urgent: false };
 }
 
@@ -674,18 +674,18 @@ export class SupportTicketDetailComponent implements OnChanges, OnDestroy, After
     readonly quickReplies = QUICK_REPLIES;
 
     readonly priorities: { value: TicketPriority; label: string; activeClass: string }[] = [
-        { value: 'baja',    label: '🟢 Baja',    activeClass: 'border-success-300 bg-success-50 text-success-700' },
-        { value: 'media',   label: '🟡 Media',   activeClass: 'border-warning-300 bg-warning-50 text-warning-700' },
-        { value: 'alta',    label: '🟠 Alta',    activeClass: 'border-orange-300 bg-orange-50 text-orange-700' },
+        { value: 'baja', label: '🟢 Baja', activeClass: 'border-success-300 bg-success-50 text-success-700' },
+        { value: 'media', label: '🟡 Media', activeClass: 'border-warning-300 bg-warning-50 text-warning-700' },
+        { value: 'alta', label: '🟠 Alta', activeClass: 'border-orange-300 bg-orange-50 text-orange-700' },
         { value: 'urgente', label: '🔴 Urgente', activeClass: 'border-error-300 bg-error-50 text-error-700' },
     ];
 
     // ─── Computed ─────────────────────────────────────────────────────────────
 
     readonly statusLabel = computed(() => STATUS_LABELS[this.ticket()?.status ?? 'abierto']);
-    readonly statusClass  = computed(() => STATUS_CLASS[this.ticket()?.status ?? 'abierto']);
+    readonly statusClass = computed(() => STATUS_CLASS[this.ticket()?.status ?? 'abierto']);
     readonly priorityLabel = computed(() => PRIORITY_LABEL[this.ticket()?.priority ?? 'media']);
-    readonly priorityClass  = computed(() => PRIORITY_CLASS[this.ticket()?.priority ?? 'media']);
+    readonly priorityClass = computed(() => PRIORITY_CLASS[this.ticket()?.priority ?? 'media']);
 
     readonly slaInfo = computed(() => {
         const t = this.ticket();
