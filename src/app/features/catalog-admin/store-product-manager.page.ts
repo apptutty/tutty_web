@@ -879,7 +879,7 @@ export class StoreProductManagerPageComponent implements OnInit {
             stock_status: (this.filterStockStatus !== 'all' ? this.filterStockStatus : undefined) as any,
             min_price: this.filterMinPrice ?? undefined,
             max_price: this.filterMaxPrice ?? undefined,
-        };        this.svc.getCatalog(this.storeId, filters).subscribe({
+        }; this.svc.getCatalog(this.storeId, filters).subscribe({
             next: ({ data, count }) => {
                 this.products.set(data);
                 this.totalCount.set(count);
