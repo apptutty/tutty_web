@@ -3,6 +3,7 @@ import { authGuard, noAuthGuard } from './core/auth/auth.guard';
 import { storeApprovedGuard } from './core/auth/store-approved.guard';
 import { operatorApprovedGuard } from './core/auth/operator-approved.guard';
 import { operatorGuard } from './core/auth/operator.guard';
+import { roleGuard } from './core/auth/role.guard';
 import { AdminShellComponent } from './layout/admin-shell/admin-shell.component';
 
 export const routes: Routes = [
@@ -95,26 +96,32 @@ export const routes: Routes = [
       },
       {
         path: 'catalog',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/catalog-admin/catalog-manager.page').then(m => m.CatalogManagerPageComponent),
       },
       {
         path: 'catalog/search',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/catalog-admin/catalog-global-search.page').then(m => m.CatalogGlobalSearchPageComponent),
       },
       {
         path: 'catalog/price-approvals',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/catalog-admin/price-approval-dashboard.page').then(m => m.PriceApprovalDashboardComponent),
       },
       {
         path: 'catalog/:storeId',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/catalog-admin/store-product-manager.page').then(m => m.StoreProductManagerPageComponent),
       },
       {
         path: 'catalog/:storeId/products/new',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/catalog-admin/product-form.page').then(m => m.ProductFormPageComponent),
       },
       {
         path: 'catalog/:storeId/products/:productId',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/catalog-admin/product-form.page').then(m => m.ProductFormPageComponent),
       },
       {

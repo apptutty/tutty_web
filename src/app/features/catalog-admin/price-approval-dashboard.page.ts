@@ -58,7 +58,7 @@ type PctFilter = 0 | 10 | 20 | 30;
   <div class="flex items-center gap-3 p-4 mb-4 bg-orange-50 border border-orange-200 rounded-xl">
     <span class="text-2xl flex-shrink-0">⚠️</span>
     <div>
-      <p class="text-sm font-semibold text-orange-800">{{ suspiciousCount() }} propuesta{{ suspiciousCount() === 1 ? '' : 's' }} supera{{ suspiciousCount() === 1 ? '' : 'n' }} el límite del {{ pctLimit }}%</p>
+      <p class="text-sm font-semibold text-orange-800">{{ suspiciousCount() }} propuesta{{ suspiciousCount() === 1 ? '' : 's' }} supera{{ suspiciousCount() === 1 ? '' : 'n' }} el límite del {{ pctLimit() }}%</p>
       <p class="text-xs text-orange-600">Estas filas requieren notas del comercio para poder ser aprobadas</p>
     </div>
   </div>
@@ -212,7 +212,7 @@ type PctFilter = 0 | 10 | 20 | 30;
                     {{ item.price_change_pct > 0 ? '▲' : '▼' }} {{ item.price_change_pct | number:'1.0-0' }}%
                   </span>
                   @if (isSuspicious(item)) {
-                    <span class="text-orange-500" title="Supera el límite del {{ pctLimit }}%">⚠️</span>
+                    <span class="text-orange-500" title="Supera el límite del {{ pctLimit() }}%">⚠️</span>
                   }
                 </div>
               </td>
@@ -309,7 +309,6 @@ export class PriceApprovalDashboardComponent implements OnInit {
     readonly rejectingItem = signal<PendingPriceItem | null>(null);
     readonly selectedIds = signal<Set<string>>(new Set());
 
-    // KPI placeholders (would normally come from a separate query)
     readonly approvedThisWeek = signal(0);
     readonly rejectedThisWeek = signal(0);
 
@@ -320,7 +319,7 @@ export class PriceApprovalDashboardComponent implements OnInit {
 
     readonly filteredItems = signal<PendingPriceItem[]>([]);
 
-    readonly pctLimit = 20;
+    readonly pctLimit = signal(20);
 
     readonly directionOpts: { value: DirectionFilter; label: string }[] = [
         { value: 'all', label: 'Todos' },
@@ -344,6 +343,14 @@ export class PriceApprovalDashboardComponent implements OnInit {
 
     ngOnInit(): void {
         this.load();
+        this.svc.getWeeklyPriceStats().subscribe(stats => {
+            this.approvedThisWeek.set(stats.approved);
+            this.rejectedThisWeek.set(stats.rejected);
+        });
+        this.svc.getAppSetting('max_price_increase_pct').subscribe(val => {
+            const parsed = parseInt(val ?? '', 10);
+            if (!isNaN(parsed)) this.pctLimit.set(parsed);
+        });
     }
 
     private load(): void {
@@ -370,7 +377,7 @@ export class PriceApprovalDashboardComponent implements OnInit {
 
     isSuspicious(item: PendingPriceItem): boolean {
         // Only flag upward price changes that exceed the limit
-        return item.price_change_pct > this.pctLimit;
+        return item.price_change_pct > this.pctLimit();
     }
 
     // ─── Selection ────────────────────────────────────────────────────────────

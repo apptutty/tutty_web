@@ -44,6 +44,8 @@ export interface CatalogFilters {
     has_pending_price?: boolean;
     has_variants?: boolean;
     stock_status?: StockStatus | 'all';
+    min_price?: number;
+    max_price?: number;
     page: number;
     page_size?: number;
 }
@@ -259,6 +261,8 @@ export class CatalogAdminService {
         }
         if (filters.has_pending_price) q = q.not('price_pending', 'is', null);
         if (filters.has_variants) q = q.eq('has_variants', true);
+        if (filters.min_price !== undefined) q = q.gte('price', filters.min_price);
+        if (filters.max_price !== undefined) q = q.lte('price', filters.max_price);
         if (filters.stock_status && filters.stock_status !== 'all') {
             if (filters.stock_status === 'agotado') q = q.eq('track_stock', true).eq('stock_count', 0);
             else if (filters.stock_status === 'no_controlado') q = q.eq('track_stock', false);
@@ -770,6 +774,43 @@ export class CatalogAdminService {
         a.download = `catalogo-${storeId}-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    // ─── getWeeklyPriceStats ──────────────────────────────────────────────────
+    // Returns count of price decisions made in the last 7 days from catalog_change_log
+
+    getWeeklyPriceStats(): Observable<{ approved: number; rejected: number }> {
+        const since = new Date(Date.now() - 7 * 24 * 3_600_000).toISOString();
+        return from(
+            Promise.all([
+                this.supabase
+                    .from('catalog_change_log')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('change_type', 'precio_aprobado')
+                    .gte('created_at', since),
+                this.supabase
+                    .from('catalog_change_log')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('change_type', 'precio_rechazado')
+                    .gte('created_at', since),
+            ]).then(([approvedRes, rejectedRes]) => ({
+                approved: approvedRes.count ?? 0,
+                rejected: rejectedRes.count ?? 0,
+            }))
+        );
+    }
+
+    // ─── getAppSetting ────────────────────────────────────────────────────────
+
+    getAppSetting(key: string): Observable<string | null> {
+        return from(
+            this.supabase
+                .from('app_settings')
+                .select('value')
+                .eq('key', key)
+                .maybeSingle()
+                .then(({ data }) => data?.value ?? null)
+        );
     }
 
     // ─── globalSearch ─────────────────────────────────────────────────────────

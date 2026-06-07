@@ -156,15 +156,37 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
       }
     </select>
 
-    <select class="input-field text-sm w-36" [(ngModel)]="filterModeration" (ngModelChange)="reloadProducts()">
+    <select class="input-field text-sm w-36" [(ngModel)]="filterModeration" (ngModelChange)="reloadProducts(true)">
       <option value="all">Toda moderación</option>
       <option value="aprobado">✅ Aprobado</option>
       <option value="bajo_revision">⚠️ Bajo revisión</option>
       <option value="retirado">🔴 Retirado</option>
     </select>
 
+    <select class="input-field text-sm w-36" [(ngModel)]="filterAvailability" (ngModelChange)="reloadProducts(true)">
+      <option [ngValue]="null">Disponibilidad</option>
+      <option [ngValue]="true">✅ Disponibles</option>
+      <option [ngValue]="false">❌ No disponibles</option>
+    </select>
+
+    <select class="input-field text-sm w-32" [(ngModel)]="filterStockStatus" (ngModelChange)="reloadProducts(true)">
+      <option value="all">Todo stock</option>
+      <option value="disponible">Con stock</option>
+      <option value="bajo_stock">⚠️ Bajo stock</option>
+      <option value="agotado">🔴 Agotado</option>
+      <option value="no_controlado">— No controlado</option>
+    </select>
+
+    <div class="flex items-center gap-1">
+      <input type="number" class="input-field text-sm w-24" [(ngModel)]="filterMinPrice"
+             (change)="reloadProducts(true)" placeholder="RD$ mín" min="0" />
+      <span class="text-gray-300 text-xs">—</span>
+      <input type="number" class="input-field text-sm w-24" [(ngModel)]="filterMaxPrice"
+             (change)="reloadProducts(true)" placeholder="RD$ máx" min="0" />
+    </div>
+
     <label class="flex items-center gap-1.5 text-xs text-warning-700 font-medium cursor-pointer">
-      <input type="checkbox" class="rounded" [(ngModel)]="filterPending" (ngModelChange)="reloadProducts()" />
+      <input type="checkbox" class="rounded" [(ngModel)]="filterPending" (ngModelChange)="reloadProducts(true)" />
       Solo precios pendientes
     </label>
 
@@ -291,6 +313,15 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </a>
+                    <button
+                      class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-500 transition-colors"
+                      title="Duplicar"
+                      (click)="duplicateProduct(p)"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
                     @if (p.price_pending != null) {
                       <button
                         class="p-1.5 rounded-lg hover:bg-warning-50 text-warning-500 transition-colors"
@@ -487,6 +518,66 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
         }
       </div>
     }
+  </div>
+}
+
+<!-- ─── Combo form modal ──────────────────────────────────────────────────── -->
+@if (showComboModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50" (click)="showComboModal.set(false)"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10 p-6 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-base font-bold text-gray-800 mb-4">
+        {{ editingCombo() ? 'Editar combo' : 'Nuevo combo' }}
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="label text-xs mb-1 block">Nombre *</label>
+          <input type="text" class="input-field text-sm" [(ngModel)]="comboForm.name"
+                 placeholder="Ej: Combo familia" maxlength="80" />
+        </div>
+        <div>
+          <label class="label text-xs mb-1 block">Descripción</label>
+          <textarea class="input-field text-sm resize-none" rows="2"
+                    [(ngModel)]="comboForm.description" placeholder="Qué incluye…"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label text-xs mb-1 block">Precio (RD\$) *</label>
+            <input type="number" class="input-field text-sm" [(ngModel)]="comboForm.price" min="1" />
+          </div>
+          <div>
+            <label class="label text-xs mb-1 block">URL foto</label>
+            <input type="url" class="input-field text-sm" [(ngModel)]="comboForm.photo_url" placeholder="https://…" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label text-xs mb-1 block">Disponible desde</label>
+            <input type="time" class="input-field text-sm" [(ngModel)]="comboForm.available_from" />
+          </div>
+          <div>
+            <label class="label text-xs mb-1 block">Disponible hasta</label>
+            <input type="time" class="input-field text-sm" [(ngModel)]="comboForm.available_until" />
+          </div>
+        </div>
+        @if (comboForm.available_from && comboForm.available_until &&
+             comboForm.available_from >= comboForm.available_until) {
+          <p class="text-xs text-error-600">⚠️ La hora de inicio debe ser anterior a la de fin</p>
+        }
+        <label class="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" class="rounded" [(ngModel)]="comboForm.is_active" />
+          <span>Activo</span>
+        </label>
+      </div>
+      <div class="flex gap-3 justify-end mt-5">
+        <button class="btn-secondary text-sm" (click)="showComboModal.set(false)">Cancelar</button>
+        <button class="btn-primary text-sm"
+                (click)="saveCombo()"
+                [disabled]="comboSaving() || !comboForm.name.trim() || comboForm.price <= 0">
+          {{ comboSaving() ? 'Guardando…' : (editingCombo() ? 'Guardar cambios' : 'Crear combo') }}
+        </button>
+      </div>
+    </div>
   </div>
 }
 
@@ -687,6 +778,10 @@ export class StoreProductManagerPageComponent implements OnInit {
     filterCategory = '';
     filterModeration: ModerationStatus | 'all' = 'all';
     filterPending = false;
+    filterAvailability: boolean | null = null; // null = all
+    filterMinPrice: number | null = null;
+    filterMaxPrice: number | null = null;
+    filterStockStatus: string = 'all';
 
     // Categories tab
     readonly categories = signal<MenuCategory[]>([]);
@@ -698,6 +793,14 @@ export class StoreProductManagerPageComponent implements OnInit {
     // Combos tab
     readonly combos = signal<StoreCombo[]>([]);
     readonly combosLoading = signal(false);
+    readonly showComboModal = signal(false);
+    readonly editingCombo = signal<StoreCombo | null>(null);
+    readonly comboSaving = signal(false);
+    comboForm: {
+        name: string; description: string; price: number;
+        photo_url: string; is_active: boolean;
+        available_from: string; available_until: string;
+    } = this.emptyComboForm();
 
     // History tab
     readonly changeLog = signal<CatalogChangeEntry[]>([]);
@@ -772,8 +875,11 @@ export class StoreProductManagerPageComponent implements OnInit {
             search: this.productSearch || undefined,
             moderation_status: this.filterModeration,
             has_pending_price: this.filterPending || undefined,
-        };
-        this.svc.getCatalog(this.storeId, filters).subscribe({
+            is_available: this.filterAvailability ?? undefined,
+            stock_status: (this.filterStockStatus !== 'all' ? this.filterStockStatus : undefined) as any,
+            min_price: this.filterMinPrice ?? undefined,
+            max_price: this.filterMaxPrice ?? undefined,
+        };        this.svc.getCatalog(this.storeId, filters).subscribe({
             next: ({ data, count }) => {
                 this.products.set(data);
                 this.totalCount.set(count);
@@ -923,17 +1029,50 @@ export class StoreProductManagerPageComponent implements OnInit {
     async deleteProduct(p: CatalogProduct): Promise<void> {
         const ok = await this.confirm.confirm({
             title: 'Eliminar producto',
-            message: `¿Eliminar "${p.name}"? Esta acción no se puede deshacer.`,
+            message: `¿Eliminar "${p.name}"? Esta acción no se puede deshacer y eliminará el registro del historial de precios.`,
             confirmText: 'Eliminar', danger: true,
         });
         if (!ok) return;
         try {
-            const { error } = await this.svc.updateProduct(p.id, { is_available: false } as any);
+            const { error } = await this.svc.deleteProduct(p.id);
             if (error) throw new Error(error);
             this.toast.success('Producto eliminado');
             this.reloadProducts();
         } catch {
             this.toast.error('Error al eliminar producto');
+        }
+    }
+
+    async duplicateProduct(p: CatalogProduct): Promise<void> {
+        const ok = await this.confirm.confirm({
+            title: 'Duplicar producto',
+            message: `¿Crear una copia de "${p.name}"?`,
+            confirmText: 'Duplicar',
+        });
+        if (!ok) return;
+        try {
+            const { error } = await this.svc.createProduct(this.storeId, {
+                name: `${p.name} (copia)`,
+                description: p.description ?? undefined,
+                category_id: p.category_id ?? undefined,
+                price: p.price,
+                discount_price: p.discount_price ?? undefined,
+                photo_url: p.photo_url ?? undefined,
+                is_available: false, // draft until explicitly activated
+                is_featured: false,
+                track_stock: p.track_stock,
+                stock_count: p.stock_count ?? undefined,
+                low_stock_alert: p.low_stock_alert ?? undefined,
+                sku: undefined, // must be unique
+                moderation_status: 'bajo_revision',
+                dietary_tags: (p as any).dietary_tags ?? [],
+                notify_store: false,
+            });
+            if (error) throw new Error(error);
+            this.toast.success(`Copia de "${p.name}" creada como borrador`);
+            this.reloadProducts();
+        } catch {
+            this.toast.error('Error al duplicar producto');
         }
     }
 
@@ -981,8 +1120,57 @@ export class StoreProductManagerPageComponent implements OnInit {
 
     // ─── Combos ───────────────────────────────────────────────────────────────
 
+    private emptyComboForm() {
+        return { name: '', description: '', price: 0, photo_url: '', is_active: true, available_from: '', available_until: '' };
+    }
+
     openComboForm(combo?: StoreCombo): void {
-        this.toast.info('Formulario de combos en construcción');
+        this.editingCombo.set(combo ?? null);
+        this.comboForm = combo
+            ? { name: combo.name, description: combo.description ?? '', price: combo.price, photo_url: combo.photo_url ?? '', is_active: combo.is_active, available_from: combo.available_from ?? '', available_until: combo.available_until ?? '' }
+            : this.emptyComboForm();
+        this.showComboModal.set(true);
+    }
+
+    async saveCombo(): Promise<void> {
+        if (!this.comboForm.name.trim() || this.comboForm.price <= 0) {
+            this.toast.error('Nombre y precio son obligatorios');
+            return;
+        }
+        // Validate time range
+        if (this.comboForm.available_from && this.comboForm.available_until &&
+            this.comboForm.available_from >= this.comboForm.available_until) {
+            this.toast.error('La hora de inicio debe ser anterior a la hora de fin');
+            return;
+        }
+        this.comboSaving.set(true);
+        const data: Partial<StoreCombo> = {
+            name: this.comboForm.name.trim(),
+            description: this.comboForm.description.trim() || undefined,
+            price: this.comboForm.price,
+            photo_url: this.comboForm.photo_url.trim() || undefined,
+            is_active: this.comboForm.is_active,
+            available_from: this.comboForm.available_from || undefined,
+            available_until: this.comboForm.available_until || undefined,
+            items: [],
+        };
+        try {
+            const editing = this.editingCombo();
+            if (editing) {
+                await this.svc.updateCombo(editing.id, data);
+                this.combos.update(prev => prev.map(c => c.id === editing.id ? { ...c, ...data } : c));
+                this.toast.success('Combo actualizado');
+            } else {
+                const created = await this.svc.createCombo(this.storeId, data);
+                this.combos.update(prev => [...prev, created]);
+                this.toast.success('Combo creado');
+            }
+            this.showComboModal.set(false);
+        } catch {
+            this.toast.error('Error al guardar el combo');
+        } finally {
+            this.comboSaving.set(false);
+        }
     }
 
     async deleteCombo(id: string): Promise<void> {
