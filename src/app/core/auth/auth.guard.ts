@@ -5,17 +5,25 @@ import { AuthService } from './auth.service';
 export const authGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  await auth.ready;
-  return auth.isAuthenticated() ? true : router.createUrlTree(['/login']);
+  try {
+    await auth.ready;
+    return auth.isAuthenticated() ? true : router.createUrlTree(['/login']);
+  } catch {
+    return router.createUrlTree(['/login']);
+  }
 };
 
 export const noAuthGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  await auth.ready;
-  if (!auth.isAuthenticated()) return true;
-  const user = auth.currentUser();
-  return user?.role === 'store_admin'
-    ? router.createUrlTree(['/store'])
-    : router.createUrlTree(['/dashboard']);
+  try {
+    await auth.ready;
+    if (!auth.isAuthenticated()) return true;
+    const user = auth.currentUser();
+    return user?.role === 'store_admin'
+      ? router.createUrlTree(['/store'])
+      : router.createUrlTree(['/dashboard']);
+  } catch {
+    return true; // allow login page to render on unexpected errors
+  }
 };

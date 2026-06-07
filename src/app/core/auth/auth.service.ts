@@ -24,20 +24,48 @@ export class AuthService {
     }
 
     private initAuthListener(): void {
-        // onAuthStateChange fires INITIAL_SESSION first, so getSession() is redundant.
-        // Using a single listener avoids double loadUserProfile calls on startup.
-        this.supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session?.user) {
-                await this.loadUserProfile(session.user.id);
-            } else {
-                this.currentUser.set(null);
-                // Navigate to login only for active sign-outs (not the initial no-session state)
-                if (!this.isLoading() && event === 'SIGNED_OUT') {
-                    this.router.navigate(['/login']);
+        // Use getSession() for the initial state — reads from localStorage without
+        // calling /auth/v1/user, preventing the 401 that onAuthStateChange triggers
+        // internally. The try/finally guarantees ready always resolves.
+        this.supabase.auth.getSession()
+            .then(async ({ data: { session } }) => {
+                try {
+                    if (session?.user) {
+                        await this.loadUserProfile(session.user.id);
+                    } else {
+                        this.currentUser.set(null);
+                    }
+                } catch (err) {
+                    console.error('[AuthService] Session init error:', err);
+                    this.currentUser.set(null);
+                } finally {
+                    this.isLoading.set(false);
+                    this._readyResolve();
                 }
+            })
+            .catch(() => {
+                this.currentUser.set(null);
+                this.isLoading.set(false);
+                this._readyResolve();
+            });
+
+        // Listen for subsequent auth changes (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED…).
+        // Skip INITIAL_SESSION — already handled via getSession() above.
+        this.supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'INITIAL_SESSION') return;
+            try {
+                if (session?.user) {
+                    await this.loadUserProfile(session.user.id);
+                } else {
+                    this.currentUser.set(null);
+                    if (event === 'SIGNED_OUT') {
+                        this.router.navigate(['/login']);
+                    }
+                }
+            } catch (err) {
+                console.error('[AuthService] Auth state change error:', err);
+                this.currentUser.set(null);
             }
-            this.isLoading.set(false);
-            this._readyResolve();
         });
     }
 
