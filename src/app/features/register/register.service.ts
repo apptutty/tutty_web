@@ -94,6 +94,14 @@ export class RegisterService {
             throw authError ?? new Error('No se pudo crear la cuenta');
         }
 
+        // When Supabase requires email confirmation, signUp returns session: null.
+        // Without a session we can't make authenticated DB inserts — surface a clear error.
+        if (!authData.session) {
+            throw new Error(
+                'Tu cuenta fue creada. Por favor revisa tu correo electrónico y confirma tu cuenta antes de continuar.'
+            );
+        }
+
         const userId = authData.user.id;
 
         // 2. Insert user profile with store_admin role

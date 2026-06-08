@@ -344,6 +344,17 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
 
     .btn-secondary:hover:not(:disabled) { background: #f9fafb; }
     .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .error-banner {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 10px;
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      font-weight: 500;
+    }
   `],
 })
 export class RegisterStepAccountComponent implements OnInit {
@@ -409,7 +420,10 @@ export class RegisterStepAccountComponent implements OnInit {
             const result = await this.registerService.submitRegistrationForExistingUser(user.id);
             this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
         } catch (err: unknown) {
-            this.errorMessage.set(err instanceof Error ? err.message : 'Error al registrar.');
+            const msg = err instanceof Error
+                ? err.message
+                : (err as any)?.message ?? 'Error al registrar.';
+            this.errorMessage.set(msg);
         } finally {
             this.submitting.set(false);
         }
@@ -433,8 +447,10 @@ export class RegisterStepAccountComponent implements OnInit {
             const result = await this.registerService.submitRegistration();
             this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Error al registrar. Por favor intenta de nuevo.';
-            this.errorMessage.set(message);
+            const msg = err instanceof Error
+                ? err.message
+                : (err as any)?.message ?? 'Error al registrar. Por favor intenta de nuevo.';
+            this.errorMessage.set(msg);
         } finally {
             this.submitting.set(false);
         }
