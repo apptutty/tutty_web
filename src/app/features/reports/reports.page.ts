@@ -20,25 +20,30 @@ Chart.register(...registerables);
       </app-page-header>
 
       <!-- Date Range Picker -->
-      <div class="card p-4 mb-6 flex flex-wrap gap-3 items-end">
-        <div>
-          <label class="label">Desde</label>
-          <input type="date" class="input-field" [(ngModel)]="fromDate" />
-        </div>
-        <div>
-          <label class="label">Hasta</label>
-          <input type="date" class="input-field" [(ngModel)]="toDate" />
-        </div>
-        <div class="flex gap-2">
+      <div class="card p-4 mb-6">
+        <!-- Quick presets -->
+        <div class="flex flex-wrap gap-2 mb-4">
           @for (preset of presets; track preset.label) {
-            <button class="px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700" (click)="applyPreset(preset)">
+            <button class="px-3 py-1.5 text-sm rounded-full border border-gray-300 hover:border-brand-500 hover:text-brand-500 transition-colors" (click)="applyPreset(preset)">
               {{ preset.label }}
             </button>
           }
         </div>
-        <button class="btn-primary" (click)="loadAll()" [disabled]="loading()">
-          {{ loading() ? 'Cargando...' : 'Aplicar' }}
-        </button>
+        <!-- Date inputs -->
+        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+          <div class="flex-1 w-full">
+            <label class="label">Desde</label>
+            <input type="date" class="input-field w-full" [(ngModel)]="fromDate" />
+          </div>
+          <span class="hidden sm:block text-gray-300 mb-2.5">→</span>
+          <div class="flex-1 w-full">
+            <label class="label">Hasta</label>
+            <input type="date" class="input-field w-full" [(ngModel)]="toDate" />
+          </div>
+          <button class="btn-primary w-full sm:w-auto" (click)="loadAll()" [disabled]="loading()">
+            {{ loading() ? 'Cargando...' : 'Aplicar' }}
+          </button>
+        </div>
       </div>
 
       <!-- KPI Cards -->
@@ -46,7 +51,7 @@ Chart.register(...registerables);
         <app-stat-card title="Ingresos Totales" [value]="totalRevenue() | currencyDop" icon="💰" color="green" />
         <app-stat-card title="Pedidos Entregados" [value]="totalOrders()" icon="📦" color="blue" />
         <app-stat-card title="Ticket Promedio" [value]="avgTicket() | currencyDop" icon="🧾" color="purple" />
-        <app-stat-card title="Tasa de Cancelación" [value]="cancellationData()?.rate + '%'" icon="❌" color="red" />
+        <app-stat-card title="Tasa de Cancelación" [value]="cancellationRate()" icon="❌" color="red" />
       </div>
 
       <!-- Sales Chart -->
@@ -163,21 +168,6 @@ Chart.register(...registerables);
           </div>
         }
       </div>
-
-      <!-- ═══════════════════════════════════ SA-7.1: Multi-Comercio -->
-      @if (activeExtraTab() === 'multicomercio') {
-        <div class="mt-6 space-y-5">
-          <div class="flex gap-2 border-b border-gray-200 mb-2 overflow-x-auto">
-            @for (t of extraTabs; track t.id) {
-              <button (click)="activeExtraTab.set(t.id)"
-                class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
-                [class]="activeExtraTab() === t.id ? 'border-brand-500 text-brand-500' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                {{ t.label }}
-              </button>
-            }
-          </div>
-        </div>
-      }
 
       <!-- extra tab bar (always visible below main content) -->
       <div class="mt-8">
@@ -543,6 +533,11 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
   totalRevenue = computed(() => this.salesByDay().reduce((s, d) => s + d.total, 0));
   totalOrders = computed(() => this.salesByDay().reduce((s, d) => s + d.orders, 0));
   avgTicket = computed(() => this.totalOrders() > 0 ? this.totalRevenue() / this.totalOrders() : 0);
+  cancellationRate = computed(() => {
+    const d = this.cancellationData();
+    if (d == null || isNaN(d.rate)) return '0%';
+    return `${d.rate.toFixed(1)}%`;
+  });
 
   fromDate = '';
   toDate = '';

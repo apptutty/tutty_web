@@ -3,6 +3,10 @@ module.exports = {
   content: ['./src/**/*.{html,ts,scss}'],
   theme: {
     extend: {
+      screens: {
+        'xs': '320px',
+        '3xl': '1536px',
+      },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
       },

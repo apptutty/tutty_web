@@ -17,25 +17,27 @@ import { Courier, VehicleType } from '../../core/supabase/database.types';
     </app-page-header>
 
     <!-- Filters -->
-    <div class="flex flex-wrap gap-3 mb-4">
+    <div class="flex flex-col sm:flex-row gap-3 mb-4">
       <input
         type="search"
-        class="input-field max-w-xs"
+        class="input-field flex-1"
         placeholder="Buscar por nombre o cédula..."
         [(ngModel)]="searchText"
       />
-      <select class="input-field w-48" [(ngModel)]="availableFilter" (ngModelChange)="loadCouriers()">
-        <option value="">Todos</option>
-        <option value="true">Disponibles</option>
-        <option value="false">No disponibles</option>
-      </select>
-      <select class="input-field w-44" [(ngModel)]="vehicleFilter">
-        <option value="">Todos los vehículos</option>
-        <option value="moto">Moto</option>
-        <option value="bicicleta">Bicicleta</option>
-        <option value="carro">Carro</option>
-        <option value="a_pie">A pie</option>
-      </select>
+      <div class="flex gap-2">
+        <select class="input-field flex-1 sm:w-44" [(ngModel)]="availableFilter" (ngModelChange)="loadCouriers()">
+          <option value="">Todos</option>
+          <option value="true">Disponibles</option>
+          <option value="false">No disponibles</option>
+        </select>
+        <select class="input-field flex-1 sm:w-40" [(ngModel)]="vehicleFilter">
+          <option value="">Todos los vehículos</option>
+          <option value="moto">Moto</option>
+          <option value="bicicleta">Bicicleta</option>
+          <option value="carro">Carro</option>
+          <option value="a_pie">A pie</option>
+        </select>
+      </div>
     </div>
 
     <!-- Table -->

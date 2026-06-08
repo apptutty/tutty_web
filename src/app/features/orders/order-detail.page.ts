@@ -31,7 +31,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
         <div class="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full"></div>
       </div>
     } @else if (order()) {
-      <app-page-header [title]="'Pedido ' + order()!.order_number" [subtitle]="'Detalle completo'">
+      <app-page-header [title]="orderTitle()" [subtitle]="'Detalle completo'">
         <button class="btn-secondary" (click)="router.navigate(['/orders'])">← Volver</button>
         @if (nextStatuses().length > 0) {
           <button class="btn-primary" (click)="showStatusModal.set(true)">
@@ -266,6 +266,13 @@ export class OrderDetailPageComponent implements OnInit {
 
   nextStatuses(): OrderStatus[] {
     return STATUS_FLOW[this.order()?.status as OrderStatus] ?? [];
+  }
+
+  orderTitle(): string {
+    const o = this.order();
+    if (!o) return 'Pedido';
+    if (o.order_number) return `Pedido #${o.order_number}`;
+    return `Pedido ${o.id.slice(0, 8).toUpperCase()}`;
   }
 
   getItemName(snapshot: any): string {

@@ -48,24 +48,26 @@ const COMMERCE_LABELS: Record<CommerceType, string> = {
       </div>
     </app-page-header>
 
-    <!-- Tabs -->
-    <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit">
-      @for (tab of tabs; track tab.key) {
-        <button
-          class="relative px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-          [class]="activeTab() === tab.key
-            ? 'bg-white text-gray-800 shadow-theme-xs'
-            : 'text-gray-500 hover:text-gray-700'"
-          (click)="switchTab(tab.key)"
-        >
-          {{ tab.label }}
-          @if (tab.key === 'pendiente' && pendingCount() > 0) {
-            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-error-500 text-white text-[10px] font-bold">
-              {{ pendingCount() > 9 ? '9+' : pendingCount() }}
-            </span>
-          }
-        </button>
-      }
+    <!-- Tabs (horizontal scroll on mobile) -->
+    <div class="overflow-x-auto scrollbar-hide -mx-0 mb-6">
+      <div class="flex gap-1 bg-gray-100 p-1 rounded-xl w-max">
+        @for (tab of tabs; track tab.key) {
+          <button
+            class="relative px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap min-h-[44px] sm:min-h-0"
+            [class]="activeTab() === tab.key
+              ? 'bg-white text-gray-800 shadow-theme-xs'
+              : 'text-gray-500 hover:text-gray-700'"
+            (click)="switchTab(tab.key)"
+          >
+            {{ tab.label }}
+            @if (tab.key === 'pendiente' && pendingCount() > 0) {
+              <span class="flex items-center justify-center w-5 h-5 rounded-full bg-error-500 text-white text-[10px] font-bold">
+                {{ pendingCount() > 9 ? '9+' : pendingCount() }}
+              </span>
+            }
+          </button>
+        }
+      </div>
     </div>
 
     <!-- Cards grid -->

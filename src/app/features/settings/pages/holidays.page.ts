@@ -8,7 +8,7 @@ import { Holiday } from '../../../core/supabase/database.types';
 @Component({
   selector: 'app-settings-holidays',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="max-w-2xl">
       <div class="card p-6">
@@ -28,14 +28,14 @@ import { Holiday } from '../../../core/supabase/database.types';
         } @else {
           <div class="space-y-2">
             @for (h of holidays(); track h.id) {
-              <div class="flex items-center justify-between p-3 border rounded-lg">
+              <div class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                 <div>
-                  <p class="font-medium text-gray-900">{{ h.name }}</p>
-                  <p class="text-sm text-gray-500">{{ h.date | date:'dd MMM yyyy':'':'es' }}</p>
+                  <p class="font-medium text-gray-900">{{ h.name || '—' }}</p>
+                  <p class="text-sm text-gray-500">{{ formatHolidayDate(h.date) }}</p>
                 </div>
                 <div class="flex gap-2">
-                  <button class="text-brand-500 hover:text-brand-700 text-sm" (click)="openForm(h)">Editar</button>
-                  <button class="text-error-500 hover:text-error-700 text-sm" (click)="delete(h.id)">Eliminar</button>
+                  <button class="text-brand-500 hover:text-brand-700 text-sm px-3 py-1.5 border border-brand-200 rounded-lg hover:bg-brand-50 transition-colors" (click)="openForm(h)">Editar</button>
+                  <button class="text-error-500 hover:text-error-700 text-sm px-3 py-1.5 border border-error-200 rounded-lg hover:bg-error-50 transition-colors" (click)="delete(h.id)">Eliminar</button>
                 </div>
               </div>
             }
@@ -116,5 +116,12 @@ export class HolidaysPageComponent implements OnInit {
       this.toast.success('Feriado eliminado');
       this.load();
     } catch { this.toast.error('Error al eliminar'); }
+  }
+
+  formatHolidayDate(dateStr: string): string {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone shift
+    if (isNaN(d.getTime())) return dateStr;
+    return new Intl.DateTimeFormat('es-DO', { day: '2-digit', month: 'long', year: 'numeric' }).format(d);
   }
 }

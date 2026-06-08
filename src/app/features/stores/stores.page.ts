@@ -57,47 +57,51 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
       <button class="btn-primary" (click)="openForm()">+ Nuevo comercio</button>
     </app-page-header>
 
-    <!-- Commerce type tabs -->
-    <div class="flex flex-wrap gap-1 mb-4">
-      @for (tab of commerceTabs; track tab.value) {
-        <button
-          (click)="setCommerceType(tab.value)"
-          class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-          [class]="activeType() === tab.value
-            ? 'bg-brand-500 text-white shadow-sm'
-            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
-        >{{ tab.label }}</button>
-      }
+    <!-- Commerce type tabs (horizontal scroll on mobile) -->
+    <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4">
+      <div class="flex gap-1 min-w-max">
+        @for (tab of commerceTabs; track tab.value) {
+          <button
+            (click)="setCommerceType(tab.value)"
+            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0"
+            [class]="activeType() === tab.value
+              ? 'bg-brand-500 text-white shadow-sm'
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+          >{{ tab.label }}</button>
+        }
+      </div>
     </div>
 
     <!-- Secondary filters -->
-    <div class="flex flex-wrap gap-3 mb-4">
-      <div class="relative flex-1 min-w-[200px] max-w-xs">
+    <div class="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
+      <div class="relative flex-1 min-w-0">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
         <input
           type="search"
-          class="input-field pl-9"
+          class="input-field pl-9 w-full"
           placeholder="Buscar por nombre o slug..."
           [(ngModel)]="searchText"
           (ngModelChange)="onSearch()"
         />
       </div>
-      <select class="input-field w-44" [(ngModel)]="approvalFilter" (ngModelChange)="loadStores()">
-        <option value="">Todas las aprobaciones</option>
-        <option value="pendiente">Pendiente</option>
-        <option value="aprobado">Aprobado</option>
-        <option value="rechazado">Rechazado</option>
-        <option value="suspendido">Suspendido</option>
-      </select>
-      <select class="input-field w-36" [(ngModel)]="openFilter" (ngModelChange)="loadStores()">
-        <option value="">Todos</option>
-        <option value="open">Abiertos</option>
-        <option value="closed">Cerrados</option>
-      </select>
+      <div class="flex gap-2 flex-wrap sm:flex-nowrap">
+        <select class="input-field flex-1 sm:w-44" [(ngModel)]="approvalFilter" (ngModelChange)="loadStores()">
+          <option value="">Todas las aprobaciones</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="rechazado">Rechazado</option>
+          <option value="suspendido">Suspendido</option>
+        </select>
+        <select class="input-field flex-1 sm:w-36" [(ngModel)]="openFilter" (ngModelChange)="loadStores()">
+          <option value="">Todos</option>
+          <option value="open">Abiertos</option>
+          <option value="closed">Cerrados</option>
+        </select>
+      </div>
       @if (approvalFilter || openFilter) {
-        <button class="btn-secondary text-sm" (click)="clearFilters()">✕ Limpiar</button>
+        <button class="btn-secondary text-sm w-full sm:w-auto" (click)="clearFilters()">✕ Limpiar</button>
       }
     </div>
 
@@ -107,30 +111,28 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
         <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Comercio</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Admin</th>
               <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Abierto</th>
               <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Activo</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Aprobación</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Rating</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tier</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Pedidos hoy</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide w-16">Acción</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-100">
             @if (loading()) {
               @for (i of [1,2,3,4,5]; track i) {
                 <tr class="animate-pulse">
-                  @for (j of [1,2,3,4,5,6,7,8,9,10]; track j) {
+                  @for (j of [1,2,3,4,5,6,7,8]; track j) {
                     <td class="px-4 py-3"><div class="h-4 bg-gray-200 rounded w-3/4"></div></td>
                   }
                 </tr>
               }
             } @else if (stores().length === 0) {
               <tr>
-                <td colspan="10" class="px-4 py-12 text-center text-gray-400">
+                <td colspan="8" class="px-4 py-12 text-center text-gray-400">
                   <p class="text-4xl mb-2">🏪</p>
                   <p class="text-sm">Sin comercios</p>
                 </td>
@@ -138,14 +140,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
             } @else {
               @for (s of stores(); track s.id) {
                 <tr class="hover:bg-gray-50 transition-colors">
-                  <!-- Type badge -->
-                  <td class="px-4 py-3 whitespace-nowrap">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                      <span>{{ icon(s.commerce_type) }}</span>
-                      <span>{{ label(s.commerce_type) }}</span>
-                    </span>
-                  </td>
-                  <!-- Name -->
+                  <!-- Comercio: logo + name + type badge -->
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
                       @if (s.logo_url) {
@@ -155,9 +150,11 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                           {{ icon(s.commerce_type) }}
                         </div>
                       }
-                      <div>
-                        <p class="font-medium text-gray-800">{{ s.name }}</p>
-                        <p class="text-xs text-gray-400">{{ s.slug }}</p>
+                      <div class="min-w-0">
+                        <p class="font-medium text-gray-800 truncate">{{ s.name }}</p>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500">
+                          {{ label(s.commerce_type) }}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -205,23 +202,43 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                       {{ tierLabel(s.commission_tier!) }} ({{ (s.commission_rate * 100).toFixed(0) }}%)
                     </span>
                   </td>
-                  <!-- Orders today (placeholder — would need live data) -->
-                  <td class="px-4 py-3 text-gray-500">—</td>
-                  <!-- Actions -->
-                  <td class="px-4 py-3">
-                    <div class="flex items-center gap-1 flex-wrap">
-                      <button class="btn-secondary px-2 py-1 text-xs" title="Ver detalle"
-                        (click)="router.navigate(['/stores', s.id])">👁</button>
-                      <button class="btn-secondary px-2 py-1 text-xs" title="Editar"
-                        (click)="openForm(s)">✏️</button>
-                      <button class="btn-secondary px-2 py-1 text-xs" title="Gestionar catálogo"
-                        (click)="router.navigate(['/stores', s.id, 'catalog'])">
-                        {{ icon(s.commerce_type) }}
+                  <!-- Actions dropdown -->
+                  <td class="px-4 py-3 text-right">
+                    <div class="relative inline-block">
+                      <button
+                        class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                        (click)="$event.stopPropagation(); toggleMenu(s.id)"
+                        title="Acciones"
+                      >
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                        </svg>
                       </button>
-                      <button class="btn-secondary px-2 py-1 text-xs" title="Gestionar zonas"
-                        (click)="router.navigate(['/restaurants', s.id, 'zones'])">📍</button>
-                      <button class="px-2 py-1 text-xs rounded border border-error-200 text-error-600 hover:bg-error-50 transition-colors"
-                        title="Eliminar" (click)="deleteStore(s)">🗑️</button>
+                      @if (openMenuId === s.id) {
+                        <div class="absolute right-0 top-9 z-50 bg-white rounded-xl shadow-theme-lg border border-gray-100 py-1 min-w-[168px]">
+                          <button (click)="router.navigate(['/stores', s.id]); closeMenu()"
+                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left">
+                            👁 Ver detalle
+                          </button>
+                          <button (click)="openForm(s); closeMenu()"
+                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left">
+                            ✏️ Editar
+                          </button>
+                          <button (click)="router.navigate(['/stores', s.id, 'catalog']); closeMenu()"
+                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left">
+                            📦 Catálogo
+                          </button>
+                          <button (click)="router.navigate(['/restaurants', s.id, 'zones']); closeMenu()"
+                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left">
+                            📍 Zonas
+                          </button>
+                          <div class="border-t border-gray-100 my-1"></div>
+                          <button (click)="deleteStore(s); closeMenu()"
+                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 text-left">
+                            🗑️ Eliminar
+                          </button>
+                        </div>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -360,7 +377,16 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     searchText = '';
     approvalFilter: ApprovalStatus | '' = '';
     openFilter: 'open' | 'closed' | '' = '';
+    openMenuId: string | null = null;
     private searchTimeout: any;
+
+    toggleMenu(id: string): void {
+      this.openMenuId = this.openMenuId === id ? null : id;
+    }
+
+    closeMenu(): void {
+      this.openMenuId = null;
+    }
 
     readonly commerceTabs = COMMERCE_TABS;
 

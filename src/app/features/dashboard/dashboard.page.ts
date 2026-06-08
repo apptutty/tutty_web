@@ -22,7 +22,7 @@ const STATUS_ORDER = ['recibido', 'confirmado', 'en_preparacion', 'en_camino', '
     <app-page-header title="Dashboard" subtitle="Resumen en tiempo real de la plataforma" />
 
     <!-- KPI Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
       <app-stat-card
         title="Ventas Hoy"
         [value]="kpis()?.ventas_hoy | currencyDop"

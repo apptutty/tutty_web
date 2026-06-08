@@ -101,10 +101,17 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
                   </td>
                   <td class="px-4 py-3 text-xs text-gray-500">
                     @if (p.valid_from || p.valid_until) {
-                      {{ p.valid_from ?? '—' }} → {{ p.valid_until ?? '—' }}
+                      <div class="flex flex-col gap-0.5">
+                        <span class="text-gray-400">Desde</span>
+                        <span>{{ formatDate(p.valid_from) }}</span>
+                        <span class="text-gray-400 mt-0.5">Hasta</span>
+                        <span [class.text-error-500]="isExpired(p.valid_until)">
+                          {{ p.valid_until ? formatDate(p.valid_until) : '\u221e' }}
+                        </span>
+                      </div>
                     } @else { Sin límite }
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-600">{{ p.commerce_id }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">{{ $any(p)['restaurant_name'] ?? 'Todos' }}</td>
                   <td class="px-4 py-3">
                     <button
                       class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
@@ -394,6 +401,18 @@ export class PromotionsPageComponent implements OnInit {
       percentage: 'Porcentaje', fixed_amount: 'Monto fijo', free_delivery: 'Delivery gratis',
     };
     return map[type] ?? type;
+  }
+
+  formatDate(isoString: string | null | undefined): string {
+    if (!isoString) return '—';
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '—';
+    return new Intl.DateTimeFormat('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }).format(d);
+  }
+
+  isExpired(isoString: string | null | undefined): boolean {
+    if (!isoString) return false;
+    return new Date(isoString) < new Date();
   }
 
   openStats(p: Promotion): void {

@@ -11,16 +11,29 @@ import { AuditLogEntry } from '../../../core/supabase/database.types';
   imports: [CommonModule, FormsModule, DatePipe],
   template: `
     <div>
-      <div class="flex flex-wrap items-center gap-3 mb-4">
-        <input type="text" class="input-field w-44 text-sm" [(ngModel)]="filter.admin"
-          placeholder="Filtrar por admin" />
-        <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateFrom" />
-        <span class="text-gray-400">—</span>
-        <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateTo" />
-        <input type="text" class="input-field w-44 text-sm" [(ngModel)]="filter.action"
-          placeholder="Filtrar por acción" />
-        <button class="btn-primary text-sm" (click)="load()">Buscar</button>
-        <button class="btn-secondary text-sm" (click)="exportCsv()">⬇ Exportar CSV</button>
+      <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3 mb-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Admin</label>
+          <input type="text" class="input-field w-44 text-sm" [(ngModel)]="filter.admin"
+            placeholder="Filtrar por admin" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateFrom" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateTo" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Acción</label>
+          <input type="text" class="input-field w-44 text-sm" [(ngModel)]="filter.action"
+            placeholder="Filtrar por acción" />
+        </div>
+        <div class="flex gap-2 sm:self-end">
+          <button class="btn-primary text-sm" (click)="load()">Buscar</button>
+          <button class="btn-secondary text-sm" (click)="exportCsv()">⬇ Exportar CSV</button>
+        </div>
       </div>
 
       <div class="card overflow-hidden">

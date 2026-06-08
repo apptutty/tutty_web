@@ -47,39 +47,43 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
   template: `
     <app-page-header title="Finanzas" subtitle="Liquidaciones, comisiones y reportes financieros" />
 
-    <!-- Tabs -->
-    <div class="flex gap-0 border-b border-gray-200 mb-5 overflow-x-auto">
-      @for (tab of tabs; track tab.id) {
-        <button
-          (click)="activeTab.set(tab.id)"
-          class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
-          [class]="activeTab() === tab.id
-            ? 'border-brand-500 text-brand-500'
-            : 'border-transparent text-gray-500 hover:text-gray-700'"
-        >{{ tab.label }}</button>
-      }
+    <!-- Tabs (horizontal scroll on mobile) -->
+    <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 border-b border-gray-200 mb-5">
+      <div class="flex gap-0 min-w-max">
+        @for (tab of tabs; track tab.id) {
+          <button
+            (click)="activeTab.set(tab.id)"
+            class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors min-h-[44px]"
+            [class]="activeTab() === tab.id
+              ? 'border-brand-500 text-brand-500'
+              : 'border-transparent text-gray-500 hover:text-gray-700'"
+          >{{ tab.label }}</button>
+        }
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════ TAB: RESUMEN -->
     @if (activeTab() === 'summary') {
       <!-- Period selector -->
-      <div class="flex flex-wrap items-center gap-2 mb-5">
-        @for (p of periodPresets; track p.value) {
-          <button
-            (click)="setSummaryPeriod(p.value)"
-            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-            [class]="summaryPeriod() === p.value
-              ? 'bg-brand-500 text-white shadow-sm'
-              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
-          >{{ p.label }}</button>
-        }
-        <div class="flex items-center gap-2 ml-auto">
-          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="summaryFrom" />
-          <span class="text-gray-400">—</span>
-          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="summaryTo" />
-          <button class="btn-primary text-sm" (click)="loadSummaryKpi()">Ver</button>
+        <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 mb-5">
+          <div class="flex flex-wrap gap-2">
+            @for (p of periodPresets; track p.value) {
+              <button
+                (click)="setSummaryPeriod(p.value)"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                [class]="summaryPeriod() === p.value
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+              >{{ p.label }}</button>
+            }
+          </div>
+          <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:ml-auto">
+            <input type="date" class="input-field w-full sm:w-36 text-sm" [(ngModel)]="summaryFrom" />
+            <span class="text-gray-400 hidden sm:block">—</span>
+            <input type="date" class="input-field w-full sm:w-36 text-sm" [(ngModel)]="summaryTo" />
+            <button class="btn-primary text-sm w-full sm:w-auto" (click)="loadSummaryKpi()">Ver</button>
+          </div>
         </div>
-      </div>
 
       <!-- KPIs -->
       @if (kpiLoading()) {
@@ -111,7 +115,9 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4">
             <p class="text-xs text-gray-400 mb-1">Descuentos otorgados</p>
-            <p class="text-xl font-bold text-error-500">-RD$ {{ kpi()!.discounts | number:'1.0-0' }}</p>
+            <p class="text-xl font-bold" [class]="kpi()!.discounts > 0 ? 'text-error-500' : 'text-gray-800'">
+              {{ kpi()!.discounts > 0 ? '-' : '' }}RD$ {{ kpi()!.discounts | number:'1.0-0' }}
+            </p>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4 bg-gradient-to-br from-brand-50 to-white border-brand-200">
             <p class="text-xs text-brand-400 mb-1">Ingresos netos Tutty</p>
@@ -132,22 +138,22 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
           </div>
         } @else {
           <div class="overflow-x-auto">
-            <div class="flex items-end gap-1 min-w-max" style="min-height:140px">
+            <div class="flex items-end gap-2 min-w-max" style="min-height:160px; padding-bottom: 24px;">
               @for (point of chartData(); track point.date) {
-                <div class="flex flex-col items-center gap-0.5 group" style="width:32px">
-                  <!-- Commission bar (overlay) -->
-                  <div class="relative w-full flex flex-col justify-end" style="height:120px">
+                <div class="flex flex-col items-center gap-0.5 group" style="width:40px">
+                  <!-- Bars -->
+                  <div class="relative w-full flex flex-col justify-end" style="height:130px">
                     <div
                       class="w-full rounded-t bg-brand-500/20 absolute bottom-0"
                       [style.height.%]="chartMax() > 0 ? (point.grossSales / chartMax()) * 100 : 0"
                     ></div>
                     <div
-                      class="w-full rounded-t bg-brand-500 absolute bottom-0"
-                      style="width:50%"
+                      class="rounded-t bg-brand-500 absolute bottom-0"
+                      style="width:60%"
                       [style.height.%]="chartMax() > 0 ? (point.commissions / chartMax()) * 100 : 0"
                     ></div>
                   </div>
-                  <span class="text-[9px] text-gray-400 -rotate-45 origin-top-left mt-1 whitespace-nowrap">
+                  <span class="text-[9px] text-gray-400 whitespace-nowrap mt-1">
                     {{ point.date | date:'d/M' }}
                   </span>
                 </div>

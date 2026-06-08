@@ -75,18 +75,24 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
 
     <!-- Bookings tab -->
     @if (activeTab() === 'reservas') {
-      <div class="flex flex-wrap gap-3 mb-4">
-        <select class="input-field w-48" [(ngModel)]="bookingStatusFilter" (ngModelChange)="loadBookings()">
+      <div class="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
+        <select class="input-field sm:w-48" [(ngModel)]="bookingStatusFilter" (ngModelChange)="loadBookings()">
           <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
           <option value="confirmada">Confirmada</option>
           <option value="cancelada">Cancelada</option>
           <option value="completada">Completada</option>
         </select>
-        <input type="date" class="input-field w-44" [(ngModel)]="bookingDateFrom" placeholder="Desde" />
-        <input type="date" class="input-field w-44" [(ngModel)]="bookingDateTo" placeholder="Hasta" />
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+          <input type="date" class="input-field sm:w-44" [(ngModel)]="bookingDateFrom" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+          <input type="date" class="input-field sm:w-44" [(ngModel)]="bookingDateTo" />
+        </div>
         @if (bookingDateFrom || bookingDateTo) {
-          <button class="btn-secondary text-sm" (click)="bookingDateFrom = ''; bookingDateTo = ''">✕ Fechas</button>
+          <button class="btn-secondary text-sm self-end" (click)="bookingDateFrom = ''; bookingDateTo = ''">✕ Fechas</button>
         }
       </div>
       <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">

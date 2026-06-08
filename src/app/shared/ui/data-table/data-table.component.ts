@@ -22,8 +22,8 @@ export interface TableColumn {
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, CurrencyDopPipe, TimeAgoPipe, StatusBadgeComponent],
     template: `
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
+    <div class="overflow-x-auto touch-scroll">
+      <table class="min-w-full min-w-[600px] divide-y divide-gray-200">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             @for (col of columns; track col.key) {
@@ -110,22 +110,22 @@ export interface TableColumn {
 
     <!-- Pagination -->
     @if (totalCount > pageSize) {
-      <div class="flex items-center justify-between px-4 py-3.5 border-t border-gray-200 bg-white">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3.5 border-t border-gray-200 bg-white">
         <p class="text-sm text-gray-500">
           Mostrando {{ rangeStart }}-{{ rangeEnd }} de {{ totalCount }} resultados
         </p>
         <div class="flex items-center gap-1">
           <button
-            class="btn-secondary px-2 py-1.5 text-xs"
+            class="btn-secondary px-3 py-1.5 text-xs"
             [disabled]="currentPage === 1"
             (click)="pageChange.emit(currentPage - 1)"
-          >‹ Anterior</button>
-          <span class="text-sm text-gray-600 px-2">{{ currentPage }}</span>
+          >‹ Ant</button>
+          <span class="sm:hidden text-sm text-gray-500 px-2">Pág {{ currentPage }} / {{ totalPages }}</span>
           <button
-            class="btn-secondary px-2 py-1.5 text-xs"
+            class="btn-secondary px-3 py-1.5 text-xs"
             [disabled]="currentPage >= totalPages"
             (click)="pageChange.emit(currentPage + 1)"
-          >Siguiente ›</button>
+          >Sig ›</button>
         </div>
       </div>
     }

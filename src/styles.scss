@@ -68,4 +68,40 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* ── Scrollbar hide (alias for utility use) ── */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* ── Touch scrolling iOS ── */
+  .touch-scroll { -webkit-overflow-scrolling: touch; }
+
+  /* ── Sidebar transition ── */
+  .sidebar-transition { transition: width 300ms ease, transform 300ms ease; }
+
+  /* ── Table responsive helper ── */
+  .table-scroll-hint {
+    @apply text-xs text-gray-400 mt-1 flex items-center gap-1 sm:hidden;
+  }
+}
+
+/* ── Safe area for notch/home indicator (iOS) ── */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-top    { padding-top: env(safe-area-inset-top); }
+
+/* ── Focus visible (accessibility) ── */
+*:focus-visible {
+  outline: 2px solid #FF3C97;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Mobile touch targets (WCAG min 44x44) ── */
+@media (max-width: 640px) {
+  .table-action-btn {
+    padding: 0.75rem;
+  }
 }
