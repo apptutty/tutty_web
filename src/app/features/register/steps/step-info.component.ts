@@ -128,7 +128,7 @@ function slugify(text: string): string {
           <select id="category" class="input-field" formControlName="category_id">
             <option value="">Sin categoría específica</option>
             @for (cat of categories(); track cat.id) {
-              <option [value]="cat.id">{{ cat.icon ? cat.icon + ' ' : '' }}{{ cat.name }}</option>
+              <option [value]="cat.id">{{ getCategoryIcon(cat.slug) }} {{ cat.name }}</option>
             }
           </select>
         </div>
@@ -486,6 +486,16 @@ export class RegisterStepInfoComponent implements OnInit {
     }
 
     isCuisineSelected(c: string): boolean { return this.selectedCuisines.includes(c); }
+
+    getCategoryIcon(slug: string): string {
+        const icons: Record<string, string> = {
+            dominicana: '🍽️', pizza: '🍕', pollo: '🍗', rapida: '🍔', mariscos: '🦞',
+            sushi: '🍣', hamburguesas: '🍔', postres: '🍰', bebidas: '🥤', saludable: '🥗',
+            farmacia: '💊', bodega: '📦', colmado: '🛒', tienda_ropa: '👗',
+            supermercado: '🛒', electronica: '📱', otro: '🏪',
+        };
+        return icons[slug] ?? '🏪';
+    }
 
     toggleCuisine(c: string): void {
         if (this.isCuisineSelected(c)) {

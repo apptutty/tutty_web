@@ -1183,6 +1183,16 @@ export class SettingsPageComponent implements OnInit {
     return this.commerceTypes.find(ct => ct.value === type)?.label ?? type;
   }
 
+  getCategoryIcon(slug: string): string {
+    const icons: Record<string, string> = {
+      dominicana: '🍽️', pizza: '🍕', pollo: '🍗', rapida: '🍔', mariscos: '🦞',
+      sushi: '🍣', hamburguesas: '🍔', postres: '🍰', bebidas: '🥤', saludable: '🥗',
+      farmacia: '💊', bodega: '📦', colmado: '🛒', tienda_ropa: '👗',
+      supermercado: '🛒', electronica: '📱', otro: '🏪',
+    };
+    return icons[slug] ?? '🏪';
+  }
+
   onCategoryDragStart(index: number) {
     this.draggedIndex.set(index);
   }
