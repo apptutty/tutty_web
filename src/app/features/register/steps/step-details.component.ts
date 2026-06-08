@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RegisterService } from '../register.service';
@@ -341,16 +341,16 @@ export class RegisterStepDetailsComponent implements OnInit {
     readonly dayLabel = (d: string) => DAY_LABELS[d] ?? d;
     readonly unitTypes = UNIT_TYPES;
 
-    private selectedDays: string[] = [];
+    private readonly selectedDays = signal<string[]>([]);
     private selectedUnitTypes: string[] = [];
 
     readonly commerceType = computed<CommerceType | null>(() => this.registerService.registrationData().commerce_type);
 
     readonly schedulePreview = computed(() => {
-        if (!this.selectedDays.length) return '';
+        if (!this.selectedDays().length) return '';
         const open = this.form?.value.opening_time ?? '';
         const close = this.form?.value.closing_time ?? '';
-        const days = this.selectedDays.map(d => DAY_LABELS[d] ?? d).join(', ');
+        const days = this.selectedDays().map(d => DAY_LABELS[d] ?? d).join(', ');
         return open && close ? `✓ Abierto ${days} de ${open} a ${close}` : `✓ Días: ${days}`;
     });
 
@@ -382,7 +382,7 @@ export class RegisterStepDetailsComponent implements OnInit {
             return;
         }
 
-        this.selectedDays = [...draft.open_days];
+        this.selectedDays.set([...draft.open_days]);
         this.selectedUnitTypes = [...(draft.unit_types ?? [])];
 
         this.form.patchValue({
@@ -404,14 +404,14 @@ export class RegisterStepDetailsComponent implements OnInit {
     }
 
     isDaySelected(day: string): boolean {
-        return this.selectedDays.includes(day);
+        return this.selectedDays().includes(day);
     }
 
     toggleDay(day: string): void {
         if (this.isDaySelected(day)) {
-            this.selectedDays = this.selectedDays.filter(d => d !== day);
+            this.selectedDays.update(days => days.filter(d => d !== day));
         } else {
-            this.selectedDays = [...this.selectedDays, day];
+            this.selectedDays.update(days => [...days, day]);
         }
     }
 
@@ -431,7 +431,7 @@ export class RegisterStepDetailsComponent implements OnInit {
         this.registerService.update({
             opening_time: v.opening_time ?? '08:00',
             closing_time: v.closing_time ?? '22:00',
-            open_days: this.selectedDays,
+            open_days: this.selectedDays(),
             avg_delivery_minutes: v.avg_delivery_minutes ?? 30,
             min_order_amount: v.min_order_amount ?? 0,
             free_delivery_enabled: v.free_delivery_enabled ?? false,
