@@ -463,6 +463,8 @@ export class ApprovalQueuePageComponent implements OnInit, OnDestroy {
       this.toast.success(`✅ ${store.name} aprobado correctamente`);
       this.approveStore.set(null);
       this.slideOverStore.set(null);
+      this.stores.update(list => list.filter(s => s.id !== store.id));
+      if (this.activeTab() === 'pendiente') this.pendingCount.update(n => Math.max(0, n - 1));
     } catch { this.toast.error('Error al aprobar el comercio'); }
     finally { this.actionLoading.set(false); }
   }
@@ -476,6 +478,8 @@ export class ApprovalQueuePageComponent implements OnInit, OnDestroy {
       this.toast.success(`Solicitud de ${store.name} rechazada`);
       this.rejectStore.set(null);
       this.slideOverStore.set(null);
+      this.stores.update(list => list.filter(s => s.id !== store.id));
+      if (this.activeTab() === 'pendiente') this.pendingCount.update(n => Math.max(0, n - 1));
     } catch { this.toast.error('Error al rechazar la solicitud'); }
     finally { this.actionLoading.set(false); }
   }
@@ -489,6 +493,8 @@ export class ApprovalQueuePageComponent implements OnInit, OnDestroy {
       this.toast.success(`${store.name} suspendido`);
       this.suspendStore.set(null);
       this.slideOverStore.set(null);
+      this.stores.update(list => list.filter(s => s.id !== store.id));
+      if (this.activeTab() === 'pendiente') this.pendingCount.update(n => Math.max(0, n - 1));
     } catch { this.toast.error('Error al suspender el comercio'); }
     finally { this.actionLoading.set(false); }
   }
