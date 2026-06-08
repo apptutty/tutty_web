@@ -5,28 +5,28 @@ import { RegisterService } from '../register.service';
 import { AuthService } from '../../../core/auth/auth.service';
 
 function passwordStrength(pass: string): 'weak' | 'medium' | 'strong' {
-    if (pass.length < 6) return 'weak';
-    const hasUpper = /[A-Z]/.test(pass);
-    const hasNumber = /[0-9]/.test(pass);
-    const hasSpecial = /[^A-Za-z0-9]/.test(pass);
-    const score = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
-    if (score >= 2 && pass.length >= 8) return 'strong';
-    if (score >= 1 && pass.length >= 6) return 'medium';
-    return 'weak';
+  if (pass.length < 6) return 'weak';
+  const hasUpper = /[A-Z]/.test(pass);
+  const hasNumber = /[0-9]/.test(pass);
+  const hasSpecial = /[^A-Za-z0-9]/.test(pass);
+  const score = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+  if (score >= 2 && pass.length >= 8) return 'strong';
+  if (score >= 1 && pass.length >= 6) return 'medium';
+  return 'weak';
 }
 
 function confirmPasswordValidator(control: AbstractControl): ValidationErrors | null {
-    const parent = control.parent;
-    if (!parent) return null;
-    const password = parent.get('password')?.value as string;
-    return control.value === password ? null : { mismatch: true };
+  const parent = control.parent;
+  if (!parent) return null;
+  const password = parent.get('password')?.value as string;
+  return control.value === password ? null : { mismatch: true };
 }
 
 @Component({
-    selector: 'app-register-step-account',
-    standalone: true,
-    imports: [ReactiveFormsModule],
-    template: `
+  selector: 'app-register-step-account',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
     <div class="step-container">
       <div class="step-header">
         <h1>Crea tu cuenta de administrador</h1>
@@ -174,7 +174,7 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
       } <!-- end @else (not authenticated) -->
     </div>
   `,
-    styles: [`
+  styles: [`
     .step-container { max-width: 520px; margin: 0 auto; }
 
     .step-header { margin-bottom: 2rem; }
@@ -358,105 +358,105 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
   `],
 })
 export class RegisterStepAccountComponent implements OnInit {
-    private readonly registerService = inject(RegisterService);
-    private readonly auth = inject(AuthService);
-    private readonly router = inject(Router);
-    private readonly fb = inject(FormBuilder);
+  private readonly registerService = inject(RegisterService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
 
-    readonly submitting = signal(false);
-    readonly errorMessage = signal<string | null>(null);
-    readonly showPassword = signal(false);
-    readonly draft = this.registerService.registrationData;
-    readonly isAuthenticated = this.auth.isAuthenticated;
-    readonly currentUser = this.auth.currentUser;
+  readonly submitting = signal(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly showPassword = signal(false);
+  readonly draft = this.registerService.registrationData;
+  readonly isAuthenticated = this.auth.isAuthenticated;
+  readonly currentUser = this.auth.currentUser;
 
-    readonly form = this.fb.group({
-        full_name: ['', Validators.required],
-        phone: ['', Validators.required],
-        email: ['', [Validators.required, Validators.email]],
-        password: ['', [Validators.required, Validators.minLength(8)]],
-        confirm_password: ['', [Validators.required, confirmPasswordValidator]],
-        accept_terms: [false, Validators.requiredTrue],
+  readonly form = this.fb.group({
+    full_name: ['', Validators.required],
+    phone: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    confirm_password: ['', [Validators.required, confirmPasswordValidator]],
+    accept_terms: [false, Validators.requiredTrue],
+  });
+
+  get f() { return this.form.controls; }
+
+  readonly strengthClass = computed<'weak' | 'medium' | 'strong'>(() =>
+    passwordStrength(this.form.controls['password'].value ?? '')
+  );
+
+  readonly strengthLabel = computed(() => {
+    const s = this.strengthClass();
+    return s === 'weak' ? 'débil' : s === 'medium' ? 'media' : 'fuerte';
+  });
+
+  ngOnInit(): void {
+    const draft = this.registerService.registrationData();
+    if (!draft.opening_time) {
+      this.router.navigate(['/register/details']);
+      return;
+    }
+
+    this.form.patchValue({
+      full_name: draft.full_name,
+      phone: draft.phone,
+      email: draft.email,
     });
 
-    get f() { return this.form.controls; }
+    // Re-validate confirm when password changes
+    this.form.controls['password'].valueChanges.subscribe(() => {
+      this.form.controls['confirm_password'].updateValueAndValidity();
+    });
+  }
 
-    readonly strengthClass = computed<'weak' | 'medium' | 'strong'>(() =>
-        passwordStrength(this.form.controls['password'].value ?? '')
-    );
+  async submitAuthenticated(): Promise<void> {
+    if (this.submitting()) return;
+    const user = this.auth.currentUser();
+    if (!user) return;
 
-    readonly strengthLabel = computed(() => {
-        const s = this.strengthClass();
-        return s === 'weak' ? 'débil' : s === 'medium' ? 'media' : 'fuerte';
+    this.submitting.set(true);
+    this.errorMessage.set(null);
+    try {
+      const result = await this.registerService.submitRegistrationForExistingUser(user.id);
+      this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
+    } catch (err: unknown) {
+      const msg = err instanceof Error
+        ? err.message
+        : (err as any)?.message ?? 'Error al registrar.';
+      this.errorMessage.set(msg);
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  async submit(): Promise<void> {
+    if (this.form.invalid || this.submitting()) return;
+
+    const v = this.form.value;
+    this.registerService.update({
+      full_name: v.full_name ?? '',
+      phone: v.phone ?? '',
+      email: v.email ?? '',
+      password: v.password ?? '',
     });
 
-    ngOnInit(): void {
-        const draft = this.registerService.registrationData();
-        if (!draft.opening_time) {
-            this.router.navigate(['/register/details']);
-            return;
-        }
+    this.submitting.set(true);
+    this.errorMessage.set(null);
 
-        this.form.patchValue({
-            full_name: draft.full_name,
-            phone: draft.phone,
-            email: draft.email,
-        });
-
-        // Re-validate confirm when password changes
-        this.form.controls['password'].valueChanges.subscribe(() => {
-            this.form.controls['confirm_password'].updateValueAndValidity();
-        });
+    try {
+      const result = await this.registerService.submitRegistration();
+      this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
+    } catch (err: unknown) {
+      const msg = err instanceof Error
+        ? err.message
+        : (err as any)?.message ?? 'Error al registrar. Por favor intenta de nuevo.';
+      this.errorMessage.set(msg);
+    } finally {
+      this.submitting.set(false);
     }
+  }
 
-    async submitAuthenticated(): Promise<void> {
-        if (this.submitting()) return;
-        const user = this.auth.currentUser();
-        if (!user) return;
-
-        this.submitting.set(true);
-        this.errorMessage.set(null);
-        try {
-            const result = await this.registerService.submitRegistrationForExistingUser(user.id);
-            this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
-        } catch (err: unknown) {
-            const msg = err instanceof Error
-                ? err.message
-                : (err as any)?.message ?? 'Error al registrar.';
-            this.errorMessage.set(msg);
-        } finally {
-            this.submitting.set(false);
-        }
-    }
-
-    async submit(): Promise<void> {
-        if (this.form.invalid || this.submitting()) return;
-
-        const v = this.form.value;
-        this.registerService.update({
-            full_name: v.full_name ?? '',
-            phone: v.phone ?? '',
-            email: v.email ?? '',
-            password: v.password ?? '',
-        });
-
-        this.submitting.set(true);
-        this.errorMessage.set(null);
-
-        try {
-            const result = await this.registerService.submitRegistration();
-            this.router.navigate(['/register/pending'], { queryParams: { approved: result.approved, id: result.commerceId } });
-        } catch (err: unknown) {
-            const msg = err instanceof Error
-                ? err.message
-                : (err as any)?.message ?? 'Error al registrar. Por favor intenta de nuevo.';
-            this.errorMessage.set(msg);
-        } finally {
-            this.submitting.set(false);
-        }
-    }
-
-    back(): void {
-        this.router.navigate(['/register/details']);
-    }
+  back(): void {
+    this.router.navigate(['/register/details']);
+  }
 }
