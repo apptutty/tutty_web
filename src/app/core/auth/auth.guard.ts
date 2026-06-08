@@ -7,7 +7,7 @@ export const authGuard: CanActivateFn = async () => {
   const router = inject(Router);
   try {
     await auth.ready;
-    return auth.isAuthenticated() ? true : router.createUrlTree(['/login']);
+    return auth.sessionExists() ? true : router.createUrlTree(['/login']);
   } catch {
     return router.createUrlTree(['/login']);
   }
@@ -18,12 +18,12 @@ export const noAuthGuard: CanActivateFn = async () => {
   const router = inject(Router);
   try {
     await auth.ready;
-    if (!auth.isAuthenticated()) return true;
+    if (!auth.sessionExists()) return true;
+    await auth.profileReady;
     const user = auth.currentUser();
-    return user?.role === 'store_admin'
-      ? router.createUrlTree(['/store'])
-      : router.createUrlTree(['/dashboard']);
+    if (!user) return true; // profile failed — show login rather than redirect loop
+    return router.createUrlTree([user.role === 'store_admin' ? '/store' : '/dashboard']);
   } catch {
-    return true; // allow login page to render on unexpected errors
+    return true;
   }
 };

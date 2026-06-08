@@ -56,13 +56,11 @@ export class StoreOrdersService {
         const { page = 1, pageSize = 50, status, date_from, date_to, search } = filters;
 
         let query = this.supabase
-            .from('orders')
+            .from('orders_full')
             .select(
-                `id, order_number, subtotal, delivery_fee, total, status, created_at, delivery_address,
-         customer:users(full_name, phone),
-         repartidor:repartidores(user:users(full_name)),
-         items:order_items(id, menu_item_snapshot, quantity)`,
-
+                `id, order_number, subtotal, delivery_fee, total, status, created_at,
+         delivery_street, delivery_sector, delivery_city, delivery_notes,
+         customer_name, customer_phone, repartidor_name, commerce_id`,
                 { count: 'exact' },
             )
             .eq('commerce_id', storeId);
@@ -87,25 +85,43 @@ export class StoreOrdersService {
 
         if (error) throw error;
 
-        const orders: StoreOrder[] = (data ?? []).map((o: any) => ({
-            id: o.id,
-            order_number: o.order_number,
-            subtotal: o.subtotal ?? 0,
-            commission_amount: 0, // not fetched intentionally
-            delivery_fee: o.delivery_fee ?? 0,
-            total: o.total ?? 0,
-            status: o.status,
-            created_at: o.created_at,
-            delivery_address: o.delivery_address ?? '',
-            customer_name: o.customer?.full_name ?? '—',
-            customer_phone: o.customer?.phone ?? '',
-            repartidor_name: o.repartidor?.user?.full_name ?? null,
-            item_count: (o.items ?? []).length,
-            items_preview: (o.items ?? [])
-                .slice(0, 3)
-                .map((i: any) => `${i.quantity}x ${(i.menu_item_snapshot as any)?.name ?? 'Producto'}`)
-                .join(', '),
-        }));
+        // Fetch items separately to build preview (orders_full is a flat view, no nested joins)
+        const orderIds = (data ?? []).map((o: any) => o.id);
+        let itemsMap: Map<string, any[]> = new Map();
+        if (orderIds.length > 0) {
+            const { data: itemsData } = await this.supabase
+                .from('order_items')
+                .select('order_id, menu_item_snapshot, quantity')
+                .in('order_id', orderIds);
+            for (const item of itemsData ?? []) {
+                if (!itemsMap.has(item.order_id)) itemsMap.set(item.order_id, []);
+                itemsMap.get(item.order_id)!.push(item);
+            }
+        }
+
+        const orders: StoreOrder[] = (data ?? []).map((o: any) => {
+            const items = itemsMap.get(o.id) ?? [];
+            const addr = [o.delivery_street, o.delivery_sector, o.delivery_city].filter(Boolean).join(', ');
+            return {
+                id: o.id,
+                order_number: o.order_number,
+                subtotal: o.subtotal ?? 0,
+                commission_amount: 0, // not fetched intentionally
+                delivery_fee: o.delivery_fee ?? 0,
+                total: o.total ?? 0,
+                status: o.status,
+                created_at: o.created_at,
+                delivery_address: addr,
+                customer_name: o.customer_name ?? '—',
+                customer_phone: o.customer_phone ?? '',
+                repartidor_name: o.repartidor_name ?? null,
+                item_count: items.length,
+                items_preview: items
+                    .slice(0, 3)
+                    .map((i: any) => `${i.quantity}x ${(i.menu_item_snapshot as any)?.name ?? 'Producto'}`)
+                    .join(', '),
+            };
+        });
 
         return { data: orders, count: count ?? 0 };
     }
@@ -114,22 +130,22 @@ export class StoreOrdersService {
 
     getOrderDetail(orderId: string): Observable<StoreOrderDetail> {
         return from(
-            this.supabase
-                .from('orders')
-                .select(`
-          *,
-          commerce:commerces(id, name, address, phone),
-          customer:users(id, full_name, phone),
-          repartidor:repartidores(id, vehicle_type, plate, rating, user:users(full_name)),
-          items:order_items(*),
-          status_history:order_status_history(*, changed_by_user:users(full_name))
-        `)
-                .eq('id', orderId)
-                .single()
-                .then(({ data, error }) => {
-                    if (error) throw error;
-                    return data as StoreOrderDetail;
-                }),
+            Promise.all([
+                this.supabase.from('orders_full').select('*').eq('id', orderId).single(),
+                this.supabase.from('order_items').select('*').eq('order_id', orderId),
+                this.supabase
+                    .from('order_status_history')
+                    .select('*, changed_by_user:users(full_name)')
+                    .eq('order_id', orderId)
+                    .order('created_at', { ascending: true }),
+            ]).then(([orderRes, itemsRes, historyRes]) => {
+                if (orderRes.error) throw orderRes.error;
+                return {
+                    ...orderRes.data,
+                    items: itemsRes.data ?? [],
+                    status_history: historyRes.data ?? [],
+                } as StoreOrderDetail;
+            })
         );
     }
 

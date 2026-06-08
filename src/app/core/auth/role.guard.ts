@@ -7,18 +7,9 @@ export function roleGuard(allowedRoles: UserRole[]): CanActivateFn {
     return async () => {
         const auth = inject(AuthService);
         const router = inject(Router);
-
-        // Await ready so this guard is safe even when used without authGuard in front of it.
-        await auth.ready;
-
-        if (!auth.isAuthenticated()) {
-            return router.createUrlTree(['/login']);
-        }
-
-        if (auth.hasRole(allowedRoles)) {
-            return true;
-        }
-
+        await auth.profileReady;
+        if (!auth.isAuthenticated()) return router.createUrlTree(['/login']);
+        if (auth.hasRole(allowedRoles)) return true;
         return router.createUrlTree(['/unauthorized']);
     };
 }

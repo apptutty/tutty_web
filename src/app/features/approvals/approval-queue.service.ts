@@ -52,8 +52,11 @@ export class ApprovalQueueService {
       // Initial load
       this.getStoresByStatus('pendiente').subscribe(data => observer.next(data));
 
+      // Use a unique channel name so re-subscriptions never conflict with a
+      // previous channel that hasn't been fully removed yet.
+      const channelName = `approval-pending-${Date.now()}`;
       const channel = this.supabase
-        .channel('approval-pending')
+        .channel(channelName)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'commerces' },

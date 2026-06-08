@@ -18,18 +18,25 @@ async function checkApproval(userId: string): Promise<boolean> {
     return data !== null;
 }
 
-export const pendingApprovalGuard: CanActivateFn = () => {
+export const pendingApprovalGuard: CanActivateFn = (route) => {
+    console.log('[pendingApprovalGuard] START — url:', route.url.toString());
     const auth = inject(AuthService);
     const router = inject(Router);
 
     const runCheck = async () => {
         const user = auth.currentUser();
-        if (!user) return router.createUrlTree(['/login']);
+        console.log('[pendingApprovalGuard] runCheck — user:', user ? `id=${user.id}` : 'null');
+        if (!user) {
+            console.warn('[pendingApprovalGuard] No user — redirect /login');
+            return router.createUrlTree(['/login']);
+        }
 
         const approved = await checkApproval(user.id);
+        console.log('[pendingApprovalGuard] checkApproval result:', approved);
         return approved ? true : router.createUrlTree(['/register/pending']);
     };
 
+    console.log('[pendingApprovalGuard] isLoading:', auth.isLoading());
     if (!auth.isLoading()) {
         return from(runCheck());
     }

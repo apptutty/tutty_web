@@ -65,7 +65,7 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
         <!-- Action buttons -->
         @if (order()) {
           <div class="flex gap-2 no-print">
-            @if (order()!.customer.phone) {
+            @if (order()!.customer_phone) {
               <a
                 [href]="whatsappUrl()"
                 target="_blank"
@@ -143,19 +143,19 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
           <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Cliente</h3>
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-500">
-              {{ order()!.customer.full_name[0]?.toUpperCase() ?? '?' }}
+              {{ order()!.customer_name[0]?.toUpperCase() ?? '?' }}
             </div>
             <div>
-              <p class="font-semibold text-gray-900">{{ order()!.customer.full_name }}</p>
-              @if (order()!.customer.phone) {
-                <p class="text-sm text-gray-500">{{ order()!.customer!.phone }}</p>
+              <p class="font-semibold text-gray-900">{{ order()!.customer_name }}</p>
+              @if (order()!.customer_phone) {
+                <p class="text-sm text-gray-500">{{ order()!.customer_phone }}</p>
               }
             </div>
           </div>
-          @if (order()!.delivery_address) {
+          @if (order()!.delivery_street) {
             <div class="mt-3 text-sm text-gray-600 flex items-start gap-2">
               <span class="mt-0.5">📍</span>
-              <span>{{ order()!.delivery_address }}</span>
+              <span>{{ deliveryAddress() }}</span>
             </div>
           }
           @if (order()!.special_instructions) {
@@ -208,16 +208,16 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
         </div>
 
         <!-- Repartidor info -->
-        @if (order()!.repartidor) {
+        @if (order()!.repartidor_id) {
           <div class="card p-4">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Repartidor</h3>
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg">🛵</div>
               <div>
-                <p class="font-semibold text-gray-900">{{ repartidorName() }}</p>
-                <p class="text-sm text-gray-500">{{ order()!.repartidor!.vehicle_type }} · {{ order()!.repartidor!.plate ?? 'Sin placa' }}</p>
+                <p class="font-semibold text-gray-900">{{ order()!.repartidor_name ?? '—' }}</p>
+                <p class="text-sm text-gray-500">{{ order()!.vehicle_type }} · {{ order()!.vehicle_plate ?? 'Sin placa' }}</p>
               </div>
-              <div class="ml-auto text-sm font-semibold text-yellow-600">⭐ {{ order()!.repartidor!.rating | number:'1.1-1' }}</div>
+              <div class="ml-auto text-sm font-semibold text-yellow-600">⭐ {{ order()!.repartidor_rating | number:'1.1-1' }}</div>
             </div>
           </div>
         }
@@ -279,10 +279,11 @@ export class StoreOrderDetailPageComponent implements OnInit, OnDestroy {
 
     readonly orderStatusHistory = computed(() => this.order()?.status_history ?? []);
 
-    readonly repartidorName = computed(() => {
-        const r = this.order()?.repartidor as any;
-        if (!r) return '—';
-        return r.user?.full_name ?? r.full_name ?? '—';
+    readonly repartidorName = computed(() => this.order()?.repartidor_name ?? '—');
+
+    readonly deliveryAddress = computed(() => {
+        const o = this.order();
+        return [o?.delivery_street, o?.delivery_sector, o?.delivery_city].filter(v => !!v).join(', ') || '—';
     });
 
     readonly orderItemsForDisplay = computed(() =>
@@ -310,10 +311,10 @@ export class StoreOrderDetailPageComponent implements OnInit, OnDestroy {
 
     readonly whatsappUrl = computed(() => {
         const o = this.order();
-        if (!o?.customer?.phone) return '#';
-        const phone = o.customer.phone.replace(/\D/g, '');
+        if (!o?.customer_phone) return '#';
+        const phone = o.customer_phone.replace(/\D/g, '');
         const text = encodeURIComponent(
-            `Hola ${o.customer.full_name}, tu pedido #${o.order_number} en Tutty está siendo procesado. ¡Gracias por tu compra!`,
+            `Hola ${o.customer_name}, tu pedido #${o.order_number} en Tutty está siendo procesado. ¡Gracias por tu compra!`,
         );
         return `https://wa.me/${phone}?text=${text}`;
     });
@@ -410,8 +411,8 @@ export class StoreOrderDetailPageComponent implements OnInit, OnDestroy {
       <p class="center">Ticket de pedido</p>
       <p class="center">#${o.order_number}</p>
       <hr/>
-      <p>Cliente: ${o.customer?.full_name ?? '—'}</p>
-      <p>Dirección: ${o.delivery_address ?? '—'}</p>
+      <p>Cliente: ${o.customer_name ?? '—'}</p>
+      <p>Dirección: ${o.delivery_street ? [o.delivery_street, o.delivery_sector, o.delivery_city].filter(Boolean).join(', ') : '—'}</p>
       <hr/>
       <table>${itemRows}</table>
       <hr/>
