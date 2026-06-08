@@ -58,7 +58,7 @@ import { StoreCategory, CommerceType } from '../../../core/supabase/database.typ
                   <td class="px-4 py-3 font-medium text-gray-800">{{ cat.name }}</td>
                   <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ cat.slug }}</td>
                   <td class="px-4 py-3 text-gray-600">{{ typeLabel(cat.commerce_type) }}</td>
-                  <td class="px-4 py-3 text-center text-xl">{{ cat.icon }}</td>
+                  <td class="px-4 py-3 text-center text-xl">{{ getCategoryIcon(cat.slug) }}</td>
                   <td class="px-4 py-3 text-center text-gray-500">{{ cat.display_order }}</td>
                   <td class="px-4 py-3 text-center">
                     <span [class]="cat.is_active ? 'text-success-600' : 'text-error-500'" class="font-medium text-xs">{{ cat.is_active ? 'Sí' : 'No' }}</span>
@@ -108,10 +108,6 @@ import { StoreCategory, CommerceType } from '../../../core/supabase/database.typ
                   }
                 </select>
               </div>
-              <div>
-                <label class="label">Ícono (emoji o texto)</label>
-                <input type="text" class="input-field" [(ngModel)]="form.icon" name="cat_icon" placeholder="🍽" />
-              </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -154,8 +150,8 @@ export class CategoriesPageComponent implements OnInit {
   readonly editing = signal<StoreCategory | null>(null);
   readonly draggedIndex = signal<number | null>(null);
   typeFilter: CommerceType | 'all' = 'all';
-  form: { name: string; slug: string; commerce_type: CommerceType; icon: string; display_order: number; is_active: boolean } = {
-    name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: 0, is_active: true,
+  form: { name: string; slug: string; commerce_type: CommerceType; display_order: number; is_active: boolean } = {
+    name: '', slug: '', commerce_type: 'restaurante', display_order: 0, is_active: true,
   };
 
   readonly commerceTypes: { value: CommerceType; label: string }[] = [
@@ -182,8 +178,8 @@ export class CategoriesPageComponent implements OnInit {
   openForm(cat?: StoreCategory) {
     this.editing.set(cat ?? null);
     this.form = cat
-      ? { name: cat.name, slug: cat.slug, commerce_type: cat.commerce_type, icon: cat.icon ?? '', display_order: cat.display_order, is_active: cat.is_active }
-      : { name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: this.categories().length, is_active: true };
+      ? { name: cat.name, slug: cat.slug, commerce_type: cat.commerce_type, display_order: cat.display_order, is_active: cat.is_active }
+      : { name: '', slug: '', commerce_type: 'restaurante', display_order: this.categories().length, is_active: true };
     this.showModal.set(true);
   }
 
@@ -216,6 +212,16 @@ export class CategoriesPageComponent implements OnInit {
 
   typeLabel(type: CommerceType): string {
     return this.commerceTypes.find(ct => ct.value === type)?.label ?? type;
+  }
+
+  getCategoryIcon(slug: string): string {
+    const icons: Record<string, string> = {
+      dominicana: '🍽️', pizza: '🍕', pollo: '🍗', rapida: '🍔', mariscos: '🦞',
+      sushi: '🍣', hamburguesas: '🍔', postres: '🍰', bebidas: '🥤', saludable: '🥗',
+      farmacia: '💊', bodega: '📦', colmado: '🛒', tienda_ropa: '👗',
+      supermercado: '🛒', electronica: '📱', otro: '🏪',
+    };
+    return icons[slug] ?? '🏪';
   }
 
   onDragStart(index: number) { this.draggedIndex.set(index); }

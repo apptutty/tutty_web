@@ -555,7 +555,7 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
                       <td class="px-4 py-3 font-medium text-gray-800">{{ cat.name }}</td>
                       <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ cat.slug }}</td>
                       <td class="px-4 py-3 text-gray-600">{{ commerceTypeLabel(cat.commerce_type) }}</td>
-                      <td class="px-4 py-3 text-center text-xl">{{ cat.icon }}</td>
+                      <td class="px-4 py-3 text-center text-xl">{{ getCategoryIcon(cat.slug) }}</td>
                       <td class="px-4 py-3 text-center text-gray-500">{{ cat.display_order }}</td>
                       <td class="px-4 py-3 text-center">
                         <span [class]="cat.is_active ? 'text-success-600' : 'text-error-500'"
@@ -607,11 +607,6 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
                         <option [value]="ct.value">{{ ct.label }}</option>
                       }
                     </select>
-                  </div>
-                  <div>
-                    <label class="label">Ícono (emoji o texto)</label>
-                    <input type="text" class="input-field" [(ngModel)]="categoryForm.icon"
-                      name="cat_icon" placeholder="🍽" />
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -1089,8 +1084,8 @@ export class SettingsPageComponent implements OnInit {
   showCategoryModal = signal(false);
   editingCategory = signal<StoreCategory | null>(null);
   categoryTypeFilter: CommerceType | 'all' = 'all';
-  categoryForm: { name: string; slug: string; commerce_type: CommerceType; icon: string; display_order: number; is_active: boolean } = {
-    name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: 0, is_active: true,
+  categoryForm: { name: string; slug: string; commerce_type: CommerceType; display_order: number; is_active: boolean } = {
+    name: '', slug: '', commerce_type: 'restaurante', display_order: 0, is_active: true,
   };
   draggedIndex = signal<number | null>(null);
 
@@ -1151,8 +1146,8 @@ export class SettingsPageComponent implements OnInit {
   openCategoryForm(cat?: StoreCategory) {
     this.editingCategory.set(cat ?? null);
     this.categoryForm = cat
-      ? { name: cat.name, slug: cat.slug, commerce_type: cat.commerce_type, icon: cat.icon ?? '', display_order: cat.display_order, is_active: cat.is_active }
-      : { name: '', slug: '', commerce_type: 'restaurante', icon: '🍽', display_order: this.categories().length, is_active: true };
+      ? { name: cat.name, slug: cat.slug, commerce_type: cat.commerce_type, display_order: cat.display_order, is_active: cat.is_active }
+      : { name: '', slug: '', commerce_type: 'restaurante', display_order: this.categories().length, is_active: true };
     this.showCategoryModal.set(true);
   }
 
