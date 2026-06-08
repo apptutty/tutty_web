@@ -572,7 +572,6 @@ export interface StoreCategory {
   name: string;
   slug: string;
   commerce_type: CommerceType;
-  icon?: string | null;
   display_order: number;
   is_active: boolean;
   created_at?: string;

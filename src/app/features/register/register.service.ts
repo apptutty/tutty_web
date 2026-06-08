@@ -62,7 +62,7 @@ export class RegisterService {
   async getStoreCategories(commerceType: string): Promise<StoreCategory[]> {
     const { data } = await this.supabase
       .from('restaurant_categories')
-      .select('*')
+      .select('id, name, slug, display_order, commerce_type, is_active')
       .eq('commerce_type', commerceType)
       .eq('is_active', true)
       .order('display_order');

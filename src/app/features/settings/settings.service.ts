@@ -116,7 +116,9 @@ export class SettingsService {
     }
 
     async getStoreCategories(commerceType?: CommerceType): Promise<StoreCategory[]> {
-        let q = this.supabase.from('restaurant_categories').select('*').order('display_order');
+        let q = this.supabase.from('restaurant_categories')
+            .select('id, name, slug, display_order, commerce_type, is_active, created_at')
+            .order('display_order');
         if (commerceType) q = q.eq('commerce_type', commerceType);
         const { data, error } = await q;
         if (error) throw error;
@@ -124,9 +126,12 @@ export class SettingsService {
     }
 
     async saveStoreCategory(cat: Partial<StoreCategory>): Promise<StoreCategory> {
-        const op = cat.id
-            ? this.supabase.from('restaurant_categories').update(cat).eq('id', cat.id).select().single()
-            : this.supabase.from('restaurant_categories').insert(cat).select().single();
+        // Strip icon — column does not exist in DB
+        const { ...payload } = cat as any;
+        delete payload['icon'];
+        const op = payload.id
+            ? this.supabase.from('restaurant_categories').update(payload).eq('id', payload.id).select('id, name, slug, display_order, commerce_type, is_active, created_at').single()
+            : this.supabase.from('restaurant_categories').insert(payload).select('id, name, slug, display_order, commerce_type, is_active, created_at').single();
         const { data, error } = await op;
         if (error) throw error;
         return data as StoreCategory;
