@@ -117,27 +117,26 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
           <!-- Restaurant -->
           <div class="card">
             <h3 class="text-sm font-semibold text-gray-800 mb-3">🏪 Restaurante</h3>
-            <p class="text-sm font-medium text-gray-700">{{ order()!.restaurant.name }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ order()!.restaurant.address }}</p>
+            <p class="text-sm font-medium text-gray-700">{{ order()!.commerce_name }}</p>
           </div>
 
           <!-- Customer -->
           <div class="card">
             <h3 class="text-sm font-semibold text-gray-800 mb-3">👤 Cliente</h3>
-            <p class="text-sm font-medium text-gray-700">{{ order()!.customer.full_name }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ order()!.customer.phone }}</p>
-            <p class="text-xs text-gray-500 mt-1">📍 {{ order()!.delivery_address }}</p>
+            <p class="text-sm font-medium text-gray-700">{{ order()!.customer_name }}</p>
+            <p class="text-xs text-gray-500 mt-0.5">{{ order()!.customer_phone }}</p>
+            <p class="text-xs text-gray-500 mt-1">📍 {{ order()!.delivery_street }}{{ order()!.delivery_sector ? ', ' + order()!.delivery_sector : '' }}{{ order()!.delivery_city ? ', ' + order()!.delivery_city : '' }}</p>
           </div>
 
           <!-- Repartidor -->
           <div class="card">
             <h3 class="text-sm font-semibold text-gray-800 mb-3">🛵 Repartidor</h3>
-            @if (order()!.repartidor) {
-              <p class="text-sm font-medium text-gray-700">{{ order()!.repartidor!.full_name }}</p>
+            @if (order()!.repartidor_id) {
+              <p class="text-sm font-medium text-gray-700">{{ order()!.repartidor_name }}</p>
               <p class="text-xs text-gray-500">
-                {{ order()!.repartidor!.vehicle_type }} · Placa: {{ order()!.repartidor!.plate ?? 'N/A' }}
+                {{ order()!.vehicle_type }} · Placa: {{ order()!.vehicle_plate ?? 'N/A' }}
               </p>
-              <p class="text-xs text-gray-500">⭐ {{ order()!.repartidor!.rating }}/5</p>
+              <p class="text-xs text-gray-500">⭐ {{ order()!.repartidor_rating }}/5</p>
             } @else {
               <p class="text-sm text-gray-400 mb-3">Sin asignar</p>
               @if (['confirmado', 'en_preparacion'].includes(order()!.status)) {

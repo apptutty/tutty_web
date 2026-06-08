@@ -19,8 +19,8 @@ export class OrdersService {
         const { page = 1, pageSize = 20, status, commerce_id, date_from, date_to, search } = filters;
 
         let query = this.supabase
-            .from('orders')
-            .select('*, commerce:commerces(name), customer:users(full_name, phone), repartidor:repartidores(user:users(full_name))', { count: 'exact' });
+            .from('orders_full')
+            .select('*', { count: 'exact' });
 
         if (status === 'activos') {
             query = query.in('status', ACTIVE_STATUSES);
@@ -47,31 +47,29 @@ export class OrdersService {
     private mapOrder(o: any) {
         return {
             ...o,
-            restaurant_name: o.commerce?.name ?? '—',
-            customer_name: o.customer?.full_name ?? '—',
-            customer_phone: o.customer?.phone ?? '—',
-            repartidor_name: o.repartidor?.user?.full_name ?? '—',
+            // Keep restaurant_name alias so the table column key stays unchanged
+            restaurant_name: o.commerce_name ?? '—',
         };
     }
 
     getOrderById(id: string): Observable<OrderDetail> {
         return from(
-            this.supabase
-                .from('orders')
-                .select(`
-          *,
-          commerce:commerces(id, name, address, phone),
-          customer:users(id, full_name, phone),
-          repartidor:repartidores(id, vehicle_type, plate, rating, user:users(full_name)),
-          items:order_items(*),
-          status_history:order_status_history(*, changed_by_user:users(full_name))
-        `)
-                .eq('id', id)
-                .single()
-                .then(({ data, error }) => {
-                    if (error) throw error;
-                    return data as OrderDetail;
-                })
+            Promise.all([
+                this.supabase.from('orders_full').select('*').eq('id', id).single(),
+                this.supabase.from('order_items').select('*').eq('order_id', id),
+                this.supabase
+                    .from('order_status_history')
+                    .select('*, changed_by_user:users(full_name)')
+                    .eq('order_id', id)
+                    .order('created_at', { ascending: true }),
+            ]).then(([orderRes, itemsRes, historyRes]) => {
+                if (orderRes.error) throw orderRes.error;
+                return {
+                    ...orderRes.data,
+                    items: itemsRes.data ?? [],
+                    status_history: historyRes.data ?? [],
+                } as OrderDetail;
+            })
         );
     }
 

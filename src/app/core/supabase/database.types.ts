@@ -57,10 +57,58 @@ export interface Order {
   estimated_delivery_time?: string | null;
 }
 
-export interface OrderDetail extends Order {
-  restaurant: { id: string; name: string; address: string; phone?: string };
-  customer: { id: string; full_name: string; phone?: string };
-  repartidor?: { id: string; full_name: string; vehicle_type: VehicleType; plate?: string; rating: number } | null;
+/** Flat row returned by the orders_full Postgres view. */
+export interface OrderFull {
+  id: string;
+  order_number: string;
+  status: OrderStatus;
+  payment_method?: string | null;
+  payment_status?: string | null;
+  subtotal: number;
+  delivery_fee: number;
+  discount_amount: number;
+  commission_amount?: number | null;
+  total: number;
+  tip_amount?: number | null;
+  promo_code?: string | null;
+  special_instructions?: string | null;
+  estimated_delivery_time?: string | null;
+  actual_delivery_time?: string | null;
+  cancellation_reason?: string | null;
+  cancelled_by?: string | null;
+  cancelled_at?: string | null;
+  delivery_address_snapshot?: Json | null;
+  delivery_pin?: string | null;
+  delivery_pin_used?: boolean | null;
+  created_at: string;
+  updated_at: string;
+  // Commerce
+  commerce_id: string;
+  commerce_name: string;
+  commerce_logo?: string | null;
+  commerce_type?: string | null;
+  commerce_whatsapp?: string | null;
+  // Customer
+  user_id: string;
+  customer_name: string;
+  customer_phone?: string | null;
+  customer_email?: string | null;
+  // Repartidor (null when unassigned)
+  repartidor_id?: string | null;
+  repartidor_name?: string | null;
+  repartidor_phone?: string | null;
+  repartidor_rating?: number | null;
+  vehicle_type?: VehicleType | null;
+  vehicle_plate?: string | null;
+  // Delivery address
+  delivery_address_id?: string | null;
+  delivery_street?: string | null;
+  delivery_sector?: string | null;
+  delivery_city?: string | null;
+  delivery_notes?: string | null;
+}
+
+export interface OrderDetail extends OrderFull {
   items: OrderItem[];
   status_history: OrderStatusHistory[];
 }
