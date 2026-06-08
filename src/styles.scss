@@ -70,17 +70,24 @@
   }
 
   /* ── Scrollbar hide (alias for utility use) ── */
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
   /* ── Touch scrolling iOS ── */
-  .touch-scroll { -webkit-overflow-scrolling: touch; }
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
 
   /* ── Sidebar transition ── */
-  .sidebar-transition { transition: width 300ms ease, transform 300ms ease; }
+  .sidebar-transition {
+    transition: width 300ms ease, transform 300ms ease;
+  }
 
   /* ── Table responsive helper ── */
   .table-scroll-hint {
@@ -89,8 +96,13 @@
 }
 
 /* ── Safe area for notch/home indicator (iOS) ── */
-.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-.safe-top    { padding-top: env(safe-area-inset-top); }
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
 
 /* ── Focus visible (accessibility) ── */
 *:focus-visible {

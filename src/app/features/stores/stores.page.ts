@@ -381,11 +381,11 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     private searchTimeout: any;
 
     toggleMenu(id: string): void {
-      this.openMenuId = this.openMenuId === id ? null : id;
+        this.openMenuId = this.openMenuId === id ? null : id;
     }
 
     closeMenu(): void {
-      this.openMenuId = null;
+        this.openMenuId = null;
     }
 
     readonly commerceTabs = COMMERCE_TABS;
