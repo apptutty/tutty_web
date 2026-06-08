@@ -6,17 +6,17 @@ import { CommerceType } from '../../../core/supabase/database.types';
 
 const ALL_DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 const DAY_LABELS: Record<string, string> = {
-    lunes: 'Lun', martes: 'Mar', miercoles: 'Mié',
-    jueves: 'Jue', viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
+  lunes: 'Lun', martes: 'Mar', miercoles: 'Mié',
+  jueves: 'Jue', viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
 };
 
 const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra'];
 
 @Component({
-    selector: 'app-register-step-details',
-    standalone: true,
-    imports: [ReactiveFormsModule],
-    template: `
+  selector: 'app-register-step-details',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
     <div class="step-container">
       <div class="step-header">
         <h1>Configuración operativa</h1>
@@ -187,7 +187,7 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
       </form>
     </div>
   `,
-    styles: [`
+  styles: [`
     .step-container { max-width: 600px; margin: 0 auto; }
 
     .step-header { margin-bottom: 2rem; }
@@ -333,123 +333,123 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
   `],
 })
 export class RegisterStepDetailsComponent implements OnInit {
-    private readonly registerService = inject(RegisterService);
-    private readonly router = inject(Router);
-    private readonly fb = inject(FormBuilder);
+  private readonly registerService = inject(RegisterService);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
 
-    readonly allDays = ALL_DAYS;
-    readonly dayLabel = (d: string) => DAY_LABELS[d] ?? d;
-    readonly unitTypes = UNIT_TYPES;
+  readonly allDays = ALL_DAYS;
+  readonly dayLabel = (d: string) => DAY_LABELS[d] ?? d;
+  readonly unitTypes = UNIT_TYPES;
 
-    private readonly selectedDays = signal<string[]>([]);
-    private selectedUnitTypes: string[] = [];
+  private readonly selectedDays = signal<string[]>([]);
+  private selectedUnitTypes: string[] = [];
 
-    readonly commerceType = computed<CommerceType | null>(() => this.registerService.registrationData().commerce_type);
+  readonly commerceType = computed<CommerceType | null>(() => this.registerService.registrationData().commerce_type);
 
-    readonly schedulePreview = computed(() => {
-        if (!this.selectedDays().length) return '';
-        const open = this.form?.value.opening_time ?? '';
-        const close = this.form?.value.closing_time ?? '';
-        const days = this.selectedDays().map(d => DAY_LABELS[d] ?? d).join(', ');
-        return open && close ? `✓ Abierto ${days} de ${open} a ${close}` : `✓ Días: ${days}`;
+  readonly schedulePreview = computed(() => {
+    if (!this.selectedDays().length) return '';
+    const open = this.form?.value.opening_time ?? '';
+    const close = this.form?.value.closing_time ?? '';
+    const days = this.selectedDays().map(d => DAY_LABELS[d] ?? d).join(', ');
+    return open && close ? `✓ Abierto ${days} de ${open} a ${close}` : `✓ Días: ${days}`;
+  });
+
+  readonly form = this.fb.group({
+    opening_time: ['08:00', Validators.required],
+    closing_time: ['22:00', Validators.required],
+    avg_delivery_minutes: [30, [Validators.required, Validators.min(15)]],
+    min_order_amount: [0, [Validators.required, Validators.min(0)]],
+    free_delivery_enabled: [false],
+    free_delivery_threshold: [0],
+    // farmacia
+    requires_prescription: [false],
+    urgent_delivery: [false],
+    // ropa
+    handles_sizes: [false],
+    handles_colors: [false],
+    return_policy: [''],
+    sells_secondhand: [false],
+    // electronica
+    offers_warranty: [false],
+    // bodega/colmado/supermercado
+    realtime_inventory: [false],
+  });
+
+  ngOnInit(): void {
+    const draft = this.registerService.registrationData();
+    if (!draft.name) {
+      this.router.navigate(['/register/info']);
+      return;
+    }
+
+    this.selectedDays.set([...draft.open_days]);
+    this.selectedUnitTypes = [...(draft.unit_types ?? [])];
+
+    this.form.patchValue({
+      opening_time: draft.opening_time,
+      closing_time: draft.closing_time,
+      avg_delivery_minutes: draft.avg_delivery_minutes,
+      min_order_amount: draft.min_order_amount,
+      free_delivery_enabled: draft.free_delivery_enabled,
+      free_delivery_threshold: draft.free_delivery_threshold,
+      requires_prescription: draft.requires_prescription ?? false,
+      urgent_delivery: draft.urgent_delivery ?? false,
+      handles_sizes: draft.handles_sizes ?? false,
+      handles_colors: draft.handles_colors ?? false,
+      return_policy: draft.return_policy ?? '',
+      sells_secondhand: draft.sells_secondhand ?? false,
+      offers_warranty: draft.offers_warranty ?? false,
+      realtime_inventory: draft.realtime_inventory ?? false,
     });
+  }
 
-    readonly form = this.fb.group({
-        opening_time: ['08:00', Validators.required],
-        closing_time: ['22:00', Validators.required],
-        avg_delivery_minutes: [30, [Validators.required, Validators.min(15)]],
-        min_order_amount: [0, [Validators.required, Validators.min(0)]],
-        free_delivery_enabled: [false],
-        free_delivery_threshold: [0],
-        // farmacia
-        requires_prescription: [false],
-        urgent_delivery: [false],
-        // ropa
-        handles_sizes: [false],
-        handles_colors: [false],
-        return_policy: [''],
-        sells_secondhand: [false],
-        // electronica
-        offers_warranty: [false],
-        // bodega/colmado/supermercado
-        realtime_inventory: [false],
+  isDaySelected(day: string): boolean {
+    return this.selectedDays().includes(day);
+  }
+
+  toggleDay(day: string): void {
+    if (this.isDaySelected(day)) {
+      this.selectedDays.update(days => days.filter(d => d !== day));
+    } else {
+      this.selectedDays.update(days => [...days, day]);
+    }
+  }
+
+  isUnitTypeSelected(u: string): boolean { return this.selectedUnitTypes.includes(u); }
+
+  toggleUnitType(u: string): void {
+    if (this.isUnitTypeSelected(u)) {
+      this.selectedUnitTypes = this.selectedUnitTypes.filter(x => x !== u);
+    } else {
+      this.selectedUnitTypes = [...this.selectedUnitTypes, u];
+    }
+  }
+
+  next(): void {
+    if (this.form.invalid) return;
+    const v = this.form.value;
+    this.registerService.update({
+      opening_time: v.opening_time ?? '08:00',
+      closing_time: v.closing_time ?? '22:00',
+      open_days: this.selectedDays(),
+      avg_delivery_minutes: v.avg_delivery_minutes ?? 30,
+      min_order_amount: v.min_order_amount ?? 0,
+      free_delivery_enabled: v.free_delivery_enabled ?? false,
+      free_delivery_threshold: v.free_delivery_threshold ?? 0,
+      requires_prescription: v.requires_prescription ?? false,
+      urgent_delivery: v.urgent_delivery ?? false,
+      handles_sizes: v.handles_sizes ?? false,
+      handles_colors: v.handles_colors ?? false,
+      return_policy: v.return_policy ?? undefined,
+      sells_secondhand: v.sells_secondhand ?? false,
+      offers_warranty: v.offers_warranty ?? false,
+      realtime_inventory: v.realtime_inventory ?? false,
+      unit_types: this.selectedUnitTypes,
     });
+    this.router.navigate(['/register/account']);
+  }
 
-    ngOnInit(): void {
-        const draft = this.registerService.registrationData();
-        if (!draft.name) {
-            this.router.navigate(['/register/info']);
-            return;
-        }
-
-        this.selectedDays.set([...draft.open_days]);
-        this.selectedUnitTypes = [...(draft.unit_types ?? [])];
-
-        this.form.patchValue({
-            opening_time: draft.opening_time,
-            closing_time: draft.closing_time,
-            avg_delivery_minutes: draft.avg_delivery_minutes,
-            min_order_amount: draft.min_order_amount,
-            free_delivery_enabled: draft.free_delivery_enabled,
-            free_delivery_threshold: draft.free_delivery_threshold,
-            requires_prescription: draft.requires_prescription ?? false,
-            urgent_delivery: draft.urgent_delivery ?? false,
-            handles_sizes: draft.handles_sizes ?? false,
-            handles_colors: draft.handles_colors ?? false,
-            return_policy: draft.return_policy ?? '',
-            sells_secondhand: draft.sells_secondhand ?? false,
-            offers_warranty: draft.offers_warranty ?? false,
-            realtime_inventory: draft.realtime_inventory ?? false,
-        });
-    }
-
-    isDaySelected(day: string): boolean {
-        return this.selectedDays().includes(day);
-    }
-
-    toggleDay(day: string): void {
-        if (this.isDaySelected(day)) {
-            this.selectedDays.update(days => days.filter(d => d !== day));
-        } else {
-            this.selectedDays.update(days => [...days, day]);
-        }
-    }
-
-    isUnitTypeSelected(u: string): boolean { return this.selectedUnitTypes.includes(u); }
-
-    toggleUnitType(u: string): void {
-        if (this.isUnitTypeSelected(u)) {
-            this.selectedUnitTypes = this.selectedUnitTypes.filter(x => x !== u);
-        } else {
-            this.selectedUnitTypes = [...this.selectedUnitTypes, u];
-        }
-    }
-
-    next(): void {
-        if (this.form.invalid) return;
-        const v = this.form.value;
-        this.registerService.update({
-            opening_time: v.opening_time ?? '08:00',
-            closing_time: v.closing_time ?? '22:00',
-            open_days: this.selectedDays(),
-            avg_delivery_minutes: v.avg_delivery_minutes ?? 30,
-            min_order_amount: v.min_order_amount ?? 0,
-            free_delivery_enabled: v.free_delivery_enabled ?? false,
-            free_delivery_threshold: v.free_delivery_threshold ?? 0,
-            requires_prescription: v.requires_prescription ?? false,
-            urgent_delivery: v.urgent_delivery ?? false,
-            handles_sizes: v.handles_sizes ?? false,
-            handles_colors: v.handles_colors ?? false,
-            return_policy: v.return_policy ?? undefined,
-            sells_secondhand: v.sells_secondhand ?? false,
-            offers_warranty: v.offers_warranty ?? false,
-            realtime_inventory: v.realtime_inventory ?? false,
-            unit_types: this.selectedUnitTypes,
-        });
-        this.router.navigate(['/register/account']);
-    }
-
-    back(): void {
-        this.router.navigate(['/register/info']);
-    }
+  back(): void {
+    this.router.navigate(['/register/info']);
+  }
 }
