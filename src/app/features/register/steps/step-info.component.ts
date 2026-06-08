@@ -6,34 +6,34 @@ import { RegisterService } from '../register.service';
 import { StoreCategory } from '../../../core/supabase/database.types';
 
 const SD_SECTORS = [
-    'Naco', 'Piantini', 'Bella Vista', 'Gazcue', 'Zona Colonial', 'Los Prados',
-    'Altos de Arroyo Hondo', 'Mirador Norte', 'El Millón', 'Evaristo Morales', 'Serralles',
-    'La Julia', 'Alma Rosa', 'Los Cacicazgos', 'Cristo Rey', 'La Fe', 'Ensanche La Fe',
-    'Ensanche Ozama', 'Gualey', 'Villa Consuelo', 'Villa Juana', 'Quisqueya',
-    'Villas Agrícolas', 'Pedro Brand', 'Los Alcarrizos', 'Santo Domingo Este',
-    'Santo Domingo Norte', 'Santo Domingo Oeste',
+  'Naco', 'Piantini', 'Bella Vista', 'Gazcue', 'Zona Colonial', 'Los Prados',
+  'Altos de Arroyo Hondo', 'Mirador Norte', 'El Millón', 'Evaristo Morales', 'Serralles',
+  'La Julia', 'Alma Rosa', 'Los Cacicazgos', 'Cristo Rey', 'La Fe', 'Ensanche La Fe',
+  'Ensanche Ozama', 'Gualey', 'Villa Consuelo', 'Villa Juana', 'Quisqueya',
+  'Villas Agrícolas', 'Pedro Brand', 'Los Alcarrizos', 'Santo Domingo Este',
+  'Santo Domingo Norte', 'Santo Domingo Oeste',
 ];
 
 const CUISINE_TYPES = [
-    'Dominicana', 'Americana', 'Italiana', 'China', 'Japonesa/Sushi',
-    'Mariscos', 'Vegetariana', 'Parrilla', 'Pizza', 'Postres & Café', 'Internacional',
+  'Dominicana', 'Americana', 'Italiana', 'China', 'Japonesa/Sushi',
+  'Mariscos', 'Vegetariana', 'Parrilla', 'Pizza', 'Postres & Café', 'Internacional',
 ];
 
 const RD_PHONE_PATTERN = /^(\+1\s?)?(809|829|849)[-.\s]?\d{3}[-.\s]?\d{4}$/;
 
 function slugify(text: string): string {
-    return text
-        .toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+  return text
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 @Component({
-    selector: 'app-register-step-info',
-    standalone: true,
-    imports: [ReactiveFormsModule],
-    template: `
+  selector: 'app-register-step-info',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
     <div class="step-container">
       <div class="step-header">
         <h1>Información del comercio</h1>
@@ -210,7 +210,7 @@ function slugify(text: string): string {
       </form>
     </div>
   `,
-    styles: [`
+  styles: [`
     .step-container { max-width: 600px; margin: 0 auto; }
 
     .step-header { margin-bottom: 2rem; }
@@ -355,176 +355,176 @@ function slugify(text: string): string {
   `],
 })
 export class RegisterStepInfoComponent implements OnInit {
-    private readonly registerService = inject(RegisterService);
-    private readonly router = inject(Router);
-    private readonly fb = inject(FormBuilder);
+  private readonly registerService = inject(RegisterService);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
 
-    readonly categories = signal<StoreCategory[]>([]);
-    readonly logoPreview = signal<string | null>(null);
-    readonly bannerPreview = signal<string | null>(null);
-    readonly logoUploading = signal(false);
-    readonly bannerUploading = signal(false);
+  readonly categories = signal<StoreCategory[]>([]);
+  readonly logoPreview = signal<string | null>(null);
+  readonly bannerPreview = signal<string | null>(null);
+  readonly logoUploading = signal(false);
+  readonly bannerUploading = signal(false);
 
-    readonly commerceType = computed(() => this.registerService.registrationData().commerce_type);
-    readonly sdSectors = SD_SECTORS;
-    readonly cuisineTypes = CUISINE_TYPES;
-    selectedCuisines: string[] = [];
+  readonly commerceType = computed(() => this.registerService.registrationData().commerce_type);
+  readonly sdSectors = SD_SECTORS;
+  readonly cuisineTypes = CUISINE_TYPES;
+  selectedCuisines: string[] = [];
 
-    readonly cities = ['Santo Domingo', 'Santiago', 'La Romana', 'San Pedro de Macorís', 'Puerto Plata', 'La Vega', 'San Cristóbal', 'Higüey', 'Baní', 'Moca'];
+  readonly cities = ['Santo Domingo', 'Santiago', 'La Romana', 'San Pedro de Macorís', 'Puerto Plata', 'La Vega', 'San Cristóbal', 'Higüey', 'Baní', 'Moca'];
 
-    readonly form = this.fb.group({
-        name: ['', Validators.required],
-        slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)], [this.slugValidator()]],
-        description: [''],
-        whatsapp_number: ['', [Validators.required, Validators.pattern(RD_PHONE_PATTERN)]],
-        address: ['', Validators.required],
-        sector: [''],
-        city: ['', Validators.required],
-        category_id: [''],
-        sespas_number: [''],
-        farmacia_24h: [false],
+  readonly form = this.fb.group({
+    name: ['', Validators.required],
+    slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)], [this.slugValidator()]],
+    description: [''],
+    whatsapp_number: ['', [Validators.required, Validators.pattern(RD_PHONE_PATTERN)]],
+    address: ['', Validators.required],
+    sector: [''],
+    city: ['', Validators.required],
+    category_id: [''],
+    sespas_number: [''],
+    farmacia_24h: [false],
+  });
+
+  get f() { return this.form.controls; }
+
+  ngOnInit(): void {
+    const draft = this.registerService.registrationData();
+
+    // Guard: if no commerce type was selected, go back
+    if (!draft.commerce_type) {
+      this.router.navigate(['/register']);
+      return;
+    }
+
+    this.selectedCuisines = [...(draft.cuisine_types ?? [])];
+
+    this.form.patchValue({
+      name: draft.name,
+      slug: draft.slug,
+      description: draft.description,
+      whatsapp_number: draft.whatsapp_number,
+      address: draft.address,
+      sector: draft.sector,
+      city: draft.city,
+      category_id: draft.category_id ?? '',
+      sespas_number: draft.sespas_number ?? '',
+      farmacia_24h: draft.farmacia_24h ?? false,
     });
 
-    get f() { return this.form.controls; }
+    if (draft.logo_url) this.logoPreview.set(draft.logo_url);
+    if (draft.banner_url) this.bannerPreview.set(draft.banner_url);
 
-    ngOnInit(): void {
-        const draft = this.registerService.registrationData();
+    // Auto-generate slug from name
+    this.form.controls['name'].valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+    ).subscribe(name => {
+      if (name && !this.form.controls['slug'].dirty) {
+        this.form.controls['slug'].setValue(slugify(name), { emitEvent: true });
+        this.form.controls['slug'].markAsTouched();
+      }
+    });
 
-        // Guard: if no commerce type was selected, go back
-        if (!draft.commerce_type) {
-            this.router.navigate(['/register']);
-            return;
-        }
+    this.loadCategories(draft.commerce_type);
+  }
 
-        this.selectedCuisines = [...(draft.cuisine_types ?? [])];
+  private slugValidator(): AsyncValidatorFn {
+    return (control: AbstractControl) => {
+      const slug = control.value as string;
+      if (!slug) return of(null);
 
-        this.form.patchValue({
-            name: draft.name,
-            slug: draft.slug,
-            description: draft.description,
-            whatsapp_number: draft.whatsapp_number,
-            address: draft.address,
-            sector: draft.sector,
-            city: draft.city,
-            category_id: draft.category_id ?? '',
-            sespas_number: draft.sespas_number ?? '',
-            farmacia_24h: draft.farmacia_24h ?? false,
-        });
+      const draftSlug = this.registerService.registrationData().slug;
+      if (slug === draftSlug) return of(null); // same as saved — still available
 
-        if (draft.logo_url) this.logoPreview.set(draft.logo_url);
-        if (draft.banner_url) this.bannerPreview.set(draft.banner_url);
+      return of(slug).pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(s => this.registerService.checkSlugAvailable(s)),
+        map(available => (available ? null : { slugTaken: true })),
+        catchError(() => of(null)),
+      );
+    };
+  }
 
-        // Auto-generate slug from name
-        this.form.controls['name'].valueChanges.pipe(
-            debounceTime(400),
-            distinctUntilChanged(),
-        ).subscribe(name => {
-            if (name && !this.form.controls['slug'].dirty) {
-                this.form.controls['slug'].setValue(slugify(name), { emitEvent: true });
-                this.form.controls['slug'].markAsTouched();
-            }
-        });
+  private async loadCategories(commerceType: string): Promise<void> {
+    const data = await this.registerService.getStoreCategories(commerceType);
+    this.categories.set(data);
+  }
 
-        this.loadCategories(draft.commerce_type);
+  async onLogoChange(event: Event): Promise<void> {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    this.logoUploading.set(true);
+    try {
+      const path = `logos/${Date.now()}-${file.name}`;
+      const url = await this.registerService.uploadFile(file, 'restaurant-assets', path);
+      this.logoPreview.set(url);
+      this.registerService.update({ logo_url: url });
+    } catch {
+      // File upload failed silently; user can retry
+    } finally {
+      this.logoUploading.set(false);
     }
+  }
 
-    private slugValidator(): AsyncValidatorFn {
-        return (control: AbstractControl) => {
-            const slug = control.value as string;
-            if (!slug) return of(null);
+  async onBannerChange(event: Event): Promise<void> {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
 
-            const draftSlug = this.registerService.registrationData().slug;
-            if (slug === draftSlug) return of(null); // same as saved — still available
-
-            return of(slug).pipe(
-                debounceTime(400),
-                distinctUntilChanged(),
-                switchMap(s => this.registerService.checkSlugAvailable(s)),
-                map(available => (available ? null : { slugTaken: true })),
-                catchError(() => of(null)),
-            );
-        };
+    this.bannerUploading.set(true);
+    try {
+      const path = `banners/${Date.now()}-${file.name}`;
+      const url = await this.registerService.uploadFile(file, 'restaurant-assets', path);
+      this.bannerPreview.set(url);
+      this.registerService.update({ banner_url: url });
+    } catch {
+      // File upload failed silently; user can retry
+    } finally {
+      this.bannerUploading.set(false);
     }
+  }
 
-    private async loadCategories(commerceType: string): Promise<void> {
-        const data = await this.registerService.getStoreCategories(commerceType);
-        this.categories.set(data);
+  isCuisineSelected(c: string): boolean { return this.selectedCuisines.includes(c); }
+
+  getCategoryIcon(slug: string): string {
+    const icons: Record<string, string> = {
+      dominicana: '🍽️', pizza: '🍕', pollo: '🍗', rapida: '🍔', mariscos: '🦞',
+      sushi: '🍣', hamburguesas: '🍔', postres: '🍰', bebidas: '🥤', saludable: '🥗',
+      farmacia: '💊', bodega: '📦', colmado: '🛒', tienda_ropa: '👗',
+      supermercado: '🛒', electronica: '📱', otro: '🏪',
+    };
+    return icons[slug] ?? '🏪';
+  }
+
+  toggleCuisine(c: string): void {
+    if (this.isCuisineSelected(c)) {
+      this.selectedCuisines = this.selectedCuisines.filter(x => x !== c);
+    } else {
+      this.selectedCuisines = [...this.selectedCuisines, c];
     }
+  }
 
-    async onLogoChange(event: Event): Promise<void> {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (!file) return;
+  next(): void {
+    if (this.form.invalid) return;
+    const v = this.form.value;
+    this.registerService.update({
+      name: v.name ?? '',
+      slug: v.slug ?? '',
+      description: v.description ?? '',
+      whatsapp_number: v.whatsapp_number ?? '',
+      address: v.address ?? '',
+      sector: v.sector ?? '',
+      city: v.city ?? '',
+      category_id: v.category_id || null,
+      cuisine_types: this.selectedCuisines,
+      sespas_number: v.sespas_number || undefined,
+      farmacia_24h: v.farmacia_24h ?? false,
+    });
+    this.router.navigate(['/register/details']);
+  }
 
-        this.logoUploading.set(true);
-        try {
-            const path = `logos/${Date.now()}-${file.name}`;
-            const url = await this.registerService.uploadFile(file, 'restaurant-assets', path);
-            this.logoPreview.set(url);
-            this.registerService.update({ logo_url: url });
-        } catch {
-            // File upload failed silently; user can retry
-        } finally {
-            this.logoUploading.set(false);
-        }
-    }
-
-    async onBannerChange(event: Event): Promise<void> {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (!file) return;
-
-        this.bannerUploading.set(true);
-        try {
-            const path = `banners/${Date.now()}-${file.name}`;
-            const url = await this.registerService.uploadFile(file, 'restaurant-assets', path);
-            this.bannerPreview.set(url);
-            this.registerService.update({ banner_url: url });
-        } catch {
-            // File upload failed silently; user can retry
-        } finally {
-            this.bannerUploading.set(false);
-        }
-    }
-
-    isCuisineSelected(c: string): boolean { return this.selectedCuisines.includes(c); }
-
-    getCategoryIcon(slug: string): string {
-        const icons: Record<string, string> = {
-            dominicana: '🍽️', pizza: '🍕', pollo: '🍗', rapida: '🍔', mariscos: '🦞',
-            sushi: '🍣', hamburguesas: '🍔', postres: '🍰', bebidas: '🥤', saludable: '🥗',
-            farmacia: '💊', bodega: '📦', colmado: '🛒', tienda_ropa: '👗',
-            supermercado: '🛒', electronica: '📱', otro: '🏪',
-        };
-        return icons[slug] ?? '🏪';
-    }
-
-    toggleCuisine(c: string): void {
-        if (this.isCuisineSelected(c)) {
-            this.selectedCuisines = this.selectedCuisines.filter(x => x !== c);
-        } else {
-            this.selectedCuisines = [...this.selectedCuisines, c];
-        }
-    }
-
-    next(): void {
-        if (this.form.invalid) return;
-        const v = this.form.value;
-        this.registerService.update({
-            name: v.name ?? '',
-            slug: v.slug ?? '',
-            description: v.description ?? '',
-            whatsapp_number: v.whatsapp_number ?? '',
-            address: v.address ?? '',
-            sector: v.sector ?? '',
-            city: v.city ?? '',
-            category_id: v.category_id || null,
-            cuisine_types: this.selectedCuisines,
-            sespas_number: v.sespas_number || undefined,
-            farmacia_24h: v.farmacia_24h ?? false,
-        });
-        this.router.navigate(['/register/details']);
-    }
-
-    back(): void {
-        this.router.navigate(['/register']);
-    }
+  back(): void {
+    this.router.navigate(['/register']);
+  }
 }
