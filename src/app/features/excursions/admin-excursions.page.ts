@@ -1,18 +1,20 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { ExcursionsService } from './excursions.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { DataTableComponent, TableColumn } from '../../shared/ui/data-table/data-table.component';
+import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { ExcursionOperator, Excursion, ExcursionDate, BookingStatus } from '../../core/supabase/database.types';
 
-type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
+type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
 
 @Component({
   selector: 'app-excursions-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, StatusBadgeComponent, RouterLink],
   template: `
     <app-page-header title="Excursiones" subtitle="Gestión de operadores, excursiones y reservas">
       @if (activeTab() === 'operadores') {
@@ -46,6 +48,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
           [loading]="loading()"
           [totalCount]="filteredOperators().length"
           [pageSize]="filteredOperators().length"
+          (rowClick)="router.navigate(['/excursions/operators', $event.id])"
         />
       </div>
     }
@@ -104,6 +107,17 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas';
           [pageSize]="filteredBookings().length"
           (rowClick)="openBookingDetail($event)"
         />
+      </div>
+    }
+
+    <!-- Categories tab -->
+    @if (activeTab() === 'categorias') {
+      <div class="flex justify-end mb-4">
+        <a routerLink="/excursions/categories" class="btn-primary text-sm">Gestionar categorías →</a>
+      </div>
+      <div class="card p-8 text-center text-gray-400">
+        <p class="text-3xl mb-2">🏷️</p>
+        <p class="text-sm">Administra las categorías de excursiones en la página dedicada.</p>
       </div>
     }
 
@@ -404,6 +418,7 @@ export class ExcursionsPageComponent implements OnInit {
   private readonly service = inject(ExcursionsService);
   private readonly toastService = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  readonly router = inject(Router);
 
   readonly activeTab = signal<ActiveTab>('operadores');
   readonly operators = signal<ExcursionOperator[]>([]);
@@ -466,6 +481,7 @@ export class ExcursionsPageComponent implements OnInit {
     { key: 'operadores' as ActiveTab, label: 'Operadores' },
     { key: 'excursiones' as ActiveTab, label: 'Excursiones' },
     { key: 'reservas' as ActiveTab, label: 'Reservas' },
+    { key: 'categorias' as ActiveTab, label: 'Categorías' },
   ];
 
   readonly operatorColumns: TableColumn[] = [
@@ -473,6 +489,7 @@ export class ExcursionsPageComponent implements OnInit {
     { key: 'category', label: 'Categoría' },
     { key: 'avg_rating', label: 'Rating' },
     { key: 'total_reviews', label: 'Reseñas' },
+    { key: 'approval_status', label: 'Estado', type: 'badge', badgeType: 'approval' as any },
     { key: 'is_active', label: 'Activo', type: 'boolean' },
   ];
 
@@ -522,7 +539,8 @@ export class ExcursionsPageComponent implements OnInit {
     this.loading.set(true);
     if (this.activeTab() === 'operadores') this.loadOperators();
     else if (this.activeTab() === 'excursiones') this.loadExcursions();
-    else this.loadBookings();
+    else if (this.activeTab() === 'reservas') this.loadBookings();
+    else this.loading.set(false);
   }
 
   loadOperators(): void {
@@ -613,13 +631,7 @@ export class ExcursionsPageComponent implements OnInit {
   }
 
   openBookingDetail(booking: any): void {
-    this.selectedBooking.set(booking);
-    this.bookingDetail.set(null);
-    this.bookingDetailLoading.set(true);
-    this.service.getBookingById(booking.id).subscribe({
-      next: detail => { this.bookingDetail.set(detail); this.bookingDetailLoading.set(false); },
-      error: () => this.bookingDetailLoading.set(false),
-    });
+    this.router.navigate(['/excursions/bookings', booking.id]);
   }
 
   openDatesModal(excursion: any): void {

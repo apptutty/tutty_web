@@ -271,18 +271,131 @@ export interface Courier {
   id: string;
   user_id: string;
   cedula?: string | null;
+  gender?: string | null;
   vehicle_type?: VehicleType | null;
   vehicle_plate?: string | null;
   photo_url?: string | null;
+  cedula_photo_url?: string | null;
+  vehicle_photo_url?: string | null;
+  license_photo_url?: string | null;
   is_available: boolean;
+  approval_status?: ApprovalStatus | null;
+  daily_selfie_verified?: boolean | null;
+  // Live location
+  last_lat?: number | null;
+  last_lng?: number | null;
+  last_location_at?: string | null;
+  heading?: number | null;
+  speed_kmh?: number | null;
+  // Emergency contact
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_rel?: string | null;
+  // Address
+  home_address?: string | null;
+  home_sector?: string | null;
+  home_city?: string | null;
+  // Metrics
   avg_rating: number;
   total_deliveries: number;
   total_earnings: number;
   zone_ids: string[];
+  // HR
+  hire_date?: string | null;
+  termination_date?: string | null;
+  termination_reason?: string | null;
+  approved_by?: string | null;
+  referred_by_user?: string | null;
   created_at: string;
+  // Join fields
   full_name?: string;
   phone?: string;
   email?: string;
+  avatar_url?: string | null;
+}
+
+export interface DriverStats {
+  total: number;
+  pending: number;
+  approved: number;
+  available: number;
+  unavailable: number;
+  suspended: number;
+  totalDeliveries: number;
+  totalEarnings: number;
+  avgRating: number;
+  missingDocs: number;
+  onlineRecently: number;
+}
+
+export interface RepartidorWallet {
+  id: string;
+  repartidor_id: string;
+  balance: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  wallet_id: string;
+  type: string;
+  amount: number;
+  description?: string | null;
+  reference_id?: string | null;
+  created_at: string;
+}
+
+export interface RepartidorBankAccount {
+  id: string;
+  repartidor_id: string;
+  bank_name: string;
+  account_type: string;
+  account_number: string;
+  is_primary?: boolean | null;
+  created_at: string;
+}
+
+export interface RepartidorAbsence {
+  id: string;
+  repartidor_id: string;
+  date: string;
+  reason?: string | null;
+  registered_by?: string | null;
+  created_at: string;
+}
+
+export interface RepartidorSanction {
+  id: string;
+  repartidor_id: string;
+  type: string;
+  severity?: string | null;
+  points?: number | null;
+  reason?: string | null;
+  applied_by?: string | null;
+  created_at: string;
+}
+
+export interface RepartidorSession {
+  id: string;
+  repartidor_id: string;
+  session_type?: string | null;
+  earnings_multiplier?: number | null;
+  orders_completed?: number | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  created_at: string;
+}
+
+export interface DriverLocationHistory {
+  id: string;
+  repartidor_id: string;
+  lat: number;
+  lng: number;
+  heading?: number | null;
+  speed_kmh?: number | null;
+  recorded_at: string;
 }
 
 export interface ExcursionCategory {
@@ -293,6 +406,17 @@ export interface ExcursionCategory {
   sort_order: number;
   is_active: boolean;
   created_at: string;
+}
+
+/** Admin-facing category (matches excursion_categories table columns) */
+export interface ExcursionCategoryAdmin {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string;
 }
 
 export interface ExcursionOperatorNotifPrefs {
@@ -316,6 +440,8 @@ export interface ExcursionOperator {
   total_reviews: number;
   is_active: boolean;
   approval_status?: ApprovalStatus;
+  management_fee_type?: 'percentage' | 'fixed' | null;
+  management_fee_value?: number | null;
   // Extended operator fields
   has_insurance: boolean;
   has_tourism_license: boolean;
@@ -327,9 +453,37 @@ export interface ExcursionOperator {
   updated_at?: string;
 }
 
+export interface ExcursionOperatorAdmin {
+  id: string;
+  operator_id: string;
+  user_id: string;
+  created_at: string;
+  // Join
+  full_name?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface ExcursionStats {
+  totalOperators: number;
+  pendingOperators: number;
+  approvedOperators: number;
+  totalExcursions: number;
+  activeExcursions: number;
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  cancelledBookings: number;
+  completedBookings: number;
+  totalRevenue: number;
+  upcomingDepartures: number;
+  lowSpotsCount: number;
+}
+
 export interface Excursion {
   id: string;
   operator_id: string;
+  category_id?: string | null;
   name: string;
   description?: string | null;
   short_description?: string | null;
@@ -342,9 +496,20 @@ export interface Excursion {
   meeting_point?: string | null;
   meeting_point_lat?: number | null;
   meeting_point_lng?: number | null;
+  hotel_pickup?: boolean | null;
+  pickup_time?: string | null;
   min_hours_advance: number;
   cancellation_hours: number;
+  min_age?: number | null;
+  max_age?: number | null;
+  wheelchair_accessible?: boolean | null;
   photos: string[];
+  what_to_bring?: string[] | null;
+  what_is_included?: string[] | null;
+  what_is_not_included?: string[] | null;
+  required_equipment?: string[] | null;
+  physical_requirements?: string | null;
+  health_warnings?: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -369,6 +534,11 @@ export interface Booking {
   num_people: number;
   total: number;
   status: BookingStatus;
+  payment_method?: string | null;
+  refund_eligible?: boolean | null;
+  refund_amount?: number | null;
+  refund_processed?: boolean | null;
+  cancelled_by?: string | null;
   special_requests?: string | null;
   cancellation_reason?: string | null;
   reminder_sent_at?: string | null;
@@ -383,6 +553,11 @@ export interface BookingDetail extends Booking {
   excursion_date: { date: string; departure_time: string };
   customer: { full_name: string; phone?: string | null; email?: string | null };
   participants: BookingParticipant[];
+  // Joined display fields
+  excursion_name?: string;
+  operator_name?: string;
+  customer_name?: string;
+  excursion_date_str?: string;
 }
 
 export interface BookingParticipant {
