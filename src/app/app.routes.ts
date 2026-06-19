@@ -60,7 +60,7 @@ export const routes: Routes = [
       },
       {
         path: 'excursions',
-        loadComponent: () => import('./features/excursions/excursions.page').then(m => m.ExcursionsPageComponent),
+        loadComponent: () => import('./features/excursions/admin-excursions.page').then(m => m.ExcursionsPageComponent),
       },
       {
         path: 'couriers',
@@ -216,6 +216,38 @@ export const routes: Routes = [
       { path: 'reports', loadComponent: () => import('./features/operator-admin/reports/operator-reports.page').then(m => m.OperatorReportsPageComponent) },
       { path: 'settings', loadComponent: () => import('./features/operator-admin/settings/operator-settings.page').then(m => m.OperatorSettingsPageComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
+  },
+  {
+    path: 'customer',
+    loadComponent: () => import('./features/customer/customer-shell.component').then(m => m.CustomerShellComponent),
+    canActivate: [authGuard],
+    children: [
+      { path: '', redirectTo: 'catalog', pathMatch: 'full' },
+      {
+        path: 'catalog',
+        loadComponent: () => import('./features/customer/catalog/catalog.page').then(m => m.CustomerCatalogPageComponent),
+      },
+      {
+        path: 'excursions',
+        loadComponent: () => import('./features/excursions/excursions.page').then(m => m.ExcursionsPageComponent),
+      },
+      {
+        path: 'excursions/:id',
+        loadComponent: () => import('./features/excursions/excursion-detail/excursion-detail.page').then(m => m.ExcursionDetailPageComponent),
+      },
+      {
+        path: 'excursions/:id/book',
+        loadComponent: () => import('./features/excursions/excursion-booking/excursion-booking.page').then(m => m.ExcursionBookingPageComponent),
+      },
+      {
+        path: 'addresses',
+        loadComponent: () => import('./features/customer/addresses/addresses.page').then(m => m.CustomerAddressesPageComponent),
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/customer/profile/profile.page').then(m => m.CustomerProfilePageComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
