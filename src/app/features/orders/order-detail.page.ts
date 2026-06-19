@@ -10,6 +10,7 @@ import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.compone
 import { CurrencyDopPipe } from '../../shared/pipes/currency-dop.pipe';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
 import { OrderDetail, OrderStatus, Courier } from '../../core/supabase/database.types';
+import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
 
 const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
   recibido: ['confirmado', 'cancelado'],
@@ -23,7 +24,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
   standalone: true,
   imports: [
     CommonModule, FormsModule, PageHeaderComponent,
-    StatusBadgeComponent, CurrencyDopPipe, TimeAgoPipe,
+    StatusBadgeComponent, CurrencyDopPipe, TimeAgoPipe, TuttyMapComponent,
   ],
   template: `
     @if (loading()) {
@@ -126,6 +127,17 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
             <p class="text-sm font-medium text-gray-700">{{ order()!.customer_name }}</p>
             <p class="text-xs text-gray-500 mt-0.5">{{ order()!.customer_phone }}</p>
             <p class="text-xs text-gray-500 mt-1">📍 {{ order()!.delivery_street }}{{ order()!.delivery_sector ? ', ' + order()!.delivery_sector : '' }}{{ order()!.delivery_city ? ', ' + order()!.delivery_city : '' }}</p>
+            @if (order()!.delivery_lat && order()!.delivery_lng) {
+              <div class="mt-3">
+                <app-tutty-map
+                  mode="view"
+                  [lat]="order()!.delivery_lat"
+                  [lng]="order()!.delivery_lng"
+                  height="180px"
+                  mapClass="rounded-lg overflow-hidden border border-gray-200"
+                />
+              </div>
+            }
           </div>
 
           <!-- Repartidor -->

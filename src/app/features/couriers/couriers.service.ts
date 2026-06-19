@@ -40,8 +40,8 @@ export class CouriersService {
         const from_ = (page - 1) * pageSize;
         const to = from_ + pageSize - 1;
         return from(
-            this.supabase.from('orders')
-                .select('*, restaurant:restaurants(name), customer:users(full_name)', { count: 'exact' })
+            this.supabase.from('orders_full')
+                .select('id, order_number, status, total, created_at, commerce_name, customer_name', { count: 'exact' })
                 .eq('repartidor_id', courierId)
                 .eq('status', 'entregado')
                 .order('created_at', { ascending: false })
@@ -49,8 +49,8 @@ export class CouriersService {
                 .then(({ data, count }) => ({
                     data: (data ?? []).map((o: any) => ({
                         ...o,
-                        restaurant_name: o.restaurant?.name ?? '—',
-                        customer_name: o.customer?.full_name ?? '—',
+                        restaurant_name: o.commerce_name ?? '—',
+                        customer_name: o.customer_name ?? '—',
                     })),
                     count: count ?? 0,
                 }))

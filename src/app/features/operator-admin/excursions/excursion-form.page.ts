@@ -7,6 +7,7 @@ import { ExcursionService, ExcursionFormData } from './excursion.service';
 import { Excursion } from '../../../core/supabase/database.types';
 import { AppConfigService } from '../../../core/config/app-config.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { TuttyMapComponent, LatLng } from '../../../shared/ui/map/tutty-map.component';
 
 const DEFAULT_INCLUDES = ['Guía certificado', 'Seguro de actividad', 'Transporte', 'Almuerzo', 'Equipo'];
 const DEFAULT_EXCLUDES = ['Bebidas alcohólicas', 'Propinas', 'Gastos personales'];
@@ -28,7 +29,7 @@ function blankForm(): ExcursionFormData & { category: string | null; what_to_bri
 @Component({
     selector: 'app-excursion-form',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, TuttyMapComponent],
     template: `
   <div class="form-page">
 
@@ -156,26 +157,24 @@ function blankForm(): ExcursionFormData & { category: string | null; what_to_bri
           <input [(ngModel)]="form.meeting_point" class="input-field" placeholder="Ej. Parque Central de La Romana, frente al kiosco azul" />
         </div>
 
-        <div class="map-hint">🗺️ Coordenadas opcionales — los clientes las recibirán al confirmar reserva.</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="label">Latitud</label>
-            <input type="number" [(ngModel)]="form.meeting_point_lat" step="any" class="input-field" placeholder="18.4861" />
-          </div>
-          <div class="form-group">
-            <label class="label">Longitud</label>
-            <input type="number" [(ngModel)]="form.meeting_point_lng" step="any" class="input-field" placeholder="-69.9312" />
-          </div>
+        <div class="form-group">
+          <label class="label">
+            Meeting point on map
+            @if (form.meeting_point_lat && form.meeting_point_lng) {
+              <span class="ml-2 text-success-600 text-xs font-medium">✓ Location set ({{ form.meeting_point_lat | number:'1.4-4' }}, {{ form.meeting_point_lng | number:'1.4-4' }})</span>
+            } @else {
+              <span class="ml-2 text-gray-400 text-xs font-normal">Click map to set exact pin</span>
+            }
+          </label>
+          <app-tutty-map
+            mode="picker"
+            [lat]="form.meeting_point_lat"
+            [lng]="form.meeting_point_lng"
+            height="300px"
+            mapClass="rounded-xl overflow-hidden border border-gray-200"
+            (locationChange)="onMeetingPointPick($event)"
+          />
         </div>
-
-        @if (form.meeting_point_lat && form.meeting_point_lng) {
-          <a class="map-preview-link"
-            [href]="'https://www.openstreetmap.org/?mlat=' + form.meeting_point_lat + '&mlon=' + form.meeting_point_lng + '#map=15/' + form.meeting_point_lat + '/' + form.meeting_point_lng"
-            target="_blank">
-            📍 Ver en mapa →
-          </a>
-        }
       </section>
 
       <!-- ── SECCIÓN 4: Políticas ──────────────────────────────────────────── -->
@@ -390,6 +389,11 @@ export class ExcursionFormPageComponent implements OnInit {
 
     catLabel(cat: string) {
         return this.configSvc.categories().find(c => c.key === cat)?.label ?? cat;
+    }
+
+    onMeetingPointPick(pos: LatLng): void {
+        this.form.meeting_point_lat = pos.lat;
+        this.form.meeting_point_lng = pos.lng;
     }
 
     ngOnInit() {

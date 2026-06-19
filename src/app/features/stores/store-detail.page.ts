@@ -11,6 +11,7 @@ import {
     StoreFinanceKpi, StoreOrderSummary, StoreApprovalHistory,
 } from '../../core/supabase/database.types';
 import { COMMERCE_ICONS, COMMERCE_LABELS } from './stores.page';
+import { getSupabaseClient } from '../../core/supabase/supabase.client';
 
 type StoreTab = 'info' | 'catalog' | 'zones' | 'orders' | 'finance' | 'admins' | 'history';
 
@@ -346,9 +347,60 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 
       <!-- Tab: Pedidos -->
       @if (activeTab() === 'orders') {
-        <div class="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-500">
-          <p class="text-2xl mb-2">📦</p>
-          <p class="text-sm">Vista de pedidos próximamente</p>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-800">Recent Orders (last 30)</h3>
+            <a [routerLink]="['/orders']" [queryParams]="{commerce_id: store()!.id}"
+              class="text-xs text-brand-500 hover:text-brand-700 font-medium">View all in orders →</a>
+          </div>
+          @if (storeOrdersLoading()) {
+            <div class="p-6 space-y-3">
+              @for (i of [1,2,3]; track i) {
+                <div class="h-10 bg-gray-100 rounded animate-pulse"></div>
+              }
+            </div>
+          } @else if (storeOrders().length === 0) {
+            <div class="py-12 text-center text-gray-400">
+              <p class="text-2xl mb-2">📦</p>
+              <p class="text-sm">No orders found for this store</p>
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-100 text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Customer</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Total</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                    <th class="px-4 py-2.5"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                  @for (o of storeOrders(); track o.id) {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-4 py-2.5 font-mono text-xs text-gray-500">{{ o.order_number }}</td>
+                      <td class="px-4 py-2.5 text-gray-700">{{ o.customer_name }}</td>
+                      <td class="px-4 py-2.5">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize
+                          {{ o.status === 'entregado' ? 'bg-success-50 text-success-700' :
+                             o.status === 'cancelado' ? 'bg-error-50 text-error-700' :
+                             'bg-warning-50 text-warning-700' }}">
+                          {{ o.status }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-2.5 font-medium text-gray-800">RD$ {{ o.total | number:'1.0-0' }}</td>
+                      <td class="px-4 py-2.5 text-gray-400 text-xs">{{ o.created_at | date:'MMM d, y h:mm a' }}</td>
+                      <td class="px-4 py-2.5">
+                        <a [routerLink]="['/orders', o.id]" class="text-xs text-brand-500 hover:text-brand-700">View</a>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
       }
 
@@ -598,6 +650,11 @@ export class StoreDetailPageComponent implements OnInit {
     readonly selectedTags = signal<string[]>([]);
     readonly overrideSaving = signal(false);
 
+    // Orders tab
+    private readonly supabase = getSupabaseClient();
+    readonly storeOrders = signal<any[]>([]);
+    readonly storeOrdersLoading = signal(false);
+
     approvalNote = '';
     overrideReason = '';
     financeFrom = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
@@ -651,6 +708,20 @@ export class StoreDetailPageComponent implements OnInit {
         this.service.getApprovalHistory(id).subscribe({
             next: (h) => this.approvalHistory.set(h),
         });
+        // Load recent orders
+        this.loadStoreOrders(id);
+    }
+
+    async loadStoreOrders(commerceId: string): Promise<void> {
+        this.storeOrdersLoading.set(true);
+        const { data } = await this.supabase
+            .from('orders_full')
+            .select('id, order_number, status, total, created_at, customer_name, repartidor_name')
+            .eq('commerce_id', commerceId)
+            .order('created_at', { ascending: false })
+            .limit(30);
+        this.storeOrders.set(data ?? []);
+        this.storeOrdersLoading.set(false);
     }
 
     loadFinance(): void {

@@ -220,10 +220,6 @@ export class CouriersPageComponent implements OnInit {
         vehicle_type: val.vehicle_type as VehicleType,
         vehicle_plate: val.vehicle_plate ?? null,
         is_available: true,
-        avg_rating: 0,
-        total_deliveries: 0,
-        total_earnings: 0,
-        zone_ids: [],
       });
       this.toastService.success('Repartidor guardado');
       this.showForm.set(false);

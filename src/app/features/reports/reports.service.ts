@@ -138,7 +138,7 @@ export class ReportsService {
         return from(
             this.supabase
                 .from('orders')
-                .select('delivery_time_minutes, repartidores(full_name, commission_rate)')
+                .select('delivery_time_minutes, delivery_fee, repartidores(full_name, commission_rate)')
                 .eq('status', 'entregado')
                 .not('repartidor_id', 'is', null)
                 .gte('created_at', from_date)
@@ -151,13 +151,14 @@ export class ReportsService {
                         if (!map[name]) map[name] = { name, times: [], total: 0, count: 0 };
                         if (o.delivery_time_minutes) map[name].times.push(o.delivery_time_minutes);
                         map[name].count += 1;
+                        map[name].total += Number(o.delivery_fee) || 0;
                     });
                     return Object.values(map).map(r => ({
                         full_name: r.name,
                         deliveries: r.count,
-                        avg_rating: 0,
+                        avg_rating: 0, // computed from delivery_ratings table if needed
                         avg_time_minutes: r.times.length ? Math.round(r.times.reduce((a, b) => a + b, 0) / r.times.length) : 0,
-                        total_earnings: 0,
+                        total_earnings: r.total,
                     })).sort((a, b) => b.deliveries - a.deliveries) as CourierPerformance[];
                 })
         );

@@ -6,6 +6,7 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { StoreOrdersService, StoreOrderDetail } from './store-orders.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { OrderStatus } from '../../../core/supabase/database.types';
+import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
     recibido: 'Nuevo',
@@ -30,7 +31,7 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
 @Component({
     selector: 'app-store-order-detail',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule, RouterLink, TuttyMapComponent],
     styles: [`
     :host { display: block; }
     .print-only { display: none; }
@@ -156,6 +157,17 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
             <div class="mt-3 text-sm text-gray-600 flex items-start gap-2">
               <span class="mt-0.5">📍</span>
               <span>{{ deliveryAddress() }}</span>
+            </div>
+          }
+          @if (order()!.delivery_lat && order()!.delivery_lng) {
+            <div class="mt-3">
+              <app-tutty-map
+                mode="view"
+                [lat]="order()!.delivery_lat"
+                [lng]="order()!.delivery_lng"
+                height="180px"
+                mapClass="rounded-lg overflow-hidden border border-gray-200"
+              />
             </div>
           }
           @if (order()!.special_instructions) {

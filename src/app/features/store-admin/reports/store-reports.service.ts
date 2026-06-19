@@ -39,7 +39,7 @@ export class StoreReportsService {
   async getKPIs(storeId: string, from: string, to: string): Promise<ReportKPIs> {
     const { data, error } = await this.supabase
       .from('orders')
-      .select('status, total, subtotal')
+      .select('id, status, total, subtotal')
       .eq('commerce_id', storeId)
       .gte('created_at', from)
       .lte('created_at', to);

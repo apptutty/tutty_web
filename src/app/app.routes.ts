@@ -13,6 +13,10 @@ export const routes: Routes = [
     canActivate: [noAuthGuard],
   },
   {
+    path: 'unauthorized',
+    loadComponent: () => import('./features/unauthorized/unauthorized.page').then(m => m.UnauthorizedPageComponent),
+  },
+  {
     path: '',
     component: AdminShellComponent,
     canActivate: [authGuard, operatorGuard],
@@ -20,78 +24,97 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
         path: 'dashboard',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/dashboard/dashboard.page').then(m => m.DashboardPageComponent),
       },
       {
         path: 'orders',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/orders/orders.page').then(m => m.OrdersPageComponent),
       },
       {
         path: 'orders/:id',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/orders/order-detail.page').then(m => m.OrderDetailPageComponent),
       },
       {
         path: 'approvals',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/approvals/approval-queue.page').then(m => m.ApprovalQueuePageComponent),
       },
       {
         path: 'restaurants',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/restaurants/restaurants.page').then(m => m.RestaurantsPageComponent),
       },
       {
         path: 'restaurants/:id/menu',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/restaurants/menu-manager.page').then(m => m.MenuManagerPageComponent),
       },
       {
         path: 'restaurants/:id/zones',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/restaurants/delivery-zones.page').then(m => m.DeliveryZonesPageComponent),
       },
       {
         path: 'stores',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/stores/stores.page').then(m => m.StoresPageComponent),
       },
       {
         path: 'stores/:id',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/stores/store-detail.page').then(m => m.StoreDetailPageComponent),
       },
       {
         path: 'stores/:id/catalog',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/stores/global-catalog-override.page').then(m => m.GlobalCatalogOverrideComponent),
       },
       {
         path: 'excursions',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/excursions/admin-excursions.page').then(m => m.ExcursionsPageComponent),
       },
       {
         path: 'couriers',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/couriers/couriers.page').then(m => m.CouriersPageComponent),
       },
       {
         path: 'couriers/:id',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/couriers/courier-detail.page').then(m => m.CourierDetailPageComponent),
       },
       {
         path: 'promotions',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/promotions/promotions.page').then(m => m.PromotionsPageComponent),
       },
       {
         path: 'reports',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/reports/reports.page').then(m => m.ReportsPageComponent),
       },
       {
         path: 'finances',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/finances/finances.page').then(m => m.FinancesPageComponent),
       },
       {
         path: 'support',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/support/support.page').then(m => m.SupportPageComponent),
       },
       {
         path: 'support-dashboard',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/support/support-dashboard.page').then(m => m.SupportDashboardPageComponent),
       },
       {
         path: 'support/templates',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/support/templates/ticket-templates.page').then(m => m.TicketTemplatesPageComponent),
       },
       {
@@ -126,6 +149,7 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
+        canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/settings/settings-shell.component').then(m => m.SettingsShellComponent),
         children: [
           { path: '', redirectTo: 'general', pathMatch: 'full' },
@@ -243,6 +267,10 @@ export const routes: Routes = [
       {
         path: 'addresses',
         loadComponent: () => import('./features/customer/addresses/addresses.page').then(m => m.CustomerAddressesPageComponent),
+      },
+      {
+        path: 'orders',
+        loadComponent: () => import('./features/customer/orders/customer-orders.page').then(m => m.CustomerOrdersPageComponent),
       },
       {
         path: 'profile',

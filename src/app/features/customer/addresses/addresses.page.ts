@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { getSupabaseClient } from '../../../core/supabase/supabase.client';
+import { TuttyMapComponent, LatLng } from '../../../shared/ui/map/tutty-map.component';
 
 const ADDRESS_TYPE_ICONS: Record<string, string> = {
     residencia: '🏠',
@@ -22,13 +23,15 @@ interface Address {
     notes: string | null;
     is_default: boolean;
     address_type: string | null;
+    lat?: number | null;
+    lng?: number | null;
 }
 
 @Component({
     selector: 'app-customer-addresses',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, TuttyMapComponent],
     template: `
     <div class="min-h-screen bg-gray-50">
 
@@ -103,6 +106,27 @@ interface Address {
               [(ngModel)]="form.notes"
               placeholder="Ej: Timbre 2, portón azul"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent" />
+          </div>
+
+          <!-- Map picker -->
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1.5">
+              Pin exact location on map
+              @if (form.lat && form.lng) {
+                <span class="ml-2 text-success-600 font-medium">✓ Location set</span>
+              } @else {
+                <span class="ml-2 text-gray-400">(optional but recommended)</span>
+              }
+            </label>
+            <app-tutty-map
+              mode="picker"
+              [lat]="form.lat"
+              [lng]="form.lng"
+              height="220px"
+              mapClass="rounded-xl overflow-hidden border border-gray-200"
+              (locationChange)="onMapPick($event)"
+            />
+            <p class="text-xs text-gray-400 mt-1.5">Tap the map to drop a pin on your exact location</p>
           </div>
 
           <div class="flex items-center gap-2">
@@ -233,6 +257,8 @@ export class CustomerAddressesPageComponent implements OnInit {
         notes: '',
         is_default: false,
         address_type: 'residencia',
+        lat: null as number | null,
+        lng: null as number | null,
     };
 
     readonly addressTypes = [
@@ -253,7 +279,7 @@ export class CustomerAddressesPageComponent implements OnInit {
         this.isLoading.set(true);
         const { data } = await this.supabase
             .from('addresses')
-            .select('id, label, street, sector, city, notes, is_default, address_type')
+            .select('id, label, street, sector, city, notes, is_default, address_type, lat, lng')
             .eq('user_id', user.id)
             .order('is_default', { ascending: false });
         this.addresses.set((data ?? []) as Address[]);
@@ -261,7 +287,7 @@ export class CustomerAddressesPageComponent implements OnInit {
     }
 
     openAdd(): void {
-        this.form = { label: '', street: '', sector: '', notes: '', is_default: false, address_type: 'residencia' };
+        this.form = { label: '', street: '', sector: '', notes: '', is_default: false, address_type: 'residencia', lat: null, lng: null };
         this.formError.set(null);
         this.showForm.set(true);
     }
@@ -269,6 +295,11 @@ export class CustomerAddressesPageComponent implements OnInit {
     cancelForm(): void {
         this.showForm.set(false);
         this.formError.set(null);
+    }
+
+    onMapPick(pos: LatLng): void {
+        this.form.lat = pos.lat;
+        this.form.lng = pos.lng;
     }
 
     async saveAddress(): Promise<void> {
@@ -295,6 +326,8 @@ export class CustomerAddressesPageComponent implements OnInit {
             is_default: this.form.is_default,
             city: 'Santo Domingo',
             address_type: this.form.address_type,
+            lat: this.form.lat ?? null,
+            lng: this.form.lng ?? null,
         });
 
         if (error) {

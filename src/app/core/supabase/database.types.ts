@@ -106,6 +106,8 @@ export interface OrderFull {
   delivery_sector?: string | null;
   delivery_city?: string | null;
   delivery_notes?: string | null;
+  delivery_lat?: number | null;
+  delivery_lng?: number | null;
 }
 
 export interface OrderDetail extends OrderFull {
