@@ -258,7 +258,7 @@ export class SupportService {
                 reporter:users!reporter_id(id, full_name, email, role, avatar_url),
                 order:orders(id, order_number, total),
                 store:commerces(id, name, commerce_type),
-                repartidor:repartidores(id, user:users(full_name)),
+                repartidor:repartidores(id, user:users!repartidores_user_id_fkey(full_name)),
                 booking:excursion_bookings(id, booking_number),
                 assigned_to:users!assigned_to(id, full_name),
                 message_count:ticket_messages(count),
@@ -332,7 +332,7 @@ export class SupportService {
                 reporter:users!reporter_id(id, full_name, email, role, avatar_url),
                 order:orders(id, order_number, total),
                 store:commerces(id, name, commerce_type),
-                repartidor:repartidores(id, user:users(full_name)),
+                repartidor:repartidores(id, user:users!repartidores_user_id_fkey(full_name)),
                 booking:excursion_bookings(id, booking_number),
                 assigned_to:users!assigned_to(id, full_name),
                 messages:ticket_messages(

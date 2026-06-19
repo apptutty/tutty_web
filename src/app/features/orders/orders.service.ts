@@ -98,7 +98,7 @@ export class OrdersService {
         return from(
             this.supabase
                 .from('repartidores')
-                .select('*, user:users(full_name, phone)')
+                .select('*, user:users!repartidores_user_id_fkey(full_name, phone)')
                 .eq('is_available', true)
                 .then(({ data }) =>
                     (data ?? []).map((r: any) => ({

@@ -38,7 +38,7 @@ export class CouriersService {
         return from(
             (async () => {
                 let q = this.supabase.from('repartidores')
-                    .select('*, user:users(full_name, phone, email, avatar_url)');
+                    .select('*, user:users!repartidores_user_id_fkey(full_name, phone, email, avatar_url)');
                 if (filters.available !== undefined) q = (q as any).eq('is_available', filters.available);
                 if (filters.approvalStatus) q = (q as any).eq('approval_status', filters.approvalStatus);
                 if (filters.vehicleType) q = (q as any).eq('vehicle_type', filters.vehicleType);
@@ -58,7 +58,7 @@ export class CouriersService {
     getCourierById(id: string): Observable<Courier> {
         return from(
             this.supabase.from('repartidores')
-                .select('*, user:users(full_name, phone, email, avatar_url)')
+                .select('*, user:users!repartidores_user_id_fkey(full_name, phone, email, avatar_url)')
                 .eq('id', id).single()
                 .then(({ data, error }) => {
                     if (error) throw error;
