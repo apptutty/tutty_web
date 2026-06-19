@@ -39,10 +39,11 @@ export class CouriersService {
             (async () => {
                 let q = this.supabase.from('repartidores')
                     .select('*, user:users(full_name, phone, email, avatar_url)');
-                if (filters.available !== undefined) q = q.eq('is_available', filters.available);
+                if (filters.available !== undefined) q = (q as any).eq('is_available', filters.available);
                 if (filters.approvalStatus) q = (q as any).eq('approval_status', filters.approvalStatus);
                 if (filters.vehicleType) q = (q as any).eq('vehicle_type', filters.vehicleType);
-                const { data } = await (q as any).order('created_at', { ascending: false });
+                const { data, error } = await (q as any).order('id', { ascending: false });
+                if (error) throw error;
                 return (data ?? []).map((r: any) => ({
                     ...r,
                     full_name: r.user?.full_name ?? '—',

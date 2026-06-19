@@ -93,11 +93,11 @@ import { AuthService } from '../../core/auth/auth.service';
                   }
                 </tr>
               }
-            } @else if (couriers().length === 0) {
+            } @else if (filteredCouriers().length === 0) {
               <tr>
                 <td colspan="9" class="px-4 py-12 text-center text-gray-400">
                   <p class="text-3xl mb-2">🛵</p>
-                  <p class="text-sm">Sin repartidores que coincidan</p>
+                  <p class="text-sm">{{ couriers().length === 0 ? 'No hay repartidores registrados' : 'Sin repartidores que coincidan con los filtros' }}</p>
                 </td>
               </tr>
             } @else {
