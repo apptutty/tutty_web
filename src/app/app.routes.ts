@@ -98,6 +98,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/excursions/admin-booking-detail.page').then(m => m.AdminBookingDetailPageComponent),
       },
       {
+        path: 'excursions/excursion/new',
+        canActivate: [roleGuard(['super_admin'])],
+        loadComponent: () => import('./features/excursions/admin-excursion-edit.page').then(m => m.AdminExcursionEditPageComponent),
+      },
+      {
+        path: 'excursions/excursion/:id',
+        canActivate: [roleGuard(['super_admin'])],
+        loadComponent: () => import('./features/excursions/admin-excursion-edit.page').then(m => m.AdminExcursionEditPageComponent),
+      },
+      {
         path: 'couriers',
         canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/couriers/couriers.page').then(m => m.CouriersPageComponent),

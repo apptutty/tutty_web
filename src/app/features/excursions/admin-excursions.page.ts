@@ -21,7 +21,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
         <button class="btn-primary" (click)="openOperatorModal()">+ Operador</button>
       }
       @if (activeTab() === 'excursiones') {
-        <button class="btn-primary" (click)="openExcursionModal()">+ Excursión</button>
+        <button class="btn-primary" (click)="router.navigate(['/excursions/excursion/new'])">+ Excursión</button>
       }
     </app-page-header>
 
@@ -71,9 +71,10 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
           [loading]="loading()"
           [totalCount]="filteredExcursions().length"
           [pageSize]="filteredExcursions().length"
-          (rowClick)="openDatesModal($event)"
+          (rowClick)="router.navigate(['/excursions/excursion', $event.id])"
         />
       </div>
+      <p class="text-xs text-gray-400 mt-1">Haz clic en una excursión para editarla. Para gestionar fechas, usa el botón de fechas en la tabla.</p>
     }
 
     <!-- Bookings tab -->
@@ -125,99 +126,98 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
     @if (showOperatorModal()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50" (click)="showOperatorModal.set(false)"></div>
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 z-10">
-          <h3 class="font-semibold text-gray-800 mb-4">{{ editingOperator() ? 'Editar operador' : 'Nuevo operador' }}</h3>
-          <form [formGroup]="operatorForm" (ngSubmit)="saveOperator()" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="col-span-2">
-                <label class="label">Nombre *</label>
-                <input class="input-field" formControlName="name" />
-              </div>
-              <div>
-                <label class="label">Categoría</label>
-                <select class="input-field" formControlName="category">
-                  <option value="Playa">Playa</option>
-                  <option value="Montaña">Montaña</option>
-                  <option value="Ciudad">Ciudad</option>
-                  <option value="Aventura">Aventura</option>
-                  <option value="Cultural">Cultural</option>
-                </select>
-              </div>
-              <div>
-                <label class="label">WhatsApp</label>
-                <input class="input-field" formControlName="whatsapp_number" />
-              </div>
-              <div class="col-span-2">
-                <label class="label">Descripción</label>
-                <textarea class="input-field resize-none" rows="2" formControlName="description"></textarea>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
+          <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
+            <h3 class="font-semibold text-gray-800">{{ editingOperator() ? 'Editar operador' : 'Nuevo operador' }}</h3>
+            <button class="text-gray-400" (click)="showOperatorModal.set(false)">✕</button>
+          </div>
+          <form [formGroup]="operatorForm" (ngSubmit)="saveOperator()" class="p-6 space-y-5">
+
+            <!-- Información básica -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Información básica</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                  <label class="label">Nombre *</label>
+                  <input class="input-field" formControlName="name" />
+                </div>
+                <div>
+                  <label class="label">Categoría</label>
+                  <select class="input-field" formControlName="category">
+                    <option value="Playa">Playa</option>
+                    <option value="Montaña">Montaña</option>
+                    <option value="Ciudad">Ciudad</option>
+                    <option value="Aventura">Aventura</option>
+                    <option value="Cultural">Cultural</option>
+                    <option value="Gastronomía">Gastronomía</option>
+                    <option value="Ecoturismo">Ecoturismo</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">WhatsApp</label>
+                  <input class="input-field" formControlName="whatsapp_number" placeholder="+1 809 000 0000" />
+                </div>
+                <div>
+                  <label class="label">Dirección</label>
+                  <input class="input-field" formControlName="address" placeholder="Dirección física" />
+                </div>
+                <div>
+                  <label class="label">Años de experiencia</label>
+                  <input class="input-field" formControlName="years_experience" placeholder="ej. 10 años" />
+                </div>
+                <div class="col-span-2">
+                  <label class="label">Descripción</label>
+                  <textarea class="input-field resize-none" rows="2" formControlName="description"></textarea>
+                </div>
+                <div>
+                  <label class="label">URL del logo</label>
+                  <input class="input-field" formControlName="logo_url" placeholder="https://..." />
+                </div>
+                <div>
+                  <label class="label">URL del banner</label>
+                  <input class="input-field" formControlName="banner_url" placeholder="https://..." />
+                </div>
               </div>
             </div>
+
+            <!-- Comisión y legal -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Comisión y legal</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="label">Tipo de comisión</label>
+                  <select class="input-field" formControlName="management_fee_type">
+                    <option value="">Sin comisión</option>
+                    <option value="percentage">Porcentaje (%)</option>
+                    <option value="fixed">Monto fijo (RD$)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">Valor de comisión</label>
+                  <input class="input-field" type="number" min="0" formControlName="management_fee_value" placeholder="ej. 15" />
+                </div>
+                <div>
+                  <label class="label flex items-center gap-2">
+                    <input type="checkbox" formControlName="has_tourism_license" class="rounded" />
+                    <span>Licencia de turismo</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="label">Nº de licencia</label>
+                  <input class="input-field" formControlName="tourism_license_number" placeholder="Número de licencia" />
+                </div>
+                <div class="col-span-2">
+                  <label class="label flex items-center gap-2">
+                    <input type="checkbox" formControlName="has_insurance" class="rounded" />
+                    <span>Cuenta con seguro de actividad</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div class="flex gap-3 justify-end">
               <button type="button" class="btn-secondary" (click)="showOperatorModal.set(false)">Cancelar</button>
               <button type="submit" class="btn-primary" [disabled]="operatorForm.invalid || saveLoading()">
-                {{ saveLoading() ? 'Guardando...' : 'Guardar' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    }
-
-    <!-- Excursion Modal -->
-    @if (showExcursionModal()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/50" (click)="showExcursionModal.set(false)"></div>
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
-          <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
-            <h3 class="font-semibold text-gray-800">Nueva excursión</h3>
-            <button class="text-gray-400" (click)="showExcursionModal.set(false)">✕</button>
-          </div>
-          <form [formGroup]="excursionForm" (ngSubmit)="saveExcursion()" class="p-6 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="col-span-2">
-                <label class="label">Nombre *</label>
-                <input class="input-field" formControlName="name" />
-              </div>
-              <div>
-                <label class="label">Operador *</label>
-                <select class="input-field" formControlName="operator_id">
-                  @for (op of operators(); track op.id) {
-                    <option [value]="op.id">{{ op.name }}</option>
-                  }
-                </select>
-              </div>
-              <div>
-                <label class="label">Dificultad</label>
-                <select class="input-field" formControlName="difficulty_level">
-                  <option value="facil">Fácil</option>
-                  <option value="moderado">Moderado</option>
-                  <option value="dificil">Difícil</option>
-                </select>
-              </div>
-              <div>
-                <label class="label">Precio/persona (RD$)</label>
-                <input class="input-field" type="number" formControlName="price_per_person" />
-              </div>
-              <div>
-                <label class="label">Duración (horas)</label>
-                <input class="input-field" type="number" step="0.5" formControlName="duration_hours" />
-              </div>
-              <div>
-                <label class="label">Mín personas</label>
-                <input class="input-field" type="number" formControlName="min_people" />
-              </div>
-              <div>
-                <label class="label">Máx personas</label>
-                <input class="input-field" type="number" formControlName="max_people" />
-              </div>
-              <div class="col-span-2">
-                <label class="label">Descripción corta</label>
-                <textarea class="input-field resize-none" rows="2" formControlName="short_description"></textarea>
-              </div>
-            </div>
-            <div class="flex gap-3 justify-end">
-              <button type="button" class="btn-secondary" (click)="showExcursionModal.set(false)">Cancelar</button>
-              <button type="submit" class="btn-primary" [disabled]="excursionForm.invalid || saveLoading()">
                 {{ saveLoading() ? 'Guardando...' : 'Guardar' }}
               </button>
             </div>
@@ -426,7 +426,6 @@ export class ExcursionsPageComponent implements OnInit {
   readonly bookings = signal<any[]>([]);
   readonly loading = signal(true);
   readonly showOperatorModal = signal(false);
-  readonly showExcursionModal = signal(false);
   readonly editingOperator = signal<ExcursionOperator | null>(null);
   readonly selectedBooking = signal<any | null>(null);
   readonly bookingDetail = signal<any | null>(null);
@@ -520,17 +519,15 @@ export class ExcursionsPageComponent implements OnInit {
     category: ['Playa'],
     whatsapp_number: [''],
     description: [''],
-  });
-
-  readonly excursionForm = this.fb.group({
-    name: ['', Validators.required],
-    operator_id: ['', Validators.required],
-    difficulty_level: ['facil'],
-    price_per_person: [0, Validators.required],
-    duration_hours: [4],
-    min_people: [1],
-    max_people: [20],
-    short_description: [''],
+    address: [''],
+    years_experience: [''],
+    logo_url: [''],
+    banner_url: [''],
+    management_fee_type: [''],
+    management_fee_value: [null as number | null],
+    has_tourism_license: [false],
+    tourism_license_number: [''],
+    has_insurance: [false],
   });
 
   ngOnInit(): void { this.loadTabData(); }
@@ -570,8 +567,28 @@ export class ExcursionsPageComponent implements OnInit {
 
   openOperatorModal(op?: ExcursionOperator): void {
     this.editingOperator.set(op ?? null);
-    this.operatorForm.reset({ category: 'Playa' });
-    if (op) this.operatorForm.patchValue(op as any);
+    this.operatorForm.reset({
+      category: 'Playa',
+      has_tourism_license: false,
+      has_insurance: false,
+    });
+    if (op) {
+      this.operatorForm.patchValue({
+        name: op.name,
+        category: op.category ?? 'Playa',
+        whatsapp_number: op.whatsapp_number ?? '',
+        description: op.description ?? '',
+        address: (op as any).address ?? '',
+        years_experience: (op as any).years_experience ?? '',
+        logo_url: (op as any).logo_url ?? '',
+        banner_url: (op as any).banner_url ?? '',
+        management_fee_type: (op as any).management_fee_type ?? '',
+        management_fee_value: (op as any).management_fee_value ?? null,
+        has_tourism_license: (op as any).has_tourism_license ?? false,
+        tourism_license_number: (op as any).tourism_license_number ?? '',
+        has_insurance: (op as any).has_insurance ?? false,
+      });
+    }
     this.showOperatorModal.set(true);
   }
 
@@ -583,49 +600,26 @@ export class ExcursionsPageComponent implements OnInit {
       await this.service.saveOperator({
         ...(this.editingOperator() ? { id: this.editingOperator()!.id } : {}),
         name: val.name!,
-        slug: val.name!.toLowerCase().replace(/\s+/g, '-'),
-        category: val.category!,
-        whatsapp_number: val.whatsapp_number ?? null,
-        description: val.description ?? null,
+        slug: val.name!.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        category: val.category || null,
+        whatsapp_number: val.whatsapp_number || null,
+        description: val.description || null,
+        address: val.address || null,
+        years_experience: val.years_experience || null,
+        logo_url: val.logo_url || null,
+        banner_url: val.banner_url || null,
+        management_fee_type: (val.management_fee_type as 'percentage' | 'fixed' | null) || null,
+        management_fee_value: val.management_fee_value ?? null,
+        has_tourism_license: val.has_tourism_license ?? false,
+        tourism_license_number: val.tourism_license_number || null,
+        has_insurance: val.has_insurance ?? false,
         is_active: true,
         avg_rating: 0,
         total_reviews: 0,
-      });
+      } as any);
       this.toastService.success('Operador guardado');
       this.showOperatorModal.set(false);
       this.loadOperators();
-    } catch { this.toastService.error('Error al guardar'); }
-    finally { this.saveLoading.set(false); }
-  }
-
-  openExcursionModal(): void {
-    this.excursionForm.reset({ difficulty_level: 'facil', min_people: 1, max_people: 20, duration_hours: 4 });
-    this.showExcursionModal.set(true);
-  }
-
-  async saveExcursion(): Promise<void> {
-    if (this.excursionForm.invalid) return;
-    this.saveLoading.set(true);
-    try {
-      const val = this.excursionForm.getRawValue();
-      await this.service.saveExcursion({
-        name: val.name!,
-        operator_id: val.operator_id!,
-        difficulty_level: val.difficulty_level as any,
-        price_per_person: val.price_per_person ?? 0,
-        duration_hours: val.duration_hours ?? 4,
-        min_people: val.min_people ?? 1,
-        max_people: val.max_people ?? 20,
-        short_description: val.short_description ?? null,
-        is_active: true,
-        language: 'Español',
-        min_hours_advance: 24,
-        cancellation_hours: 24,
-        photos: [],
-      });
-      this.toastService.success('Excursión creada');
-      this.showExcursionModal.set(false);
-      this.loadExcursions();
     } catch { this.toastService.error('Error al guardar'); }
     finally { this.saveLoading.set(false); }
   }
