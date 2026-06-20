@@ -15,12 +15,16 @@ export type TicketStatus =
     | 'cerrado';
 
 export type TicketType =
-    | 'pedido'
-    | 'pago'
-    | 'repartidor'
-    | 'comercio'
-    | 'cuenta'
-    | 'excursion'
+    | 'queja_pedido'
+    | 'queja_repartidor'
+    | 'queja_comercio'
+    | 'problema_tecnico'
+    | 'solicitud_reembolso'
+    | 'duda_general'
+    | 'reporte_fraude'
+    | 'problema_pago'
+    | 'queja_excursion'
+    | 'cancelacion_excursion'
     | 'otro';
 
 export type TicketPriority = 'baja' | 'media' | 'alta' | 'urgente';
@@ -172,8 +176,6 @@ export interface AgentResult {
     avatar_url?: string;
 }
 
-export type TicketSubtype = 'reembolso' | 'fraude' | 'cancelacion';
-
 export type TemplateCategory = 'reembolso' | 'compensacion' | 'seguimiento' | 'cierre';
 
 export interface ReplyTemplate {
@@ -199,7 +201,6 @@ export interface NewTicketPayload {
     external_name?: string;
     external_contact?: string;
     type: TicketType;
-    subtype?: TicketSubtype | null;
     subject: string;
     description: string;
     order_id?: string;
@@ -1119,8 +1120,9 @@ export class SupportService {
     }
 
     private autoAssignPriority(payload: NewTicketPayload): TicketPriority {
-        if (payload.subtype === 'fraude') return 'urgente';
-        if (payload.subtype === 'reembolso' || payload.type === 'pago') return 'alta';
+        if (payload.type === 'reporte_fraude') return 'urgente';
+        if (payload.type === 'solicitud_reembolso' || payload.type === 'problema_pago') return 'alta';
+        if (payload.type === 'queja_pedido' || payload.type === 'cancelacion_excursion') return 'alta';
         return 'media';
     }
 

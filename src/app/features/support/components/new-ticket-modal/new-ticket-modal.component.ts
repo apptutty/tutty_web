@@ -5,7 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-    SupportService, SupportTicket, TicketType, TicketPriority, TicketSubtype,
+    SupportService, SupportTicket, TicketType, TicketPriority,
     UserSearchResult, OrderSearchResult, BookingSearchResult,
     StoreSearchResult, CourierSearchResult, AgentResult, NewTicketPayload,
 } from '../../services/support.service';
@@ -17,21 +17,20 @@ interface TicketTypeOption {
     icon: string;
     label: string;
     type: TicketType;
-    subtype?: TicketSubtype;
     contextType?: 'order' | 'booking' | 'store' | 'courier';
 }
 
 const TICKET_TYPE_OPTIONS: TicketTypeOption[] = [
-    { icon: '🛒', label: 'Queja pedido', type: 'pedido', contextType: 'order' },
-    { icon: '🏍️', label: 'Queja repartidor', type: 'repartidor', contextType: 'courier' },
-    { icon: '🏪', label: 'Queja comercio', type: 'comercio', contextType: 'store' },
-    { icon: '💻', label: 'Problema técnico', type: 'cuenta' },
-    { icon: '💰', label: 'Sol. reembolso', type: 'pago', subtype: 'reembolso' },
-    { icon: '🚩', label: 'Reporte fraude', type: 'otro', subtype: 'fraude' },
-    { icon: '💳', label: 'Problema pago', type: 'pago' },
-    { icon: '🧭', label: 'Queja excursión', type: 'excursion', contextType: 'booking' },
-    { icon: '❌', label: 'Cancelación exc.', type: 'excursion', subtype: 'cancelacion', contextType: 'booking' },
-    { icon: '❓', label: 'Duda general', type: 'otro' },
+    { icon: '🛒', label: 'Queja pedido', type: 'queja_pedido', contextType: 'order' },
+    { icon: '🏍️', label: 'Queja repartidor', type: 'queja_repartidor', contextType: 'courier' },
+    { icon: '🏪', label: 'Queja comercio', type: 'queja_comercio', contextType: 'store' },
+    { icon: '💻', label: 'Problema técnico', type: 'problema_tecnico' },
+    { icon: '💰', label: 'Sol. reembolso', type: 'solicitud_reembolso' },
+    { icon: '🚩', label: 'Reporte fraude', type: 'reporte_fraude' },
+    { icon: '💳', label: 'Problema pago', type: 'problema_pago' },
+    { icon: '🧭', label: 'Queja excursión', type: 'queja_excursion', contextType: 'booking' },
+    { icon: '❌', label: 'Cancelación exc.', type: 'cancelacion_excursion', contextType: 'booking' },
+    { icon: '❓', label: 'Duda general', type: 'duda_general' },
     { icon: '📝', label: 'Otro', type: 'otro' },
 ];
 
@@ -860,7 +859,6 @@ export class NewTicketModalComponent implements OnChanges, OnDestroy {
                         ? this.externalContact.trim()
                         : undefined,
                 type: opt.type,
-                subtype: opt.subtype ?? null,
                 subject: this.subject.trim(),
                 description: this.description.trim(),
                 order_id: opt.contextType === 'order' ? ctx?.id : undefined,

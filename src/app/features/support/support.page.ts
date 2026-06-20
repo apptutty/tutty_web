@@ -247,12 +247,16 @@ const ALL_STATUSES: TicketStatus[] = [
           <!-- Tipo -->
           <select class="input-field text-sm w-36" [(ngModel)]="filterType" (ngModelChange)="reload()">
             <option value="all">Todos los tipos</option>
-            <option value="pedido">Pedido</option>
-            <option value="pago">Pago</option>
-            <option value="repartidor">Repartidor</option>
-            <option value="comercio">Comercio</option>
-            <option value="cuenta">Cuenta</option>
-            <option value="excursion">Excursión</option>
+            <option value="queja_pedido">Queja pedido</option>
+            <option value="problema_pago">Problema pago</option>
+            <option value="solicitud_reembolso">Sol. reembolso</option>
+            <option value="queja_repartidor">Queja repartidor</option>
+            <option value="queja_comercio">Queja comercio</option>
+            <option value="problema_tecnico">Problema técnico</option>
+            <option value="queja_excursion">Queja excursión</option>
+            <option value="cancelacion_excursion">Cancelación exc.</option>
+            <option value="reporte_fraude">Reporte fraude</option>
+            <option value="duda_general">Duda general</option>
             <option value="otro">Otro</option>
           </select>
 

@@ -38,12 +38,16 @@ const TICKET_STATUS_CLASS: Record<TicketStatus, string> = {
 };
 
 const TICKET_TYPE_LABEL: Record<TicketType, string> = {
-    pedido: 'Pedido',
-    pago: 'Pago',
-    repartidor: 'Repartidor',
-    comercio: 'Comercio',
-    cuenta: 'Cuenta',
-    excursion: 'Excursión',
+    queja_pedido: 'Queja pedido',
+    queja_repartidor: 'Queja repartidor',
+    queja_comercio: 'Queja comercio',
+    problema_tecnico: 'Problema técnico',
+    solicitud_reembolso: 'Sol. reembolso',
+    duda_general: 'Duda general',
+    reporte_fraude: 'Reporte fraude',
+    problema_pago: 'Problema pago',
+    queja_excursion: 'Queja excursión',
+    cancelacion_excursion: 'Cancelación exc.',
     otro: 'Otro',
 };
 
