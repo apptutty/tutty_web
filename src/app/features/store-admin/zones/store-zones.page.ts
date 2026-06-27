@@ -41,6 +41,17 @@ import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
         </div>
       }
 
+      <!-- No location warning -->
+      @if (!hasStoreCoords()) {
+        <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+          <span class="text-lg flex-shrink-0">⚠️</span>
+          <div>
+            <p class="font-medium">Comercio sin coordenadas configuradas</p>
+            <p class="text-xs mt-0.5">El mapa de cobertura y el cálculo de delivery no funcionarán. Ve a <strong>Configuración → Perfil → Ubicación en mapa</strong> para configurarlas.</p>
+          </div>
+        </div>
+      }
+
       <!-- Coverage map -->
       @if (storeLat() && storeLng()) {
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -299,9 +310,10 @@ export class StoreZonesPageComponent implements OnInit {
         return radii.length ? Math.max(...radii) : null;
     };
 
-    // Map helpers — read commerce lat/lng from active store signal
-    readonly storeLat = () => (this.storeAdminService.activeStore() as any)?.lat ?? null;
-    readonly storeLng = () => (this.storeAdminService.activeStore() as any)?.lng ?? null;
+    // Map helpers — read commerce lat/lng from the typed Restaurant signal (lat/lng are already in the type)
+    readonly storeLat = () => this.storeAdminService.activeStore()?.lat ?? null;
+    readonly storeLng = () => this.storeAdminService.activeStore()?.lng ?? null;
+    readonly hasStoreCoords = () => !!(this.storeLat() && this.storeLng());
     readonly mapRadiusKm = () => {
         const active = this.zones().filter(z => z.is_active);
         const radii = active.map(z => z.max_distance_km).filter((v): v is number => v != null);

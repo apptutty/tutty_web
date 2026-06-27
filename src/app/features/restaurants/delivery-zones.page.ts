@@ -7,11 +7,12 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { DeliveryZone, Restaurant } from '../../core/supabase/database.types';
+import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
 
 @Component({
     selector: 'app-delivery-zones-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, TuttyMapComponent],
     template: `
     <app-page-header
       [title]="'Zonas de Entrega' + (restaurant() ? ' — ' + restaurant()!.name : '')"
@@ -19,6 +20,53 @@ import { DeliveryZone, Restaurant } from '../../core/supabase/database.types';
       <button class="btn-secondary" (click)="router.navigate(['/restaurants'])">← Volver</button>
       <button class="btn-primary" (click)="openForm()">+ Nueva Zona</button>
     </app-page-header>
+
+    <!-- Coverage summary -->
+    @if (zones().length > 0) {
+      <div class="mb-4 bg-brand-50 border border-brand-200 rounded-xl px-5 py-4 flex flex-wrap gap-6">
+        <div>
+          <p class="text-xs font-medium text-brand-600 uppercase tracking-wide">Zonas activas</p>
+          <p class="text-2xl font-bold text-brand-700">{{ activeZones() }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-brand-600 uppercase tracking-wide">Fee mínimo</p>
+          <p class="text-2xl font-bold text-brand-700">RD$ {{ minFee() }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-brand-600 uppercase tracking-wide">Radio máximo</p>
+          <p class="text-2xl font-bold text-brand-700">{{ maxRadius() ?? '—' }} km</p>
+        </div>
+      </div>
+    }
+
+    <!-- No coordinates warning -->
+    @if (restaurant() && !restaurant()!.lat && !restaurant()!.lng) {
+      <div class="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+        <span class="text-lg flex-shrink-0">⚠️</span>
+        <div>
+          <p class="font-medium">Comercio sin coordenadas</p>
+          <p class="text-xs mt-0.5">El cálculo de cobertura y distancia no funcionará hasta que el comercio configure su ubicación.</p>
+        </div>
+      </div>
+    }
+
+    <!-- Coverage map -->
+    @if (restaurant()?.lat && restaurant()?.lng) {
+      <div class="mb-4 bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+          <p class="text-sm font-semibold text-gray-800">Mapa de cobertura</p>
+          <p class="text-xs text-gray-400">Radio de la zona activa de mayor prioridad</p>
+        </div>
+        <app-tutty-map
+          mode="radius"
+          [lat]="restaurant()!.lat"
+          [lng]="restaurant()!.lng"
+          [radiusKm]="mapRadiusKm()"
+          height="280px"
+          mapClass=""
+        />
+      </div>
+    }
 
     <!-- Table -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
@@ -202,6 +250,21 @@ export class DeliveryZonesPageComponent implements OnInit {
     sectors: string[] = [];
 
     private commerceId = '';
+
+    readonly activeZones = () => this.zones().filter(z => z.is_active).length;
+    readonly minFee = () => {
+        const fees = this.zones().filter(z => z.is_active).map(z => z.delivery_fee);
+        return fees.length ? Math.min(...fees) : 0;
+    };
+    readonly maxRadius = () => {
+        const radii = this.zones().map(z => z.max_distance_km).filter((v): v is number => v != null);
+        return radii.length ? Math.max(...radii) : null;
+    };
+    readonly mapRadiusKm = () => {
+        const active = this.zones().filter(z => z.is_active);
+        const radii = active.map(z => z.max_distance_km).filter((v): v is number => v != null);
+        return radii.length ? Math.max(...radii) : 3;
+    };
 
     readonly zoneForm = this.fb.group({
         name: ['', Validators.required],

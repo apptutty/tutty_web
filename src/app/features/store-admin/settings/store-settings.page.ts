@@ -13,6 +13,8 @@ import { StoreSettingsService, TeamMember, StoreNotifPrefs } from './store-setti
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { Restaurant, StoreCategory, Payout } from '../../../core/supabase/database.types';
+import { TuttyMapComponent, LatLng } from '../../../shared/ui/map/tutty-map.component';
+import { AdminGeoService, PlaceSuggestion } from '../../../core/services/admin-geo.service';
 
 type Tab = 'perfil' | 'horarios' | 'delivery' | 'notificaciones' | 'equipo' | 'finanzas';
 
@@ -27,6 +29,7 @@ interface ProfileForm {
     name: string; description: string; whatsapp_number: string;
     address: string; sector: string; city: string; category_id: string | null;
     logo_url: string | null; banner_url: string | null;
+    lat: number | null; lng: number | null;
 }
 
 interface ScheduleForm {
@@ -43,7 +46,7 @@ interface DeliveryForm {
 @Component({
     selector: 'app-store-settings',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, TuttyMapComponent],
     styles: [`
     .tab-btn { padding: 8px 16px; border-bottom: 2px solid transparent; font-size: 0.875rem; font-weight: 500; color: #6b7280; transition: all 0.15s; white-space: nowrap; cursor: pointer; }
     .tab-btn.active { border-bottom-color: #e91e8c; color: #e91e8c; }
@@ -157,6 +160,47 @@ interface DeliveryForm {
         <!-- Location -->
         <div class="card p-5 space-y-4">
           <p class="section-title">Ubicación</p>
+
+          @if (!profileForm.lat || !profileForm.lng) {
+            <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-sm text-amber-800">
+              <span>⚠️</span>
+              <span>Sin coordenadas. El delivery no estará disponible hasta que guardes una ubicación en el mapa.</span>
+            </div>
+          } @else {
+            <div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700">
+              <span>📍</span>
+              <span>{{ profileForm.lat | number:'1.5-6' }}, {{ profileForm.lng | number:'1.5-6' }}</span>
+            </div>
+          }
+
+          <!-- Address autocomplete search -->
+          <div class="relative">
+            <label class="label">Buscar dirección</label>
+            <input
+              type="text"
+              [ngModel]="addressSearch()"
+              (ngModelChange)="onAddressSearchChange($event)"
+              class="input-field w-full"
+              placeholder="Buscar en mapa…"
+              autocomplete="off"
+            />
+            @if (addressSuggestions().length > 0) {
+              <div class="absolute z-20 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto">
+                @for (s of addressSuggestions(); track s.place_id) {
+                  <button type="button"
+                    class="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
+                    (click)="selectSuggestion(s)">
+                    <p class="font-medium text-gray-800 truncate">{{ s.main_text }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ s.secondary_text }}</p>
+                  </button>
+                }
+                <button type="button"
+                  class="w-full px-4 py-2 text-xs text-gray-400 hover:bg-gray-50 text-right transition-colors"
+                  (click)="clearSuggestions()">Cerrar ✕</button>
+              </div>
+            }
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div class="col-span-2">
               <label class="label">Dirección</label>
@@ -170,6 +214,25 @@ interface DeliveryForm {
               <label class="label">Ciudad</label>
               <input [(ngModel)]="profileForm.city" class="input-field w-full" placeholder="Ej. Santo Domingo" />
             </div>
+          </div>
+
+          <!-- Map picker -->
+          <div>
+            <label class="label">Ubicación en mapa</label>
+            <p class="text-xs text-gray-400 mb-2">Haz clic en el mapa para ajustar la ubicación exacta del comercio</p>
+            @if (isReverseGeocoding()) {
+              <div class="flex items-center gap-2 text-xs text-gray-400 mb-1">
+                <div class="w-3 h-3 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin"></div>
+                Obteniendo dirección…
+              </div>
+            }
+            <app-tutty-map
+              mode="picker"
+              [lat]="profileForm.lat"
+              [lng]="profileForm.lng"
+              height="300px"
+              (locationChange)="onMapPick($event)"
+            />
           </div>
         </div>
 
@@ -261,6 +324,16 @@ interface DeliveryForm {
 
       <!-- ═══ TAB: DELIVERY ═══════════════════════════════════════ -->
       @if (activeTab() === 'delivery') {
+        @if (!profileForm.lat || !profileForm.lng) {
+          <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+            <span class="text-lg">⚠️</span>
+            <div>
+              <p class="font-medium">Comercio sin ubicación configurada</p>
+              <p class="text-xs mt-0.5">Configura la ubicación en la pestaña <strong>Perfil → Ubicación en mapa</strong> para activar el cálculo de delivery.</p>
+            </div>
+            <button class="ml-auto btn-secondary text-xs py-1" (click)="activeTab.set('perfil')">Ir a ubicación</button>
+          </div>
+        }
         <div class="card p-5 space-y-5">
           <p class="section-title">Condiciones de pedido</p>
 
@@ -547,6 +620,7 @@ export class StoreSettingsPageComponent implements OnInit {
     private readonly settingsSvc = inject(StoreSettingsService);
     private readonly toast = inject(ToastService);
     private readonly confirmSvc = inject(ConfirmService);
+    private readonly geoSvc = inject(AdminGeoService);
 
     readonly tabs: { key: Tab; label: string }[] = [
         { key: 'perfil', label: 'Perfil' },
@@ -564,10 +638,16 @@ export class StoreSettingsPageComponent implements OnInit {
     readonly commerceType = computed(() => this.store()?.commerce_type ?? 'otro');
 
     // Profile
-    profileForm: ProfileForm = { name: '', description: '', whatsapp_number: '', address: '', sector: '', city: '', category_id: null, logo_url: null, banner_url: null };
+    profileForm: ProfileForm = { name: '', description: '', whatsapp_number: '', address: '', sector: '', city: '', category_id: null, logo_url: null, banner_url: null, lat: null, lng: null };
     readonly storeCategories = signal<StoreCategory[]>([]);
     private logoFile: File | null = null;
     private bannerFile: File | null = null;
+
+    // Location / map
+    readonly addressSearch = signal('');
+    readonly addressSuggestions = signal<PlaceSuggestion[]>([]);
+    readonly isReverseGeocoding = signal(false);
+    private autocompleteTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Schedule
     scheduleForm: ScheduleForm = { open_days: [], opening_time: '09:00', closing_time: '22:00', special_hours: false, avg_service_time: 30, per_day: {} };
@@ -638,6 +718,7 @@ export class StoreSettingsPageComponent implements OnInit {
             name: s.name, description: s.description ?? '', whatsapp_number: s.whatsapp_number ?? '',
             address: s.address ?? '', sector: s.sector ?? '', city: s.city,
             category_id: s.category_id ?? null, logo_url: s.logo_url ?? null, banner_url: s.banner_url ?? null,
+            lat: s.lat ?? null, lng: s.lng ?? null,
         };
         this.scheduleForm = {
             open_days: s.open_days ?? [], opening_time: s.opening_time ?? '09:00',
@@ -706,6 +787,8 @@ export class StoreSettingsPageComponent implements OnInit {
                 whatsapp_number: this.profileForm.whatsapp_number || null,
                 address: this.profileForm.address, sector: this.profileForm.sector, city: this.profileForm.city,
                 category_id: this.profileForm.category_id,
+                lat: this.profileForm.lat ?? null,
+                lng: this.profileForm.lng ?? null,
             };
             if (this.logoFile) patch.logo_url = await this.settingsSvc.uploadImage(this.logoFile, storeId, 'logo');
             if (this.bannerFile) patch.banner_url = await this.settingsSvc.uploadImage(this.bannerFile, storeId, 'banner');
@@ -723,6 +806,47 @@ export class StoreSettingsPageComponent implements OnInit {
         if (!this.scheduleForm.per_day[key]) {
             this.scheduleForm.per_day[key] = { opening_time: this.scheduleForm.opening_time, closing_time: this.scheduleForm.closing_time };
         }
+    }
+
+    // ─── Location / Map ──────────────────────────────────────────────────────
+
+    onAddressSearchChange(value: string): void {
+        this.addressSearch.set(value);
+        if (this.autocompleteTimer) clearTimeout(this.autocompleteTimer);
+        if (value.trim().length < 2) { this.addressSuggestions.set([]); return; }
+        this.autocompleteTimer = setTimeout(async () => {
+            const suggestions = await this.geoSvc.autocomplete(value);
+            this.addressSuggestions.set(suggestions);
+        }, 300);
+    }
+
+    async selectSuggestion(s: PlaceSuggestion): Promise<void> {
+        this.clearSuggestions();
+        this.addressSearch.set('');
+        const detail = await this.geoSvc.getPlaceDetails(s.place_id);
+        if (!detail) { this.toast.error('No se pudo obtener la ubicación'); return; }
+        this.profileForm.lat = detail.lat;
+        this.profileForm.lng = detail.lng;
+        this.profileForm.address = detail.formatted_address;
+        if (detail.sector) this.profileForm.sector = detail.sector;
+        if (detail.city) this.profileForm.city = detail.city;
+    }
+
+    async onMapPick(pos: LatLng): Promise<void> {
+        this.profileForm.lat = pos.lat;
+        this.profileForm.lng = pos.lng;
+        this.isReverseGeocoding.set(true);
+        const geo = await this.geoSvc.reverseGeocode(pos.lat, pos.lng);
+        this.isReverseGeocoding.set(false);
+        if (geo) {
+            if (!this.profileForm.address) this.profileForm.address = geo.formatted_address;
+            if (geo.sector && !this.profileForm.sector) this.profileForm.sector = geo.sector;
+            if (geo.city && !this.profileForm.city) this.profileForm.city = geo.city;
+        }
+    }
+
+    clearSuggestions(): void {
+        this.addressSuggestions.set([]);
     }
 
     async saveSchedule() {

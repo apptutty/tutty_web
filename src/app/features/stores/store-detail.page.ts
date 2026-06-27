@@ -12,6 +12,7 @@ import {
 } from '../../core/supabase/database.types';
 import { COMMERCE_ICONS, COMMERCE_LABELS } from './stores.page';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
+import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
 
 type StoreTab = 'info' | 'catalog' | 'zones' | 'orders' | 'finance' | 'admins' | 'history';
 
@@ -25,7 +26,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 @Component({
     selector: 'app-store-detail-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe, TuttyMapComponent],
     template: `
     <!-- Back nav -->
     <div class="mb-4">
@@ -126,6 +127,20 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
               <div class="col-span-2"><p class="text-gray-400 text-xs mb-0.5">Dirección</p><p>{{ store()!.address }}</p></div>
               <div><p class="text-gray-400 text-xs mb-0.5">Sector</p><p>{{ store()!.sector ?? '—' }}</p></div>
               <div><p class="text-gray-400 text-xs mb-0.5">Ciudad</p><p>{{ store()!.city }}</p></div>
+              @if (store()!.lat && store()!.lng) {
+                <div class="col-span-2">
+                  <p class="text-gray-400 text-xs mb-0.5">Coordenadas</p>
+                  <p class="font-mono text-xs text-gray-600">{{ store()!.lat | number:'1.5-6' }}, {{ store()!.lng | number:'1.5-6' }}</p>
+                </div>
+              } @else {
+                <div class="col-span-2">
+                  <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+                    <span>⚠️</span>
+                    <span>Comercio sin coordenadas — el delivery no funcionará correctamente.</span>
+                    <button class="ml-auto underline hover:no-underline" (click)="openEditForm()">Configurar</button>
+                  </div>
+                </div>
+              }
               <div><p class="text-gray-400 text-xs mb-0.5">Rating promedio</p><p>⭐ {{ store()!.avg_rating | number:'1.1-1' }}</p></div>
               <div><p class="text-gray-400 text-xs mb-0.5">Total reseñas</p><p>{{ store()!.total_reviews }}</p></div>
               <div><p class="text-gray-400 text-xs mb-0.5">Horario</p>
@@ -135,6 +150,18 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                 <div class="col-span-2"><p class="text-gray-400 text-xs mb-0.5">Descripción</p><p>{{ store()!.description }}</p></div>
               }
             </div>
+            <!-- Read-only location map -->
+            @if (store()!.lat && store()!.lng) {
+              <div class="border-t border-gray-100 pt-4">
+                <p class="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wide">Ubicación</p>
+                <app-tutty-map
+                  mode="view"
+                  [lat]="store()!.lat"
+                  [lng]="store()!.lng"
+                  height="220px"
+                />
+              </div>
+            }
           </div>
           <!-- Right: commission card -->
           <div class="space-y-4">
@@ -565,6 +592,21 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
               <div><label class="label">Pedido mínimo (RD$)</label><input class="input-field" type="number" formControlName="min_order_amount" /></div>
               <div class="sm:col-span-2"><label class="label">Descripción</label>
                 <textarea class="input-field resize-none" rows="2" formControlName="description"></textarea></div>
+              <div>
+                <label class="label">Latitud</label>
+                <input class="input-field font-mono" type="number" step="0.000001" formControlName="lat" placeholder="18.4718" />
+              </div>
+              <div>
+                <label class="label">Longitud</label>
+                <input class="input-field font-mono" type="number" step="0.000001" formControlName="lng" placeholder="-69.9513" />
+              </div>
+              @if (!editForm.get('lat')!.value || !editForm.get('lng')!.value) {
+                <div class="sm:col-span-2">
+                  <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                    ⚠️ Sin coordenadas. El cálculo de delivery para este comercio no funcionará.
+                  </p>
+                </div>
+              }
             </div>
             <div class="flex gap-3 justify-end pt-2">
               <button type="button" class="btn-secondary" (click)="showEditForm.set(false)">Cancelar</button>
@@ -686,6 +728,8 @@ export class StoreDetailPageComponent implements OnInit {
         sector: [''],
         city: ['Santo Domingo', Validators.required],
         min_order_amount: [200],
+        lat: [null as number | null],
+        lng: [null as number | null],
     });
 
     ngOnInit(): void {
@@ -784,6 +828,8 @@ export class StoreDetailPageComponent implements OnInit {
             sector: s.sector ?? '',
             city: s.city,
             min_order_amount: s.min_order_amount,
+            lat: s.lat ?? null,
+            lng: s.lng ?? null,
         });
         this.showEditForm.set(true);
     }
