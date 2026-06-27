@@ -60,6 +60,10 @@ export class OperatorBookingsService {
 
     // ─── List ──────────────────────────────────────────────────────────────────
     async listBookings(operatorId: string, filters: BookingFilters = {}): Promise<BookingListRow[]> {
+        // operatorId is accepted for API compatibility but RLS already scopes results
+        // to excursions owned by the authenticated operator. No client-side operator_id
+        // filter is applied here because bookings has no denormalised operator_id column.
+        void operatorId;
         let q = this.supabase
             .from('bookings')
             .select(`
@@ -70,7 +74,6 @@ export class OperatorBookingsService {
           excursions!excursion_id ( id, name )
         )
       `)
-            .eq('operator_id', operatorId)
             .order('created_at', { ascending: false });
 
         if (filters.status && filters.status !== 'all') {
@@ -200,26 +203,36 @@ export class OperatorBookingsService {
     }
 
     // ─── Status changes ────────────────────────────────────────────────────────
-    async confirmBooking(bookingId: string): Promise<void> {
-        await this.supabase.from('bookings').update({
-            status: 'confirmada',
-            confirmed_at: new Date().toISOString(),
-        }).eq('id', bookingId);
+    /** Approve a pending booking via RPC (validates authorization, spots, status atomically). */
+    async confirmBooking(bookingId: string): Promise<{ success: boolean; error?: string }> {
+        const { data, error } = await this.supabase.rpc('approve_excursion_booking', {
+            p_booking_id: bookingId,
+        });
+        if (error) return { success: false, error: error.message };
+        const result = data as { success?: boolean; error?: string } | null;
+        if (result?.error) return { success: false, error: result.error };
+        return { success: true };
     }
 
-    async cancelBooking(bookingId: string, reason: string): Promise<void> {
-        await this.supabase.from('bookings').update({
-            status: 'cancelada',
-            cancellation_reason: reason,
-            cancelled_at: new Date().toISOString(),
-        }).eq('id', bookingId);
+    /** Cancel a booking via RPC (validates authorization and status atomically). */
+    async cancelBooking(bookingId: string, reason: string): Promise<{ success: boolean; error?: string }> {
+        const { data, error } = await this.supabase.rpc('cancel_excursion_booking', {
+            p_booking_id: bookingId,
+            p_reason: reason || null,
+        });
+        if (error) return { success: false, error: error.message };
+        const result = data as { success?: boolean; error?: string } | null;
+        if (result?.error) return { success: false, error: result.error };
+        return { success: true };
     }
 
-    async completeBooking(bookingId: string): Promise<void> {
-        await this.supabase.from('bookings').update({
+    async completeBooking(bookingId: string): Promise<{ success: boolean; error?: string }> {
+        const { error } = await this.supabase.from('bookings').update({
             status: 'completada',
             completed_at: new Date().toISOString(),
         }).eq('id', bookingId);
+        if (error) return { success: false, error: error.message };
+        return { success: true };
     }
 
     // ─── Excursions for filter ─────────────────────────────────────────────────

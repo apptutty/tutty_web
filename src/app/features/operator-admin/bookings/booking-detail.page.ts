@@ -385,11 +385,13 @@ export class BookingDetailPageComponent implements OnInit {
         if (!b) return;
         this.actionLoading.set(true);
         try {
-            await this.bookingSvc.confirmBooking(b.id);
+            const result = await this.bookingSvc.confirmBooking(b.id);
+            if (!result.success) {
+                this.toast.error(this.approveErrorLabel(result.error));
+                return;
+            }
             this.booking.update(bk => bk ? { ...bk, status: 'confirmada' as BookingStatus, confirmed_at: new Date().toISOString() } : bk);
             this.toast.success('✅ Reserva confirmada');
-        } catch (e: unknown) {
-            this.toast.error((e as Error).message ?? 'Error al confirmar la reserva.');
         } finally { this.actionLoading.set(false); }
     }
 
@@ -398,11 +400,13 @@ export class BookingDetailPageComponent implements OnInit {
         if (!b) return;
         this.actionLoading.set(true);
         try {
-            await this.bookingSvc.completeBooking(b.id);
+            const result = await this.bookingSvc.completeBooking(b.id);
+            if (!result.success) {
+                this.toast.error(result.error ?? 'Error al completar la reserva.');
+                return;
+            }
             this.booking.update(bk => bk ? { ...bk, status: 'completada' as BookingStatus, completed_at: new Date().toISOString() } : bk);
             this.toast.success('✔ Reserva marcada como completada');
-        } catch (e: unknown) {
-            this.toast.error((e as Error).message ?? 'Error al completar la reserva.');
         } finally { this.actionLoading.set(false); }
     }
 
@@ -414,13 +418,32 @@ export class BookingDetailPageComponent implements OnInit {
         if (!b) return;
         this.actionLoading.set(true);
         try {
-            await this.bookingSvc.cancelBooking(b.id, this.cancelReason);
+            const result = await this.bookingSvc.cancelBooking(b.id, this.cancelReason);
+            if (!result.success) {
+                this.cancelError.set(this.cancelErrorLabel(result.error));
+                return;
+            }
             this.booking.update(bk => bk ? { ...bk, status: 'cancelada' as BookingStatus, cancellation_reason: this.cancelReason, cancelled_at: new Date().toISOString() } : bk);
             this.showCancelModal.set(false);
             this.toast.success('Reserva cancelada');
-        } catch (e: unknown) {
-            this.cancelError.set((e as Error).message);
         } finally { this.actionLoading.set(false); }
+    }
+
+    private approveErrorLabel(err?: string): string {
+        switch (err) {
+            case 'not_enough_spots': return 'No hay cupos suficientes para aprobar esta reserva.';
+            case 'invalid_status':   return 'Esta reserva ya no está en estado pendiente.';
+            case 'unauthorized':     return 'No tienes permiso para aprobar esta reserva.';
+            default: return 'Error al confirmar la reserva. Inténtalo de nuevo.';
+        }
+    }
+
+    private cancelErrorLabel(err?: string): string {
+        switch (err) {
+            case 'invalid_status': return 'Esta reserva no puede cancelarse en su estado actual.';
+            case 'unauthorized':   return 'No tienes permiso para cancelar esta reserva.';
+            default: return 'Error al cancelar la reserva. Inténtalo de nuevo.';
+        }
     }
 
     async sendReminder() {

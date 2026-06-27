@@ -307,9 +307,14 @@ export class OperatorBookingsPageComponent implements OnInit {
     viewDetail(id: string) { this.router.navigate(['/operator/bookings', id]); }
 
     async quickConfirm(bk: BookingListRow) {
+        if (this.actionId()) return;
         this.actionId.set(bk.id);
         try {
-            await this.bookingSvc.confirmBooking(bk.id);
+            const result = await this.bookingSvc.confirmBooking(bk.id);
+            if (!result.success) {
+                this.error.set(this.approveErrorLabel(result.error));
+                return;
+            }
             this.allBookings.update(list => list.map(b => b.id === bk.id ? { ...b, status: 'confirmada' as BookingStatus } : b));
             this.applyFilters();
         } finally { this.actionId.set(null); }
@@ -322,7 +327,11 @@ export class OperatorBookingsPageComponent implements OnInit {
         if (!target || !this.cancelReason.trim()) return;
         this.cancelling.set(true);
         try {
-            await this.bookingSvc.cancelBooking(target.id, this.cancelReason);
+            const result = await this.bookingSvc.cancelBooking(target.id, this.cancelReason);
+            if (!result.success) {
+                this.error.set(this.cancelErrorLabel(result.error));
+                return;
+            }
             this.allBookings.update(list => list.map(b => b.id === target.id ? { ...b, status: 'cancelada' as BookingStatus } : b));
             this.applyFilters();
             this.cancelTarget.set(null);
@@ -330,12 +339,34 @@ export class OperatorBookingsPageComponent implements OnInit {
     }
 
     async quickComplete(bk: BookingListRow) {
+        if (this.actionId()) return;
         this.actionId.set(bk.id);
         try {
-            await this.bookingSvc.completeBooking(bk.id);
+            const result = await this.bookingSvc.completeBooking(bk.id);
+            if (!result.success) {
+                this.error.set('Error al completar la reserva. Inténtalo de nuevo.');
+                return;
+            }
             this.allBookings.update(list => list.map(b => b.id === bk.id ? { ...b, status: 'completada' as BookingStatus } : b));
             this.applyFilters();
         } finally { this.actionId.set(null); }
+    }
+
+    private approveErrorLabel(err?: string): string {
+        switch (err) {
+            case 'not_enough_spots': return 'No hay cupos suficientes para aprobar esta reserva.';
+            case 'invalid_status':   return 'Esta reserva ya no está en estado pendiente.';
+            case 'unauthorized':     return 'No tienes permiso para aprobar esta reserva.';
+            default: return 'Error al aprobar la reserva. Inténtalo de nuevo.';
+        }
+    }
+
+    private cancelErrorLabel(err?: string): string {
+        switch (err) {
+            case 'invalid_status': return 'Esta reserva no puede cancelarse en su estado actual.';
+            case 'unauthorized':   return 'No tienes permiso para cancelar esta reserva.';
+            default: return 'Error al cancelar la reserva. Inténtalo de nuevo.';
+        }
     }
 
     exportCsv() { this.bookingSvc.exportToCsv(this.filtered()); }
