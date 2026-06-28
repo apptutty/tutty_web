@@ -12,8 +12,10 @@ import { StoreAdminService } from '../store-admin.service';
 import { StoreCatalogService } from './store-catalog.service';
 import { VariantsManagerComponent } from './variants-manager.component';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
-import { MenuItem, MenuCategory, ProductVariant } from '../../../core/supabase/database.types';
-import { AdminImageFieldComponent } from '../../../shared/ui/image-field/admin-image-field.component';
+import { MenuItem, MenuCategory, ProductVariant, CommerceCategory } from '../../../core/supabase/database.types';
+import { CommerceCategoryPickerComponent } from '../../../shared/ui/category-picker/commerce-category-picker.component';
+import { SettingsService } from '../../settings/settings.service';
+import { ScheduleWarningCardComponent } from '../shared/schedule-warning-card.component';
 
 const UNIT_TYPES = ['unidad', 'par', 'caja', 'frasco', 'pastilla', 'ml', 'mg', 'g', 'kg', 'litro', 'metro'];
 const DAYS = [
@@ -30,6 +32,7 @@ interface ProductForm {
     name: string;
     description: string;
     category_id: string | null;
+    tutty_category_id: string | null;
     price: number | null;
     discount_price: number | null;
     is_available: boolean;
@@ -60,349 +63,1087 @@ interface ProductForm {
 @Component({
     selector: 'app-store-product-form',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, VariantsManagerComponent, AdminImageFieldComponent],
+    imports: [CommonModule, FormsModule, RouterLink, VariantsManagerComponent, CommerceCategoryPickerComponent, ScheduleWarningCardComponent],
     styles: [`
-    .section-title { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:12px; }
-    .day-btn { width:32px; height:32px; border-radius:50%; border:2px solid #e5e7eb; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
-    .day-btn.on { background:#e91e8c; border-color:#e91e8c; color:white; }
-    .day-btn:not(.on):hover { border-color:#e91e8c; color:#e91e8c; }
-    .tag-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; background:#fce7f3; color:#9d174d; border-radius:99px; font-size:0.75rem; }
-    input[type=range]::-webkit-slider-thumb { accent-color:#e91e8c; }
+    :host {
+      display: block;
+      min-width: 0;
+    }
+    .product-editor-page {
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+      background: var(--admin-bg, #f6f7fb);
+      min-width: 0;
+    }
+    .product-editor-header {
+      border: 1px solid #e7eaf1;
+      background:
+        radial-gradient(circle at 94% 8%, rgba(235,27,141,.10), transparent 24%),
+        linear-gradient(180deg, #fff, #fbfcff);
+      border-radius: 26px;
+      box-shadow: 0 8px 24px rgba(18, 24, 40, .07);
+      padding: 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .product-editor-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      min-width: 0;
+      flex: 1;
+    }
+    .product-editor-back {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      border: 1px solid #e7eaf1;
+      background: #fff;
+      color: #647084;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(18,24,40,.04);
+    }
+    .product-editor-title {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: #111827;
+    }
+    .product-editor-subtitle {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: #667085;
+      font-weight: 500;
+    }
+    .product-editor-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .action-secondary,
+    .action-primary {
+      height: 42px;
+      border-radius: 15px;
+      padding: 0 18px;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .action-secondary {
+      border-color: #e7eaf1;
+      background: #fff;
+      color: #344054;
+    }
+    .action-primary {
+      background: linear-gradient(135deg, #f2299b, #df117f);
+      color: #fff;
+      box-shadow: 0 12px 22px rgba(235, 27, 141, .24);
+    }
+    .action-primary:disabled {
+      opacity: .6;
+      cursor: default;
+    }
+    .product-editor-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 22px;
+      align-items: start;
+      max-width: 1320px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .product-editor-main {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+    .product-editor-aside {
+      position: sticky;
+      top: 86px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+    .product-form-card {
+      background: #fff;
+      border: 1px solid #e7eaf1;
+      border-radius: 24px;
+      box-shadow: 0 8px 24px rgba(18,24,40,.07);
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+    .product-card-head h2 {
+      margin: 0;
+      font-size: 16px;
+      color: #111827;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .product-card-head p {
+      margin: 6px 0 0;
+      color: #7b8496;
+      font-size: 12.5px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+    .product-basic-grid {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      min-width: 0;
+    }
+    .product-dropzone-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .product-dropzone {
+      border: 2px dashed #d6dce8;
+      background: #fbfcff;
+      border-radius: 22px;
+      min-height: 250px;
+      padding: 16px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .product-dropzone:hover,
+    .product-dropzone:focus-visible {
+      border-color: #eb1b8d;
+      box-shadow: 0 0 0 4px rgba(235, 27, 141, .10);
+      background: #fff;
+      outline: none;
+    }
+    .product-dropzone img {
+      width: 100%;
+      max-height: 250px;
+      object-fit: cover;
+      border-radius: 16px;
+    }
+    .drop-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 22px;
+      background: #ffe7f4;
+      color: #eb1b8d;
+      display: grid;
+      place-items: center;
+      font-size: 32px;
+      margin: 0 auto 12px;
+    }
+    .drop-title {
+      margin: 0;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+    .drop-link {
+      margin: 8px 0 0;
+      color: #eb1b8d;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .drop-hint {
+      margin: 12px 0 0;
+      color: #98a2b3;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .drop-remove {
+      margin-top: 8px;
+      border: 0;
+      background: transparent;
+      color: #b42318;
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .product-field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      min-width: 0;
+    }
+    .product-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+    .product-field label {
+      color: #344054;
+      font-size: 12.5px;
+      font-weight: 800;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .optional {
+      color: #a0a8b8;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .product-input,
+    .product-select,
+    .product-textarea {
+      width: 100%;
+      border: 1px solid #e7eaf1;
+      border-radius: 15px;
+      background: #fbfcff;
+      color: #111827;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: .15s;
+    }
+    .product-input,
+    .product-select {
+      height: 48px;
+      padding: 0 14px;
+    }
+    .product-textarea {
+      min-height: 116px;
+      resize: vertical;
+      padding: 12px 14px;
+      line-height: 1.45;
+    }
+    .product-input::placeholder,
+    .product-textarea::placeholder {
+      color: #98a2b3;
+    }
+    .product-input:focus,
+    .product-select:focus,
+    .product-textarea:focus {
+      border-color: #eb1b8d;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(235,27,141,.10);
+    }
+    .product-category-box {
+      border: 1px solid #e7eaf1;
+      border-radius: 16px;
+      background: #fbfcff;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .category-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .category-label {
+      color: #98a2b3;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .category-value {
+      color: #344054;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .category-hint {
+      margin: 0;
+      color: #98a2b3;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .category-btn {
+      height: 40px;
+      border-radius: 13px;
+      border: 1px solid #d6dce8;
+      background: #fff;
+      color: #344054;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #ffe7f4;
+      color: #be185d;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tag-chip button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .product-check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .product-check-pill {
+      min-height: 38px;
+      border: 1px solid #e7eaf1;
+      border-radius: 999px;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .product-check-pill input {
+      width: 20px;
+      height: 20px;
+      accent-color: #eb1b8d;
+      margin: 0;
+    }
+    .product-range-wrap {
+      border: 1px solid #e7eaf1;
+      border-radius: 20px;
+      background: #fbfcff;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .range-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .range-head strong {
+      color: #111827;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .range-head span {
+      color: #eb1b8d;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .product-range {
+      width: 100%;
+      accent-color: #eb1b8d;
+    }
+    .range-meta {
+      display: flex;
+      justify-content: space-between;
+      color: #98a2b3;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .range-hint {
+      margin: 0;
+      color: #98a2b3;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .product-preview-card {
+      border: 1px solid #e7eaf1;
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(18,24,40,.07);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+    .aside-head h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #111827;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .aside-head p {
+      margin: 8px 0 0;
+      color: #667085;
+      font-size: 12.5px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+    .product-preview {
+      border: 1px solid #e7eaf1;
+      border-radius: 22px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .product-preview-image {
+      margin: 16px;
+      border-radius: 22px;
+      background: #f2f4f7;
+      min-height: 190px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .product-preview-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .featured-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #f0b429;
+      color: #fff;
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .preview-body {
+      padding: 0 16px 16px;
+      display: grid;
+      gap: 8px;
+    }
+    .product-preview-category {
+      margin: 0;
+      color: #98a2b3;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .product-preview-name {
+      margin: 0;
+      color: #111827;
+      font-size: 22px;
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .product-preview-meta {
+      margin: 0;
+      color: #98a2b3;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .product-preview-price {
+      margin: 0;
+      color: #111827;
+      font-size: 26px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .price-old {
+      font-size: 14px;
+      color: #98a2b3;
+      font-weight: 700;
+      text-decoration: line-through;
+    }
+    .product-preview-footer {
+      border-top: 1px solid #eef1f6;
+      padding-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .preview-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .preview-status.on {
+      background: #eafbf1;
+      color: #067647;
+    }
+    .preview-status.off {
+      background: #feefef;
+      color: #b42318;
+    }
+    .preview-pill {
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      background: #ffe7f4;
+      color: #be185d;
+    }
+    .product-summary-list {
+      display: grid;
+      gap: 8px;
+    }
+    .product-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eef1f6;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .product-summary-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    .product-summary-row strong {
+      color: #111827;
+      font-size: 17px;
+      font-weight: 800;
+      text-align: right;
+    }
+    .product-checklist-card {
+      border: 1px solid #ffd0e8;
+      border-radius: 24px;
+      background: #fff6fb;
+      padding: 20px;
+      display: grid;
+      gap: 10px;
+    }
+    .product-checklist {
+      margin: 0;
+      padding-left: 18px;
+      color: #667085;
+      font-size: 13px;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+    .product-footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    @media (max-width: 1280px) {
+      .product-editor-layout {
+        grid-template-columns: 1fr;
+        max-width: 900px;
+      }
+      .product-editor-aside {
+        position: static;
+      }
+    }
+    @media (max-width: 980px) {
+      .product-editor-page {
+        padding: 16px;
+      }
+      .product-editor-header {
+        padding: 16px;
+      }
+      .product-editor-heading {
+        width: 100%;
+      }
+      .product-editor-title {
+        font-size: 26px;
+      }
+      .product-editor-subtitle {
+        font-size: 13px;
+      }
+      .product-editor-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+      .product-basic-grid {
+        grid-template-columns: 1fr;
+      }
+      .product-dropzone {
+        min-height: 220px;
+      }
+      .product-field-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 680px) {
+      .product-editor-title {
+        font-size: 24px;
+      }
+      .product-editor-subtitle {
+        font-size: 13px;
+      }
+      .product-editor-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .action-secondary,
+      .action-primary {
+        width: 100%;
+      }
+      .product-footer-actions {
+        flex-direction: column;
+      }
+      .product-preview-name {
+        font-size: 30px;
+      }
+      .product-preview-price {
+        font-size: 38px;
+      }
+    }
   `],
     template: `
-  <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
-      <a routerLink="/store/catalog"
-        class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-        </svg>
-      </a>
-      <h1 class="text-xl font-bold text-gray-900 flex-1">
-        {{ isEditMode() ? 'Editar producto' : 'Nuevo producto' }}
-      </h1>
-      @if (isLoading()) {
-        <div class="w-5 h-5 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin"></div>
+    <div class="product-editor-page">
+      @if (showOutsideScheduleAlert() && !warningDismissed()) {
+        <app-schedule-warning-card
+          [scheduleWindow]="scheduleWindow()"
+          (editSchedule)="goToSettings()"
+          (close)="warningDismissed.set(true)" />
       }
-      <button type="button" (click)="submit()" [disabled]="isSaving()"
-        class="btn-primary px-5 py-2 text-sm disabled:opacity-50">
-        {{ isSaving() ? 'Guardando...' : 'Guardar' }}
-      </button>
-    </div>
 
-    <form (ngSubmit)="submit()" class="max-w-3xl mx-auto p-6 space-y-6">
-
-      <!-- ─── S1: Información básica ──────────────────────────── -->
-      <div class="card p-5 space-y-4">
-        <p class="section-title">Información básica</p>
-
-        <!-- Photo -->
-        <div class="flex gap-4 items-start">
-          <div class="w-28 flex-shrink-0">
-            <app-admin-image-field
-              label="Foto del producto"
-              aspect="1/1"
-              [maxMb]="5"
-              [currentUrl]="photoPreview()"
-              [uploading]="uploadingPhoto()"
-              (fileSelected)="onPhotoSelected($event)"
-              (removed)="clearPhoto()">
-            </app-admin-image-field>
-          </div>
-
-          <div class="flex-1 space-y-3">
-            <!-- Name -->
-            <div>
-              <label class="label">Nombre *</label>
-              <input [(ngModel)]="form.name" name="name" required
-                class="input-field w-full" placeholder="Ej. Pizza Margarita" />
-            </div>
-            <!-- Description -->
-            <div>
-              <label class="label">Descripción</label>
-              <textarea [(ngModel)]="form.description" name="description" rows="2"
-                class="input-field w-full resize-none" placeholder="Descripción breve..."></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Category + Display order -->
-        <div class="grid grid-cols-2 gap-3">
+      <section class="product-editor-header">
+        <div class="product-editor-heading">
+          <a routerLink="/store/catalog" class="product-editor-back" aria-label="Volver">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </a>
           <div>
-            <label class="label">Categoría</label>
-            <select [(ngModel)]="form.category_id" name="category_id" class="input-field w-full">
-              <option [value]="null">Sin categoría</option>
-              @for (cat of categories(); track cat.id) {
-                <option [value]="cat.id">{{ cat.name }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label class="label">Orden de visualización</label>
-            <input type="number" [(ngModel)]="form.display_order" name="display_order" min="0"
-              class="input-field w-full" />
+            <h1 class="product-editor-title">{{ isEditMode() ? 'Editar producto' : 'Nuevo producto' }}</h1>
+            <p class="product-editor-subtitle">
+              {{ isEditMode()
+                ? 'Actualiza la información, precio y disponibilidad del producto.'
+                : ('Crea un producto para el menú de ' + storeName() + '.') }}
+            </p>
           </div>
         </div>
+        <div class="product-editor-actions">
+          <a routerLink="/store/catalog" class="action-secondary">Cancelar</a>
+          <button type="button" class="action-primary" [disabled]="isSaving()" (click)="submit()">
+            {{ isSaving() ? 'Guardando...' : (isEditMode() ? 'Guardar cambios' : 'Crear producto') }}
+          </button>
+        </div>
+      </section>
 
-        <!-- Price -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="label">Precio *</label>
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
-              <input type="number" [(ngModel)]="form.price" name="price" required min="0" step="0.01"
-                class="input-field w-full pl-7" placeholder="0.00" />
+      <div class="product-editor-layout">
+        <form (ngSubmit)="submit()" class="product-editor-main">
+          <section class="product-form-card">
+            <div class="product-card-head">
+              <h2>Información básica</h2>
+              <p>Define cómo se verá el producto dentro del menú.</p>
             </div>
-          </div>
-          <div>
-            <label class="label">Precio con descuento</label>
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
-              <input type="number" [(ngModel)]="form.discount_price" name="discount_price" min="0" step="0.01"
-                class="input-field w-full pl-7" placeholder="Opcional" />
+
+            <div class="product-basic-grid">
+              <div>
+                <label class="product-dropzone-label">Foto del producto</label>
+                <input #fileInput type="file" class="hidden" accept="image/png,image/jpeg,image/webp" (change)="onPhotoInputChange($event)" />
+                <div class="product-dropzone" role="button" tabindex="0" aria-label="Foto del producto" (click)="fileInput.click()" (keydown.enter)="fileInput.click()" (keydown.space)="fileInput.click()">
+                  @if (photoPreview()) {
+                    <img [src]="photoPreview()!" alt="Foto del producto" />
+                  } @else {
+                    <div>
+                      <div class="drop-icon">🖼️</div>
+                      <p class="drop-title">Arrastra una imagen aquí</p>
+                      <p class="drop-link">o haz clic para subir</p>
+                      <p class="drop-hint">JPG, PNG · máx. 5MB</p>
+                    </div>
+                  }
+                </div>
+                @if (photoPreview()) {
+                  <button type="button" class="drop-remove" (click)="clearPhoto()">Quitar imagen</button>
+                }
+              </div>
+
+              <div class="product-field">
+                <div class="product-field">
+                  <label>Nombre *</label>
+                  <input [(ngModel)]="form.name" name="name" required class="product-input" placeholder="Ej: Pizza Margarita" />
+                </div>
+                <div class="product-field">
+                  <label>Descripción</label>
+                  <textarea [(ngModel)]="form.description" name="description" class="product-textarea" placeholder="Descripción breve del producto..."></textarea>
+                </div>
+                <div class="product-field-grid">
+                  <div class="product-field">
+                    <label>Sección del menú</label>
+                    <select [(ngModel)]="form.category_id" name="category_id" class="product-select">
+                      <option [value]="null">Sin sección</option>
+                      @for (cat of categories(); track cat.id) {
+                        <option [value]="cat.id">{{ cat.name }}{{ !cat.tutty_category_id ? ' ⚠️' : '' }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="product-field">
+                    <label>Orden de visualización</label>
+                    <input type="number" [(ngModel)]="form.display_order" name="display_order" min="0" class="product-input" />
+                  </div>
+                </div>
+
+                <div class="product-category-box">
+                  <div class="category-top">
+                    <div>
+                      <div class="category-label">Categoría Tuttyno relacionada</div>
+                      <div class="category-value">
+                        {{ resolvedTuttyCategory() ? resolvedTuttyCategory()!.name : 'Sin categoría relacionada' }}
+                      </div>
+                    </div>
+                    <button type="button" class="category-btn" (click)="overrideTuttyOpen.set(!overrideTuttyOpen())">Cambiar</button>
+                  </div>
+                  <p class="category-hint">Esto ayuda a clasificar el producto dentro de Tuttyno, pero no cambia la sección visible del menú.</p>
+                  @if (overrideTuttyOpen()) {
+                    <app-commerce-category-picker
+                      label="Categoría Tuttyno relacionada"
+                      placeholder="Seleccionar categoría..."
+                      [categories]="tuttyCategoriesForProduct()"
+                      [selectedId]="form.tutty_category_id"
+                      [loading]="tuttyCategoriesLoading()"
+                      [allowClear]="true"
+                      (categorySelected)="form.tutty_category_id = $event?.id ?? null">
+                    </app-commerce-category-picker>
+                  }
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- Tags -->
-        <div>
-          <label class="label">Etiquetas</label>
-          <div class="flex flex-wrap gap-1.5 mb-2">
-            @for (tag of form.tags; track tag) {
-              <span class="tag-chip">
-                {{ tag }}
-                <button type="button" (click)="removeTag(tag)" class="hover:text-red-600 ml-1">✕</button>
-              </span>
-            }
-          </div>
-          <input [(ngModel)]="tagInput" name="tagInput"
-            (keydown.enter)="addTag(); $event.preventDefault()"
-            (keydown.comma)="addTag(); $event.preventDefault()"
-            placeholder="Escribe y presiona Enter para agregar..."
-            class="input-field w-full text-sm" />
-        </div>
-
-        <!-- Toggles -->
-        <div class="flex items-center gap-6">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" [(ngModel)]="form.is_available" name="is_available"
-              class="w-4 h-4 accent-pink-600" />
-            <span class="text-sm font-medium text-gray-700">Disponible</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" [(ngModel)]="form.is_featured" name="is_featured"
-              class="w-4 h-4 accent-pink-600" />
-            <span class="text-sm font-medium text-gray-700">Destacado</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- ─── S2: Horario y límites ────────────────────────────── -->
-      <div class="card p-5 space-y-4">
-        <p class="section-title">Horario y límites</p>
-
-        <!-- Hours -->
-        <div class="flex items-center gap-3">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" [(ngModel)]="form.use_hours" name="use_hours"
-              class="w-4 h-4 accent-pink-600" />
-            <span class="text-sm font-medium text-gray-700">Disponible en horario específico</span>
-          </label>
-        </div>
-        @if (form.use_hours) {
-          <div class="grid grid-cols-2 gap-3 pl-6">
-            <div>
-              <label class="label">Desde</label>
-              <input type="time" [(ngModel)]="form.available_from" name="available_from"
-                class="input-field w-full" />
+          <section class="product-form-card">
+            <div class="product-card-head">
+              <h2>Precio y disponibilidad</h2>
+              <p>Configura precio, visibilidad y etiquetas comerciales.</p>
             </div>
-            <div>
-              <label class="label">Hasta</label>
-              <input type="time" [(ngModel)]="form.available_until" name="available_until"
-                class="input-field w-full" />
+
+            <div class="product-field-grid">
+              <div class="product-field">
+                <label>Precio *</label>
+                <input type="number" [(ngModel)]="form.price" name="price" required min="0" step="0.01" class="product-input" placeholder="$0.00" />
+              </div>
+              <div class="product-field">
+                <label>Precio con descuento <span class="optional">Opcional</span></label>
+                <input type="number" [(ngModel)]="form.discount_price" name="discount_price" min="0" step="0.01" class="product-input" placeholder="Opcional" />
+              </div>
             </div>
-          </div>
-        }
 
-        <!-- Days -->
-        <div class="flex items-center gap-3">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" [(ngModel)]="form.use_days" name="use_days"
-              class="w-4 h-4 accent-pink-600" />
-            <span class="text-sm font-medium text-gray-700">Solo en días específicos</span>
-          </label>
-        </div>
-        @if (form.use_days) {
-          <div class="flex gap-2 pl-6">
-            @for (day of days; track day.key) {
-              <button type="button"
-                class="day-btn" [class.on]="form.available_days.includes(day.key)"
-                (click)="toggleDay(day.key)">{{ day.label }}</button>
-            }
-          </div>
-        }
-
-        <!-- Max qty -->
-        <div class="max-w-xs">
-          <label class="label">Máx. cantidad por pedido</label>
-          <input type="number" [(ngModel)]="form.max_qty_per_order" name="max_qty_per_order"
-            min="1" class="input-field w-full" placeholder="Sin límite" />
-        </div>
-      </div>
-
-      <!-- ─── S3: Campos por tipo de comercio ─────────────────── -->
-      @if (commerceType() === 'restaurante') {
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Opciones de menú</p>
-          <div class="space-y-1">
-            <label class="label">Tiempo de preparación: <strong>{{ form.preparation_time ?? 0 }} min</strong></label>
-            <input type="range" [(ngModel)]="form.preparation_time" name="preparation_time"
-              min="0" max="120" step="5" class="w-full accent-pink-600" />
-            <div class="flex justify-between text-xs text-gray-400"><span>0 min</span><span>120 min</span></div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="label">Calorías (kcal)</label>
-              <input type="number" [(ngModel)]="form.calories" name="calories"
-                min="0" class="input-field w-full" placeholder="Opcional" />
+            <div class="product-field">
+              <label>Etiquetas</label>
+              <div class="flex flex-wrap gap-1.5 mb-2">
+                @for (tag of form.tags; track tag) {
+                  <span class="tag-chip">
+                    {{ tag }}
+                    <button type="button" (click)="removeTag(tag)">✕</button>
+                  </span>
+                }
+              </div>
+              <input [(ngModel)]="tagInput" name="tagInput"
+                (keydown.enter)="addTag(); $event.preventDefault()"
+                (keydown.comma)="addTag(); $event.preventDefault()"
+                placeholder="Escribe y presiona Enter para agregar..."
+                class="product-input" />
             </div>
-            <div class="flex items-center pt-5">
-              <label class="flex items-center gap-2 cursor-pointer select-none">
-                <input type="checkbox" [(ngModel)]="form.is_combo" name="is_combo"
-                  class="w-4 h-4 accent-pink-600" />
-                <span class="text-sm font-medium text-gray-700">Es combo / combo meal</span>
+
+            <div class="product-check-row">
+              <label class="product-check-pill">
+                <input type="checkbox" [(ngModel)]="form.is_available" name="is_available" />
+                Disponible
+              </label>
+              <label class="product-check-pill">
+                <input type="checkbox" [(ngModel)]="form.is_featured" name="is_featured" />
+                Destacado
               </label>
             </div>
-          </div>
-        </div>
-      }
+          </section>
 
-      @if (commerceType() === 'farmacia') {
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Información farmacéutica</p>
-          <div class="flex gap-6">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" [(ngModel)]="form.requires_prescription" name="requires_prescription"
-                class="w-4 h-4 accent-pink-600" />
-              <span class="text-sm font-medium text-gray-700">Requiere receta (Rx)</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" [(ngModel)]="form.controlled_substance" name="controlled_substance"
-                class="w-4 h-4 accent-pink-600" />
-              <span class="text-sm font-medium text-gray-700">Sustancia controlada</span>
-            </label>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="label">Marca / Laboratorio</label>
-              <input [(ngModel)]="form.brand" name="brand" class="input-field w-full" placeholder="Ej. Bayer" />
+          <section class="product-form-card">
+            <div class="product-card-head">
+              <h2>Horario y límites</h2>
+              <p>Controla cuándo y cuánto puede ordenar el cliente.</p>
             </div>
-            <div>
-              <label class="label">Unidad de medida</label>
-              <select [(ngModel)]="form.unit_type" name="unit_type" class="input-field w-full">
-                <option [value]="null">—</option>
-                @for (u of unitTypes; track u) { <option [value]="u">{{ u }}</option> }
-              </select>
-            </div>
-            <div>
-              <label class="label">SKU / Código interno</label>
-              <input [(ngModel)]="form.sku" name="sku" class="input-field w-full font-mono" placeholder="ABC-123" />
-            </div>
-            <div>
-              <label class="label">Código de barras</label>
-              <input [(ngModel)]="form.barcode" name="barcode" class="input-field w-full font-mono" placeholder="7501234567890" />
-            </div>
-          </div>
-        </div>
-      }
 
-      @if (commerceType() === 'bodega' || commerceType() === 'colmado' || commerceType() === 'supermercado') {
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Información del producto</p>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="label">Marca</label>
-              <input [(ngModel)]="form.brand" name="brand_gro" class="input-field w-full" placeholder="Ej. Nestlé" />
+            <div class="product-check-row">
+              <label class="product-check-pill">
+                <input type="checkbox" [(ngModel)]="form.use_hours" name="use_hours" />
+                Disponible en horario específico
+              </label>
+              <label class="product-check-pill">
+                <input type="checkbox" [(ngModel)]="form.use_days" name="use_days" />
+                Solo en días específicos
+              </label>
             </div>
-            <div>
-              <label class="label">Unidad de medida</label>
-              <select [(ngModel)]="form.unit_type" name="unit_type_gro" class="input-field w-full">
-                <option [value]="null">—</option>
-                @for (u of unitTypes; track u) { <option [value]="u">{{ u }}</option> }
-              </select>
-            </div>
-            <div>
-              <label class="label">SKU</label>
-              <input [(ngModel)]="form.sku" name="sku_gro" class="input-field w-full font-mono" placeholder="ABC-123" />
-            </div>
-            <div>
-              <label class="label">Código de barras</label>
-              <input [(ngModel)]="form.barcode" name="barcode_gro" class="input-field w-full font-mono" />
-            </div>
-          </div>
-        </div>
-      }
 
-      @if (commerceType() === 'tienda_ropa' || commerceType() === 'electronica') {
-        <div class="card p-5 space-y-4">
-          <p class="section-title">{{ commerceType() === 'tienda_ropa' ? 'Tallas y colores' : 'Variantes' }}</p>
-          <div class="grid grid-cols-2 gap-3 mb-2">
-            <div>
-              <label class="label">SKU base</label>
-              <input [(ngModel)]="form.sku" name="sku_var" class="input-field w-full font-mono" placeholder="BASE-001" />
-            </div>
-          </div>
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" [(ngModel)]="form.has_variants" name="has_variants"
-              class="w-4 h-4 accent-pink-600" />
-            <span class="text-sm font-medium text-gray-700">Este producto tiene variantes</span>
-          </label>
-          @if (form.has_variants) {
-            <app-variants-manager
-              [initialVariants]="existingVariants()"
-              [commerceType]="commerceType()"
-              (variantsChange)="pendingVariants = $event" />
-          }
-        </div>
-      }
-
-      <!-- ─── S4: Inventario ──────────────────────────────────── -->
-      @if (commerceType() !== 'restaurante') {
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Control de inventario</p>
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" [(ngModel)]="form.track_stock" name="track_stock"
-              class="w-4 h-4 accent-pink-600" />
-            <span class="text-sm font-medium text-gray-700">Rastrear stock de este producto</span>
-          </label>
-          @if (form.track_stock) {
-            <div class="grid grid-cols-2 gap-3 pl-6">
-              <div>
-                <label class="label">Cantidad en stock</label>
-                <input type="number" [(ngModel)]="form.stock_count" name="stock_count"
-                  min="0" class="input-field w-full" placeholder="0" />
+            @if (form.use_hours) {
+              <div class="product-field-grid">
+                <div class="product-field">
+                  <label>Desde</label>
+                  <input type="time" [(ngModel)]="form.available_from" name="available_from" class="product-input" />
+                </div>
+                <div class="product-field">
+                  <label>Hasta</label>
+                  <input type="time" [(ngModel)]="form.available_until" name="available_until" class="product-input" />
+                </div>
               </div>
-              <div>
-                <label class="label">Alerta de stock bajo</label>
-                <input type="number" [(ngModel)]="form.low_stock_alert" name="low_stock_alert"
-                  min="0" class="input-field w-full" placeholder="Ej. 5" />
+            }
+
+            @if (form.use_days) {
+              <div class="product-check-row">
+                @for (day of days; track day.key) {
+                  <button type="button" class="category-btn" [class.action-primary]="form.available_days.includes(day.key)" (click)="toggleDay(day.key)">
+                    {{ day.label }}
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="product-field" style="max-width: 520px;">
+              <label>Máxima cantidad por pedido</label>
+              <input type="number" [(ngModel)]="form.max_qty_per_order" name="max_qty_per_order" min="1" class="product-input" placeholder="Sin límite" />
+            </div>
+          </section>
+
+          @if (commerceType() === 'restaurante') {
+            <section class="product-form-card">
+              <div class="product-card-head">
+                <h2>Opciones de menú</h2>
+                <p>Agrega detalles operativos y nutricionales.</p>
+              </div>
+
+              <div class="product-range-wrap">
+                <div class="range-head">
+                  <strong>Tiempo de preparación</strong>
+                  <span>{{ form.preparation_time ?? 0 }} min</span>
+                </div>
+                <input type="range" [(ngModel)]="form.preparation_time" name="preparation_time" min="0" max="120" step="5" class="product-range" />
+                <div class="range-meta"><span>0 min</span><span>120 min</span></div>
+                <p class="range-hint">Este tiempo ayuda a calcular la promesa de entrega al cliente.</p>
+              </div>
+
+              <div class="product-field-grid">
+                <div class="product-field">
+                  <label>Calorías (kcal) <span class="optional">Opcional</span></label>
+                  <input type="number" [(ngModel)]="form.calories" name="calories" min="0" class="product-input" placeholder="Opcional" />
+                </div>
+                <div class="product-field pt-6">
+                  <label class="product-check-pill">
+                    <input type="checkbox" [(ngModel)]="form.is_combo" name="is_combo" />
+                    Es combo / combo meal
+                  </label>
+                </div>
+              </div>
+            </section>
+          }
+
+          @if (commerceType() === 'farmacia') {
+            <section class="product-form-card">
+              <div class="product-card-head">
+                <h2>Información farmacéutica</h2>
+                <p>Configura datos regulatorios y de inventario para farmacia.</p>
+              </div>
+              <div class="product-check-row">
+                <label class="product-check-pill">
+                  <input type="checkbox" [(ngModel)]="form.requires_prescription" name="requires_prescription" />
+                  Requiere receta (Rx)
+                </label>
+                <label class="product-check-pill">
+                  <input type="checkbox" [(ngModel)]="form.controlled_substance" name="controlled_substance" />
+                  Sustancia controlada
+                </label>
+              </div>
+              <div class="product-field-grid">
+                <div class="product-field">
+                  <label>Marca / Laboratorio</label>
+                  <input [(ngModel)]="form.brand" name="brand" class="product-input" placeholder="Ej. Bayer" />
+                </div>
+                <div class="product-field">
+                  <label>Unidad de medida</label>
+                  <select [(ngModel)]="form.unit_type" name="unit_type" class="product-select">
+                    <option [value]="null">—</option>
+                    @for (u of unitTypes; track u) { <option [value]="u">{{ u }}</option> }
+                  </select>
+                </div>
+                <div class="product-field">
+                  <label>SKU / Código interno</label>
+                  <input [(ngModel)]="form.sku" name="sku" class="product-input" placeholder="ABC-123" />
+                </div>
+                <div class="product-field">
+                  <label>Código de barras</label>
+                  <input [(ngModel)]="form.barcode" name="barcode" class="product-input" placeholder="7501234567890" />
+                </div>
+              </div>
+            </section>
+          }
+
+          @if (commerceType() === 'bodega' || commerceType() === 'colmado' || commerceType() === 'supermercado') {
+            <section class="product-form-card">
+              <div class="product-card-head">
+                <h2>Información del producto</h2>
+                <p>Completa atributos comerciales para catálogo e inventario.</p>
+              </div>
+              <div class="product-field-grid">
+                <div class="product-field">
+                  <label>Marca</label>
+                  <input [(ngModel)]="form.brand" name="brand_gro" class="product-input" placeholder="Ej. Nestlé" />
+                </div>
+                <div class="product-field">
+                  <label>Unidad de medida</label>
+                  <select [(ngModel)]="form.unit_type" name="unit_type_gro" class="product-select">
+                    <option [value]="null">—</option>
+                    @for (u of unitTypes; track u) { <option [value]="u">{{ u }}</option> }
+                  </select>
+                </div>
+                <div class="product-field">
+                  <label>SKU</label>
+                  <input [(ngModel)]="form.sku" name="sku_gro" class="product-input" placeholder="ABC-123" />
+                </div>
+                <div class="product-field">
+                  <label>Código de barras</label>
+                  <input [(ngModel)]="form.barcode" name="barcode_gro" class="product-input" />
+                </div>
+              </div>
+            </section>
+          }
+
+          @if (commerceType() === 'tienda_ropa' || commerceType() === 'electronica') {
+            <section class="product-form-card">
+              <div class="product-card-head">
+                <h2>{{ commerceType() === 'tienda_ropa' ? 'Tallas y colores' : 'Variantes' }}</h2>
+                <p>Gestiona las variaciones comerciales del producto.</p>
+              </div>
+              <div class="product-field-grid">
+                <div class="product-field">
+                  <label>SKU base</label>
+                  <input [(ngModel)]="form.sku" name="sku_var" class="product-input" placeholder="BASE-001" />
+                </div>
+              </div>
+              <label class="product-check-pill">
+                <input type="checkbox" [(ngModel)]="form.has_variants" name="has_variants" />
+                Este producto tiene variantes
+              </label>
+              @if (form.has_variants) {
+                <app-variants-manager
+                  [initialVariants]="existingVariants()"
+                  [commerceType]="commerceType()"
+                  (variantsChange)="pendingVariants = $event" />
+              }
+            </section>
+          }
+
+          @if (commerceType() !== 'restaurante') {
+            <section class="product-form-card">
+              <div class="product-card-head">
+                <h2>Control de inventario</h2>
+                <p>Configura stock, alertas y disponibilidad automática.</p>
+              </div>
+              <label class="product-check-pill">
+                <input type="checkbox" [(ngModel)]="form.track_stock" name="track_stock" />
+                Rastrear stock de este producto
+              </label>
+              @if (form.track_stock) {
+                <div class="product-field-grid">
+                  <div class="product-field">
+                    <label>Cantidad en stock</label>
+                    <input type="number" [(ngModel)]="form.stock_count" name="stock_count" min="0" class="product-input" placeholder="0" />
+                  </div>
+                  <div class="product-field">
+                    <label>Alerta de stock bajo</label>
+                    <input type="number" [(ngModel)]="form.low_stock_alert" name="low_stock_alert" min="0" class="product-input" placeholder="Ej. 5" />
+                  </div>
+                </div>
+              }
+            </section>
+          }
+
+          <div class="product-footer-actions">
+            <a routerLink="/store/catalog" class="action-secondary">Cancelar</a>
+            <button type="submit" [disabled]="isSaving()" class="action-primary">
+              {{ isSaving() ? 'Guardando...' : (isEditMode() ? 'Guardar cambios' : 'Crear producto') }}
+            </button>
+          </div>
+        </form>
+
+        <aside class="product-editor-aside">
+          <section class="product-preview-card">
+            <div class="aside-head">
+              <h3>Vista previa</h3>
+              <p>Así se verá el producto en el menú.</p>
+            </div>
+            <div class="product-preview">
+              <div class="product-preview-image">
+                @if (form.is_featured) {
+                  <span class="featured-badge">Destacado</span>
+                }
+                @if (photoPreview()) {
+                  <img [src]="photoPreview()!" alt="Vista previa del producto" />
+                } @else {
+                  <span class="text-5xl">🖼️</span>
+                }
+              </div>
+              <div class="preview-body">
+                <p class="product-preview-category">{{ selectedSectionName() }}</p>
+                <p class="product-preview-name">{{ form.name || 'Nombre del producto' }}</p>
+                <p class="product-preview-meta">⏱ {{ form.preparation_time ?? 15 }} min</p>
+                <p class="product-preview-price">
+                  &#36;{{ (form.price ?? 0).toFixed(2) }}
+                  @if (form.discount_price && form.discount_price > 0) {
+                    <span class="price-old">&#36;{{ form.discount_price.toFixed(2) }}</span>
+                  }
+                </p>
+                <div class="product-preview-footer">
+                  <span class="preview-status" [class.on]="form.is_available" [class.off]="!form.is_available">
+                    {{ form.is_available ? 'Disponible' : 'No disponible' }}
+                  </span>
+                  <span class="preview-pill">Menú</span>
+                </div>
               </div>
             </div>
-          }
-        </div>
-      }
+          </section>
 
-      <!-- Save button (bottom) -->
-      <div class="flex justify-end gap-3 pb-8">
-        <a routerLink="/store/catalog" class="btn-secondary px-5 py-2 text-sm">Cancelar</a>
-        <button type="submit" [disabled]="isSaving()"
-          class="btn-primary px-5 py-2 text-sm disabled:opacity-50">
-          {{ isSaving() ? 'Guardando...' : (isEditMode() ? 'Guardar cambios' : 'Crear producto') }}
-        </button>
+          <section class="product-preview-card">
+            <div class="aside-head">
+              <h3>Resumen</h3>
+              <p>Revisa los detalles antes de publicar.</p>
+            </div>
+            <div class="product-summary-list">
+              <div class="product-summary-row"><span>Sección</span><strong>{{ selectedSectionName() }}</strong></div>
+              <div class="product-summary-row"><span>Categoría Tuttyno</span><strong>{{ resolvedTuttyCategory() ? resolvedTuttyCategory()!.name : 'Sin categoría' }}</strong></div>
+              <div class="product-summary-row"><span>Orden</span><strong>{{ form.display_order ?? 0 }}</strong></div>
+              <div class="product-summary-row"><span>Máx. por pedido</span><strong>{{ form.max_qty_per_order ?? 'Sin límite' }}</strong></div>
+              <div class="product-summary-row"><span>Combo</span><strong>{{ form.is_combo ? 'Sí' : 'No' }}</strong></div>
+            </div>
+          </section>
+
+          <section class="product-checklist-card">
+            <div class="aside-head">
+              <h3>Checklist</h3>
+              <p>Completa lo necesario para publicar bien el producto.</p>
+            </div>
+            <ul class="product-checklist">
+              <li>Agrega una foto clara del producto.</li>
+              <li>Usa un nombre corto y fácil de entender.</li>
+              <li>Confirma precio y disponibilidad.</li>
+              <li>Asigna la sección correcta del menú.</li>
+            </ul>
+          </section>
+        </aside>
       </div>
-    </form>
-  </div>
+    </div>
   `,
 })
 export class StoreProductFormPageComponent implements OnInit {
@@ -410,14 +1151,18 @@ export class StoreProductFormPageComponent implements OnInit {
     private readonly router = inject(Router);
     private readonly storeService = inject(StoreAdminService);
     private readonly catalogService = inject(StoreCatalogService);
+    private readonly settingsSvc = inject(SettingsService);
     private readonly toast = inject(ToastService);
 
     readonly isLoading = signal(false);
     readonly isSaving = signal(false);
     readonly categories = signal<MenuCategory[]>([]);
+    readonly tuttyCategoriesForProduct = signal<CommerceCategory[]>([]);
+    readonly tuttyCategoriesLoading = signal(false);
     readonly existingVariants = signal<Partial<ProductVariant>[]>([]);
     readonly productId = signal<string | null>(null);
     readonly photoPreviewSignal = signal<string | null>(null);
+    readonly warningDismissed = signal(false);
 
     pendingVariants: Partial<ProductVariant>[] = [];
     tagInput = '';
@@ -428,7 +1173,7 @@ export class StoreProductFormPageComponent implements OnInit {
     readonly days = DAYS;
 
     form: ProductForm = {
-        name: '', description: '', category_id: null,
+        name: '', description: '', category_id: null, tutty_category_id: null,
         price: null, discount_price: null,
         is_available: true, is_featured: false, tags: [], display_order: 0,
         use_hours: false, available_from: null, available_until: null,
@@ -444,17 +1189,67 @@ export class StoreProductFormPageComponent implements OnInit {
     readonly commerceType = computed(() => this.storeService.activeStore()?.commerce_type ?? 'otro');
     readonly isEditMode = computed(() => !!this.productId());
     readonly photoPreview = this.photoPreviewSignal;
+    readonly storeName = computed(() => this.storeService.activeStore()?.name ?? 'QA Burger Naco');
+    readonly outsideSchedule = computed(() => this.storeService.isOutsideSchedule());
+    readonly showOutsideScheduleAlert = computed(() => (this.storeService.activeStore()?.is_open ?? false) && this.outsideSchedule());
+    readonly scheduleWindow = computed(() => {
+        const store = this.storeService.activeStore();
+        if (!store?.opening_time || !store?.closing_time) return 'Horario no configurado';
+        return `${this.fmt12(store.opening_time)} - ${this.fmt12(store.closing_time)}`;
+    });
+
+    readonly overrideTuttyOpen = signal(false);
+    readonly selectedSection = computed(() =>
+        this.categories().find(c => c.id === this.form.category_id) ?? null
+    );
+
+    readonly inheritedTuttyCategory = computed(() => {
+        const sectionTuttyId = this.selectedSection()?.tutty_category_id;
+        if (!sectionTuttyId) return null;
+        return this.tuttyCategoriesForProduct().find(c => c.id === sectionTuttyId) ?? null;
+    });
+
+    readonly resolvedTuttyCategory = computed(() => {
+        const overrideId = this.form.tutty_category_id;
+        if (overrideId) {
+            return this.tuttyCategoriesForProduct().find(c => c.id === overrideId) ?? null;
+        }
+        return this.inheritedTuttyCategory();
+    });
 
     ngOnInit() {
         const id = this.route.snapshot.paramMap.get('id');
         const storeId = this.storeService.activeStoreId();
+        const commerceType = this.storeService.activeStore()?.commerce_type;
         if (storeId) {
             this.catalogService.getCategories(storeId).subscribe(cats => this.categories.set(cats));
+        }
+        if (commerceType) {
+            this.tuttyCategoriesLoading.set(true);
+            this.settingsSvc.getStoreCategories(commerceType as any).then(
+                cats => { this.tuttyCategoriesForProduct.set(cats); this.tuttyCategoriesLoading.set(false); },
+            ).catch(() => this.tuttyCategoriesLoading.set(false));
         }
         if (id && id !== 'new') {
             this.productId.set(id);
             this.loadProduct(id);
         }
+    }
+
+    selectedSectionName(): string {
+        return this.selectedSection()?.name ?? 'Sin sección';
+    }
+
+    onPhotoInputChange(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+        this.onPhotoSelected(file);
+        input.value = '';
+    }
+
+    goToSettings() {
+        this.router.navigate(['/store/settings']);
     }
 
     private loadProduct(id: string) {
@@ -465,6 +1260,7 @@ export class StoreProductFormPageComponent implements OnInit {
                     name: p.name,
                     description: p.description ?? '',
                     category_id: p.category_id ?? null,
+                    tutty_category_id: (p.tutty_category_id ?? p.food_type_id) ?? null,
                     price: p.price,
                     discount_price: p.discount_price ?? null,
                     is_available: p.is_available,
@@ -498,6 +1294,9 @@ export class StoreProductFormPageComponent implements OnInit {
                         this.pendingVariants = v;
                     });
                 }
+                if (p.tutty_category_id || p.food_type_id) {
+                    this.overrideTuttyOpen.set(true);
+                }
                 this.isLoading.set(false);
             },
             error: () => {
@@ -507,7 +1306,6 @@ export class StoreProductFormPageComponent implements OnInit {
         });
     }
 
-    // ─── Tags ─────────────────────────────────────────────────────────────────
     addTag() {
         const tag = this.tagInput.replace(/,$/, '').trim();
         if (tag && !this.form.tags.includes(tag)) this.form.tags = [...this.form.tags, tag];
@@ -518,14 +1316,12 @@ export class StoreProductFormPageComponent implements OnInit {
         this.form.tags = this.form.tags.filter(t => t !== tag);
     }
 
-    // ─── Days ─────────────────────────────────────────────────────────────────
     toggleDay(key: string) {
         this.form.available_days = this.form.available_days.includes(key)
             ? this.form.available_days.filter(d => d !== key)
             : [...this.form.available_days, key];
     }
 
-    // ─── Photo ────────────────────────────────────────────────────────────────
     onPhotoSelected(file: File): void {
         this.photoFile = file;
         this.photoPreviewSignal.set(URL.createObjectURL(file));
@@ -536,7 +1332,6 @@ export class StoreProductFormPageComponent implements OnInit {
         this.photoPreviewSignal.set(null);
     }
 
-    // ─── Submit ───────────────────────────────────────────────────────────────
     async submit() {
         if (!this.form.name || this.form.price == null) {
             this.toast.warning('Nombre y precio son obligatorios');
@@ -563,6 +1358,7 @@ export class StoreProductFormPageComponent implements OnInit {
                 name: this.form.name,
                 description: this.form.description || null,
                 category_id: this.form.category_id,
+                tutty_category_id: this.form.tutty_category_id,
                 price: this.form.price!,
                 discount_price: this.form.discount_price,
                 is_available: this.form.is_available,
@@ -598,7 +1394,6 @@ export class StoreProductFormPageComponent implements OnInit {
                 savedId = created.id;
             }
 
-            // Save variants
             if (this.form.has_variants && savedId && this.pendingVariants.length > 0) {
                 await this.catalogService.saveVariants(savedId, this.pendingVariants);
             }
@@ -611,5 +1406,12 @@ export class StoreProductFormPageComponent implements OnInit {
         } finally {
             this.isSaving.set(false);
         }
+    }
+
+    private fmt12(time: string): string {
+        const [h, m] = time.split(':').map(Number);
+        const ampm = h >= 12 ? 'pm' : 'am';
+        const h12 = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
     }
 }

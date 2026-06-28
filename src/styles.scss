@@ -8,8 +8,23 @@
 @import 'app/shared/styles/operator-ui'; // stylelint-disable-line
 
 @layer base {
+  :root {
+    --admin-bg: #f6f7fb;
+    --admin-bg-soft: #fbfcff;
+    --admin-card-border: #e7eaf1;
+    --admin-muted-border: #eef1f6;
+    --admin-primary: #e91e8c;
+    --admin-primary-hover: #cf177b;
+    --admin-radius-md: 16px;
+    --admin-radius-lg: 20px;
+    --admin-radius-xl: 24px;
+    --admin-shadow-sm: 0 8px 24px rgba(17, 24, 39, 0.04);
+    --admin-shadow-md: 0 14px 40px rgba(17, 24, 39, 0.08);
+  }
+
   body {
-    @apply font-inter bg-gray-50 text-base font-normal text-gray-800;
+    @apply font-poppins bg-gray-50 text-base font-normal text-gray-800;
+    background: var(--admin-bg);
   }
 
   * {
@@ -21,11 +36,18 @@
 
   /* ── Buttons ── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+    @apply inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+    box-shadow: var(--admin-shadow-sm);
+  }
+  .btn-primary:hover {
+    background: var(--admin-primary-hover);
+    box-shadow: var(--admin-shadow-md);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+    @apply inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+    border-color: var(--admin-card-border);
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
   }
 
   .btn-danger {
@@ -34,16 +56,52 @@
 
   /* ── Card ── */
   .card {
-    @apply bg-white rounded-xl shadow-theme-sm border border-gray-200 p-6;
+    @apply bg-white border p-6;
+    border-color: var(--admin-card-border);
+    border-radius: var(--admin-radius-lg);
+    box-shadow: var(--admin-shadow-sm);
   }
 
   /* ── Form ── */
   .input-field {
-    @apply w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors;
+    @apply w-full border px-3.5 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:bg-gray-50 disabled:text-gray-500 transition-colors;
+    border-color: var(--admin-muted-border);
+    border-radius: var(--admin-radius-md);
+    background: #fff;
   }
 
   .label {
     @apply block text-sm font-medium text-gray-700 mb-1.5;
+  }
+
+  .admin-page {
+    @apply p-4 md:p-6;
+    background: var(--admin-bg);
+  }
+
+  .admin-page-header {
+    @apply bg-white border p-5 md:p-6 mb-4 md:mb-6;
+    border-color: var(--admin-card-border);
+    border-radius: var(--admin-radius-lg);
+    box-shadow: var(--admin-shadow-sm);
+  }
+
+  .admin-toolbar {
+    @apply bg-white border rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap items-center gap-2 md:gap-3;
+    border-color: var(--admin-muted-border);
+  }
+
+  .admin-card-title {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #111827;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
   }
 
   /* ── Nav menu items (sidebar) ── */

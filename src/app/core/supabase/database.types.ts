@@ -201,12 +201,17 @@ export interface MenuCategory {
   description?: string | null;
   display_order: number;
   is_active: boolean;
+  tutty_category_id?: string | null;
+  tutty_category?: CommerceCategory | null;
 }
 
 export interface MenuItem {
   id: string;
   commerce_id: string;
   category_id?: string | null;
+  tutty_category_id?: string | null;  // Nivel 2 override (hereda de menu_category si null)
+  /** @deprecated Use tutty_category_id */
+  food_type_id?: string | null;
   name: string;
   description?: string | null;
   price: number;
@@ -744,15 +749,43 @@ export interface DeliveryFeeRange {
 
 // ── Settings SA-6 types ────────────────────────────────────────────────────
 
-export interface StoreCategory {
+/** Nivel 1 — Dominio Tuttyno (tabla: tutty_domains) */
+export interface TuttyDomain {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
+  icon?: string | null;     // emoji
+  color?: string | null;    // hex
+  display_order: number;
+  is_active: boolean;
+}
+
+/**
+ * Nivel 2 — Categoría Tuttyno (tabla: commerce_categories)
+ * Antes llamada StoreCategory / restaurant_categories.
+ * Solo Tuttyno las crea. El store_admin solo selecciona.
+ */
+export interface CommerceCategory {
+  id: string;
+  name: string;
+  slug: string;
+  icon_url?: string | null;
   commerce_type: CommerceType;
   display_order: number;
   is_active: boolean;
   created_at?: string;
+  // Taxonomía
+  domain_id?: string | null;
+  domain?: TuttyDomain | null;
+  applies_to?: 'commerce' | 'excursion' | 'both';
+  parent_id?: string | null;
+  description?: string | null;
+  color?: string | null;
 }
+
+/** @deprecated Alias de compatibilidad — usar CommerceCategory */
+export type StoreCategory = CommerceCategory;
 
 export interface AuditLogEntry {
   id: string;

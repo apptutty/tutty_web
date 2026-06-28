@@ -75,10 +75,10 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
     styles: [`
     /* ── Store-status pill ── */
     .status-btn {
-      @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold text-sm transition-all duration-200 cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500;
+      @apply inline-flex items-center gap-2 px-4 h-11 rounded-[22px] font-bold text-sm transition-all duration-200 cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 border-2;
     }
-    .status-btn.open  { @apply bg-success-50  text-success-700  ring-2 ring-success-200; }
-    .status-btn.closed{ @apply bg-gray-100    text-gray-500     ring-2 ring-gray-200;    }
+    .status-btn.open  { @apply bg-success-50 text-success-700 border-success-200; }
+    .status-btn.closed{ @apply bg-gray-100 text-gray-500 border-gray-300; }
 
     /* ── Pulse animation on the live dot ── */
     .pulse-dot {
@@ -104,9 +104,29 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
     .modal-backdrop {
       @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm;
     }
+
+    .top-range-switch {
+      @apply hidden sm:flex items-center gap-[3px] p-[3px] rounded-[14px] border border-gray-200;
+      background: #eef1f6;
+      height: 36px;
+    }
+    .top-range-btn {
+      @apply px-[14px] rounded-[11px] font-extrabold text-gray-500 transition-all;
+      height: 30px;
+      font-size: 16px;
+    }
+    .top-range-btn.active {
+      @apply bg-white text-gray-900 shadow-sm;
+    }
+    .top-bell-btn {
+      @apply w-[38px] h-[38px] flex items-center justify-center rounded-[13px] border border-gray-200 bg-white hover:bg-gray-50 transition-colors;
+      color: #647084;
+      font-size: 18px;
+      line-height: 1;
+    }
   `],
     template: `
-    <div class="flex min-h-[100dvh] bg-gray-50 overflow-hidden font-inter">
+    <div class="flex min-h-[100dvh] bg-gray-50 overflow-hidden font-poppins">
 
       <!-- ═══════════ MOBILE DRAWER OVERLAY ═══════════ -->
       @if (drawerOpen()) {
@@ -285,14 +305,11 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
 
           <!-- Time range filter (only on Dashboard + Reportes) -->
           @if (showTimeFilter()) {
-            <div class="hidden sm:flex items-center gap-0.5 p-1 bg-gray-100 rounded-lg">
+            <div class="top-range-switch">
               @for (range of timeRanges; track range.value) {
                 <button
-                  class="px-3 py-1 rounded-md text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-500"
-                  [class.bg-white]="storeService.timeRange() === range.value"
-                  [class.text-gray-800]="storeService.timeRange() === range.value"
-                  [class.shadow-sm]="storeService.timeRange() === range.value"
-                  [class.text-gray-500]="storeService.timeRange() !== range.value"
+                  class="top-range-btn focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-500"
+                  [class.active]="storeService.timeRange() === range.value"
                   (click)="storeService.timeRange.set(range.value)"
                 >{{ range.label }}</button>
               }
@@ -311,7 +328,7 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
             } @else {
               <span class="w-2 h-2 rounded-full bg-gray-400"></span>
             }
-            <span class="font-bold text-xs tracking-wide">
+            <span class="font-bold tracking-wide">
               {{ storeService.activeStore()?.is_open ? 'ABIERTO' : 'CERRADO' }}
             </span>
             @if (showScheduleWarning()) {
@@ -323,36 +340,12 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
 
           <!-- Notifications -->
           <button
-            class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+            class="top-bell-btn focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
             aria-label="Notificaciones"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-            </svg>
+            🔔
           </button>
         </header>
-
-        <!-- ── Schedule warning banner (dismissible, Dashboard only) ── -->
-        @if (showScheduleWarning() && storeService.activeStore()?.is_open && isDashboard() && !warningDismissed()) {
-          <div class="flex-shrink-0 bg-warning-50 border-b border-warning-200 px-4 py-2 flex items-center gap-2 text-sm text-warning-700">
-            <svg class="w-4 h-4 flex-shrink-0 text-warning-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            <span class="flex-1">
-              El comercio está marcado como abierto pero está fuera del horario configurado
-              ({{ storeService.activeStore()?.opening_time }} – {{ storeService.activeStore()?.closing_time }}).
-            </span>
-            <button
-              class="ml-2 p-1 rounded hover:bg-warning-100 transition-colors text-warning-600"
-              (click)="warningDismissed.set(true)"
-              aria-label="Descartar"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        }
 
         <!-- ── Page content ── -->
         <main class="flex-1 overflow-y-auto pb-16 lg:pb-0">
@@ -491,8 +484,6 @@ export class StoreAdminShellComponent {
             .subscribe(e => {
                 this.currentUrl.set((e as NavigationEnd).urlAfterRedirects);
                 this.drawerOpen.set(false);
-                // Re-show banner on each dashboard visit
-                this.warningDismissed.set(false);
             });
     }
 
@@ -509,6 +500,10 @@ export class StoreAdminShellComponent {
 
     readonly isDashboard = computed(() =>
         this.currentUrl().startsWith('/store/dashboard')
+    );
+
+    readonly isOrders = computed(() =>
+        this.currentUrl().startsWith('/store/orders')
     );
 
     readonly initials = computed(() => {
@@ -532,6 +527,11 @@ export class StoreAdminShellComponent {
     );
 
     readonly showScheduleWarning = computed(() => this.storeService.isOutsideSchedule());
+    readonly scheduleWindow = computed(() => {
+        const store = this.storeService.activeStore();
+        if (!store?.opening_time || !store?.closing_time) return 'Horario no configurado';
+        return `${this.fmt12(store.opening_time)} - ${this.fmt12(store.closing_time)}`;
+    });
 
     catalogLabel(item: NavItem): string {
         if (item.path !== 'catalog') return item.label;
@@ -550,9 +550,20 @@ export class StoreAdminShellComponent {
         await this.storeService.toggleIsOpen();
     }
 
+    goToSettings() {
+        this.router.navigate(['/store/settings']);
+    }
+
     switchStore(id: string) {
         this.storeDropOpen.set(false);
         this.storeService.setActiveStore(id);
+    }
+
+    private fmt12(time: string): string {
+        const [h, m] = time.split(':').map(Number);
+        const ampm = h >= 12 ? 'pm' : 'am';
+        const h12 = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
     }
 
     @HostListener('document:click', ['$event'])

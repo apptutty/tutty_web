@@ -12,10 +12,12 @@ import { StoreAdminService } from '../store-admin.service';
 import { StoreSettingsService, TeamMember, StoreNotifPrefs } from './store-settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
-import { Restaurant, StoreCategory, Payout } from '../../../core/supabase/database.types';
+import { Restaurant, CommerceCategory, Payout } from '../../../core/supabase/database.types';
 import { TuttyMapComponent, LatLng } from '../../../shared/ui/map/tutty-map.component';
 import { AdminGeoService, PlaceSuggestion } from '../../../core/services/admin-geo.service';
 import { AdminImageFieldComponent } from '../../../shared/ui/image-field/admin-image-field.component';
+import { CommerceCategoryPickerComponent } from '../../../shared/ui/category-picker/commerce-category-picker.component';
+import { SettingsService } from '../../settings/settings.service';
 
 type Tab = 'perfil' | 'horarios' | 'delivery' | 'notificaciones' | 'equipo' | 'finanzas';
 
@@ -47,12 +49,89 @@ interface DeliveryForm {
 @Component({
     selector: 'app-store-settings',
     standalone: true,
-    imports: [CommonModule, FormsModule, TuttyMapComponent, AdminImageFieldComponent],
+    imports: [CommonModule, FormsModule, TuttyMapComponent, AdminImageFieldComponent, CommerceCategoryPickerComponent],
     styles: [`
-    .tab-btn { padding: 8px 16px; border-bottom: 2px solid transparent; font-size: 0.875rem; font-weight: 500; color: #6b7280; transition: all 0.15s; white-space: nowrap; cursor: pointer; }
-    .tab-btn.active { border-bottom-color: #e91e8c; color: #e91e8c; }
-    .tab-btn:hover:not(.active) { color: #374151; border-bottom-color: #e5e7eb; }
-    .section-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 12px; }
+    .settings-page {
+      min-height: 100dvh;
+      background: linear-gradient(180deg, #f8f7fb 0%, #f4f6fb 100%);
+    }
+    .settings-head {
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      border-bottom: 1px solid #e7eaf2;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+    }
+    .settings-head-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 22px 12px;
+    }
+    .settings-title {
+      font-size: 26px;
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+      margin: 0;
+    }
+    .settings-subtitle {
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .settings-tabs {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #475569;
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .tab-btn:hover:not(.active) {
+      border-color: #cbd5e1;
+      color: #334155;
+      transform: translateY(-1px);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #ff3c97 0%, #d01f78 100%);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 8px 22px rgba(233, 30, 140, 0.28);
+    }
+    .settings-content {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+    .card {
+      border: 1px solid #e7eaf2;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
     .day-btn { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
     .day-btn.on { background: #e91e8c; border-color: #e91e8c; color: white; }
     .day-btn:not(.on):hover { border-color: #e91e8c; color: #e91e8c; }
@@ -60,30 +139,48 @@ interface DeliveryForm {
     .toggle-track.on { background: #e91e8c; }
     .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform .3s; }
     .toggle-track.on .toggle-thumb { transform: translateX(20px); }
+    @media (max-width: 768px) {
+      .settings-head-inner,
+      .settings-content {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .settings-title {
+        font-size: 21px;
+      }
+      .settings-subtitle {
+        font-size: 12px;
+      }
+    }
   `],
     template: `
-  <div class="min-h-screen bg-gray-50">
+  <div class="settings-page">
 
     <!-- Header + Tabs -->
-    <div class="bg-white border-b border-gray-200 px-6 sticky top-0 z-10">
-      <div class="flex items-center justify-between pt-4 pb-0">
-        <h1 class="text-xl font-bold text-gray-900">Configuración del comercio</h1>
+    <div class="settings-head">
+      <div class="settings-head-inner">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="settings-title">Configuración del comercio</h1>
+            <p class="settings-subtitle">Ajusta perfil, operación, notificaciones, equipo y finanzas.</p>
+          </div>
         @if (isSaving()) {
           <div class="flex items-center gap-2 text-sm text-gray-500">
             <div class="w-4 h-4 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin"></div>
             Guardando...
           </div>
         }
-      </div>
-      <div class="flex gap-0 overflow-x-auto mt-2 -mb-px">
+        </div>
+      <div class="settings-tabs" role="tablist" aria-label="Secciones de configuración">
         @for (t of tabs; track t.key) {
           <button class="tab-btn" [class.active]="activeTab() === t.key"
-            (click)="activeTab.set(t.key)">{{ t.label }}</button>
+            (click)="setTab(t.key)">{{ t.label }}</button>
         }
+      </div>
       </div>
     </div>
 
-    <div class="max-w-3xl mx-auto p-6 space-y-6">
+    <div class="settings-content space-y-6">
 
       <!-- ═══ TAB: PERFIL ═══════════════════════════════════════ -->
       @if (activeTab() === 'perfil') {
@@ -137,13 +234,15 @@ interface DeliveryForm {
               <input [(ngModel)]="profileForm.whatsapp_number" class="input-field w-full" placeholder="+1809XXXXXXX" />
             </div>
             <div>
-              <label class="label">Categoría</label>
-              <select [(ngModel)]="profileForm.category_id" class="input-field w-full">
-                <option [value]="null">Sin categoría</option>
-                @for (cat of storeCategories(); track cat.id) {
-                  <option [value]="cat.id">{{ cat.name }}</option>
-                }
-              </select>
+              <label class="label">Categoría del comercio</label>
+              <app-commerce-category-picker
+                label="Categoría del comercio"
+                placeholder="Seleccionar categoría..."
+                [categories]="storeCategories()"
+                [selectedId]="profileForm.category_id"
+                [allowClear]="true"
+                (categorySelected)="profileForm.category_id = $event?.id ?? null">
+              </app-commerce-category-picker>
             </div>
           </div>
         </div>
@@ -609,6 +708,7 @@ interface DeliveryForm {
 export class StoreSettingsPageComponent implements OnInit {
     private readonly storeAdminSvc = inject(StoreAdminService);
     private readonly settingsSvc = inject(StoreSettingsService);
+    private readonly globalSettingsSvc = inject(SettingsService);
     private readonly toast = inject(ToastService);
     private readonly confirmSvc = inject(ConfirmService);
     private readonly geoSvc = inject(AdminGeoService);
@@ -630,7 +730,7 @@ export class StoreSettingsPageComponent implements OnInit {
 
     // Profile
     profileForm: ProfileForm = { name: '', description: '', whatsapp_number: '', address: '', sector: '', city: '', category_id: null, logo_url: null, banner_url: null, lat: null, lng: null };
-    readonly storeCategories = signal<StoreCategory[]>([]);
+    readonly storeCategories = signal<CommerceCategory[]>([]);
     private logoFile: File | null = null;
     private bannerFile: File | null = null;
     readonly uploadingLogo = signal(false);
@@ -685,13 +785,33 @@ export class StoreSettingsPageComponent implements OnInit {
     readonly tierLabel = computed(() => this.settingsSvc.tierLabel(this.store()?.commission_tier));
     readonly tierColor = computed(() => this.settingsSvc.tierColor(this.store()?.commission_tier));
     readonly onboardingDaysLeft = computed(() => this.settingsSvc.onboardingDaysLeft(this.store()?.activated_at));
+    private initializedStoreId: string | null = null;
+    private readonly categoriesCache = new Map<string, CommerceCategory[]>();
+    private readonly teamCache = new Map<string, TeamMember[]>();
+    private readonly financesCache = new Map<string, { payouts: Payout[]; pendingBalance: number }>();
+    private teamRequestInFlightFor: string | null = null;
+    private financesRequestInFlightFor: string | null = null;
 
     constructor() {
         effect(() => {
             const s = this.store();
             if (!s) return;
-            this.initFromStore(s);
-            this.loadStoreCategories(s.commerce_type);
+            if (this.initializedStoreId !== s.id) {
+                this.initializedStoreId = s.id;
+                this.initFromStore(s);
+                this.teamMembers.set([]);
+                this.payouts.set([]);
+                this.pendingBalance.set(0);
+                this.teamLoading.set(false);
+                this.payoutsLoading.set(false);
+                this.pendingBalanceLoading.set(false);
+            }
+            const cachedCategories = this.categoriesCache.get(s.commerce_type);
+            if (cachedCategories) {
+                this.storeCategories.set(cachedCategories);
+            } else {
+                this.loadStoreCategories(s.commerce_type);
+            }
             this.notifPrefsSignal.set(this.settingsSvc.loadNotifPrefs(s.id));
         });
 
@@ -699,8 +819,8 @@ export class StoreSettingsPageComponent implements OnInit {
             const tab = this.activeTab();
             const storeId = this.storeAdminSvc.activeStoreId();
             if (!storeId) return;
-            if (tab === 'equipo' && this.teamMembers().length === 0) this.loadTeam(storeId);
-            if (tab === 'finanzas' && this.payouts().length === 0) this.loadFinances(storeId);
+            if (tab === 'equipo') this.loadTeam(storeId);
+            if (tab === 'finanzas') this.loadFinances(storeId);
         });
     }
 
@@ -733,31 +853,82 @@ export class StoreSettingsPageComponent implements OnInit {
     }
 
     private loadStoreCategories(type: string) {
-        this.settingsSvc.getStoreCategories(type).subscribe({
-            next: cats => this.storeCategories.set(cats),
-            error: () => { },
-        });
+        this.globalSettingsSvc.getStoreCategories(type).then(
+            cats => {
+                this.categoriesCache.set(type, cats);
+                this.storeCategories.set(cats);
+            },
+        ).catch(() => { });
     }
 
     private loadTeam(storeId: string) {
+        const cached = this.teamCache.get(storeId);
+        if (cached) {
+            this.teamMembers.set(cached);
+            return;
+        }
+        if (this.teamRequestInFlightFor === storeId) return;
+        this.teamRequestInFlightFor = storeId;
         this.teamLoading.set(true);
         this.settingsSvc.getTeamMembers(storeId).subscribe({
-            next: m => { this.teamMembers.set(m); this.teamLoading.set(false); },
-            error: () => this.teamLoading.set(false),
+            next: m => {
+                this.teamCache.set(storeId, m);
+                this.teamMembers.set(m);
+                this.teamLoading.set(false);
+                this.teamRequestInFlightFor = null;
+            },
+            error: () => {
+                this.teamLoading.set(false);
+                this.teamRequestInFlightFor = null;
+            },
         });
     }
 
     private loadFinances(storeId: string) {
+        const cached = this.financesCache.get(storeId);
+        if (cached) {
+            this.payouts.set(cached.payouts);
+            this.pendingBalance.set(cached.pendingBalance);
+            return;
+        }
+        if (this.financesRequestInFlightFor === storeId) return;
+        this.financesRequestInFlightFor = storeId;
         this.payoutsLoading.set(true);
         this.pendingBalanceLoading.set(true);
+        let payoutsData: Payout[] = [];
+        let pendingData = 0;
         this.settingsSvc.getPayouts(storeId).subscribe({
-            next: p => { this.payouts.set(p); this.payoutsLoading.set(false); },
-            error: () => this.payoutsLoading.set(false),
+            next: p => {
+                payoutsData = p;
+                this.payouts.set(p);
+                this.payoutsLoading.set(false);
+                if (!this.pendingBalanceLoading()) {
+                    this.financesCache.set(storeId, { payouts: payoutsData, pendingBalance: pendingData });
+                    this.financesRequestInFlightFor = null;
+                }
+            },
+            error: () => {
+                this.payoutsLoading.set(false);
+                if (!this.pendingBalanceLoading()) this.financesRequestInFlightFor = null;
+            },
         });
         this.settingsSvc.getPendingBalance(storeId).then(b => {
+            pendingData = b;
             this.pendingBalance.set(b);
             this.pendingBalanceLoading.set(false);
-        }).catch(() => this.pendingBalanceLoading.set(false));
+            if (!this.payoutsLoading()) {
+                this.financesCache.set(storeId, { payouts: payoutsData, pendingBalance: pendingData });
+                this.financesRequestInFlightFor = null;
+            }
+        }).catch(() => {
+            this.pendingBalanceLoading.set(false);
+            if (!this.payoutsLoading()) this.financesRequestInFlightFor = null;
+        });
+    }
+
+    setTab(tab: Tab): void {
+        if (this.activeTab() === tab) return;
+        this.activeTab.set(tab);
     }
 
     // ─── Profile images ─────────────────────────────────────────────────────
@@ -921,6 +1092,7 @@ export class StoreSettingsPageComponent implements OnInit {
                 this.toast.success(`${email} vinculado como admin`);
                 this.inviteEmail = '';
                 this.showInvitePanel.set(false);
+                this.teamCache.delete(storeId);
                 this.loadTeam(storeId);
             } else {
                 this.toast.warning('Usuario no encontrado. Pídele que se registre primero en Tutty.');
@@ -941,6 +1113,7 @@ export class StoreSettingsPageComponent implements OnInit {
         try {
             await this.settingsSvc.removeAdmin(storeId, member.user_id);
             this.teamMembers.update(list => list.filter(m => m.user_id !== member.user_id));
+            this.teamCache.set(storeId, this.teamMembers());
             this.toast.success('Acceso eliminado');
         } catch { this.toast.error('Error al eliminar acceso'); }
     }

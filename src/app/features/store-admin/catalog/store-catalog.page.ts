@@ -6,6 +6,9 @@ import {
     computed,
     inject,
     effect,
+    ViewChild,
+    ElementRef,
+    HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,102 +19,561 @@ import { StoreCatalogService } from './store-catalog.service';
 import { ProductCardComponent } from './product-card.component';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
-import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
+import { MenuItem, MenuCategory, CommerceCategory } from '../../../core/supabase/database.types';
+import { SettingsService } from '../../settings/settings.service';
 
 @Component({
     selector: 'app-store-catalog',
     standalone: true,
     imports: [CommonModule, FormsModule, ProductCardComponent],
     styles: [`
-    .cat-item { transition: background 0.12s, color 0.12s; }
-    .cat-item:hover { background: #fdf2f8; }
-    .cat-item.active { background: #fce7f3; color: #9d174d; }
-    .chip { display:inline-flex; align-items:center; padding: 4px 12px; border-radius:99px; font-size:0.75rem; cursor:pointer; border:1px solid #e5e7eb; transition: all 0.15s; }
-    .chip.on { background:#e91e8c; color:white; border-color:#e91e8c; }
-    .chip:not(.on):hover { background:#f9fafb; }
+    .sections-panel {
+      background: #fff;
+      border-right: 1px solid #e7eaf1;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .sections-header {
+      padding: 20px 16px 14px;
+      border-bottom: 1px solid #eef1f6;
+    }
+    .sections-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .sections-title {
+      font-size: 13px;
+      letter-spacing: .08em;
+      color: #687084;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .add-section {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 12px;
+      background: #eb1b8d;
+      color: #fff;
+      font-size: 20px;
+      line-height: 0;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(235, 27, 141, .25);
+    }
+    .sections-help {
+      margin: 8px 0 0;
+      color: #9aa3b4;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .quick-create-card {
+      margin-top: 14px;
+      border: 1px solid #ffd0e8;
+      background: linear-gradient(180deg, #fff6fb, #fff);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 8px 18px rgba(235, 27, 141, .08);
+    }
+    .quick-create-card strong {
+      font-size: 13px;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .quick-row {
+      display: flex;
+      gap: 8px;
+    }
+    .quick-row input {
+      width: 100%;
+      min-width: 0;
+      height: 40px;
+      border: 1px solid #f2c4df;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-family: inherit;
+      outline: none;
+      font-size: 13px;
+      background: #fff;
+    }
+    .quick-row input:focus {
+      border-color: #e91e8c;
+      box-shadow: 0 0 0 4px rgba(235, 27, 141, .10);
+    }
+    .quick-row button {
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 12px;
+      background: #111827;
+      color: #fff;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .section-list {
+      padding: 12px;
+      overflow: auto;
+    }
+    .section-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 20px minmax(0,1fr) auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 10px;
+      border-radius: 14px;
+      margin-bottom: 6px;
+      color: #1f2937;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: .16s ease;
+    }
+    .section-item:hover {
+      background: #f8f9fc;
+      border-color: #eef1f6;
+    }
+    .section-item.active {
+      background: #ffe7f4;
+      border-color: #ffd0e8;
+      color: #a80e5f;
+    }
+    .drag {
+      color: #bac1ce;
+      font-size: 14px;
+    }
+    .section-name {
+      font-size: 14px;
+      font-weight: 700;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .section-meta {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      color: #9aa3b4;
+      font-weight: 500;
+    }
+    .count {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: #eef1f6;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #667085;
+    }
+    .section-item.active .count {
+      background: #fff;
+      color: #e91e8c;
+    }
+    .dots {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      border: 0;
+      background: transparent;
+      color: #98a2b3;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .dots:hover {
+      background: #fff;
+      color: #111827;
+    }
+    .section-menu {
+      position: absolute;
+      right: 8px;
+      top: 38px;
+      z-index: 20;
+      background: #fff;
+      border: 1px solid #e7eaf1;
+      border-radius: 12px;
+      box-shadow: 0 10px 28px rgba(17,24,39,.12);
+      overflow: hidden;
+      min-width: 170px;
+    }
+    .section-menu button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 9px 12px;
+      font-size: 12px;
+      color: #475467;
+      cursor: pointer;
+    }
+    .section-menu button:hover { background: #f9fafb; }
+    .section-menu button.danger { color: #dc2626; }
+
+    .section-form-enter {
+      animation: section-slide-down 180ms ease-out;
+    }
+    @keyframes section-slide-down {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .drag-handle {
+      opacity: 0;
+      transition: opacity 0.15s, color 0.15s;
+      cursor: grab;
+    }
+    .group:hover .drag-handle { opacity: 1; }
+    .drag-handle:active { cursor: grabbing; }
+
+    .menu-filters-row {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .menu-search {
+      position: relative;
+      flex: 0 1 clamp(320px, 44%, 680px);
+      min-width: 280px;
+      max-width: 680px;
+    }
+    .menu-search svg {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      color: #9ca3af;
+      pointer-events: none;
+    }
+    .menu-search input {
+      width: 100%;
+      height: 64px;
+      border: 3px solid #eb1b8d;
+      border-radius: 10px;
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1;
+      padding: 0 18px 0 46px;
+      outline: none;
+      font-family: inherit;
+    }
+    .menu-search input::placeholder {
+      color: #9ca3af;
+    }
+    .menu-search input:focus {
+      box-shadow: 0 0 0 4px rgba(235, 27, 141, .12);
+    }
+    .menu-chip-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      min-width: 0;
+      flex: 1 1 320px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .menu-chip-group::-webkit-scrollbar {
+      display: none;
+    }
+    .toolbar-chip {
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid #d8dde6;
+      background: #f2f3f5;
+      color: #111827;
+      padding: 0 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: .15s ease;
+    }
+    .toolbar-chip:hover {
+      background: #eceff3;
+      border-color: #cfd5df;
+    }
+    .toolbar-chip.is-on {
+      background: #eb1b8d;
+      color: #fff;
+      border-color: #eb1b8d;
+      box-shadow: 0 10px 20px rgba(235, 27, 141, .18);
+    }
+    .chip-count {
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      background: #e5e7eb;
+      color: #9ca3af;
+    }
+    .toolbar-chip.is-on .chip-count {
+      background: rgba(255, 255, 255, .2);
+      color: #fff;
+    }
+    .chip-count.has-value {
+      background: #fce7f3;
+      color: #d21d7e;
+    }
+    .menu-action-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      flex-wrap: nowrap;
+    }
+    .view-toggle {
+      display: flex;
+      align-items: center;
+      border: 1px solid #d8dde6;
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    .view-toggle button {
+      height: 100%;
+      width: 40px;
+      border: 0;
+      background: transparent;
+      color: #6b7280;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .view-toggle button.active {
+      background: #f3f4f6;
+      color: #111827;
+    }
+    .csv-btn {
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid #d8dde6;
+      background: #fff;
+      color: #111827;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .csv-btn:hover {
+      background: #f9fafb;
+    }
+    @media (min-width: 1280px) {
+      .menu-filters-row {
+        flex-wrap: nowrap;
+      }
+    }
+    @media (max-width: 1024px) {
+      .menu-search input {
+        height: 52px;
+        font-size: 15px;
+      }
+      .toolbar-chip {
+        height: 40px;
+        padding: 0 12px;
+        font-size: 13px;
+      }
+      .chip-count {
+        min-width: 20px;
+        height: 20px;
+        font-size: 10px;
+      }
+      .view-toggle, .csv-btn {
+        height: 40px;
+      }
+      .csv-btn {
+        font-size: 13px;
+      }
+    }
+    @media (max-width: 768px) {
+      .menu-chip-group {
+        flex-wrap: wrap;
+        flex-basis: 100%;
+        overflow-x: visible;
+      }
+      .menu-action-group {
+        margin-left: 0;
+        flex-wrap: wrap;
+      }
+      .menu-search {
+        flex-basis: 100%;
+        min-width: 0;
+      }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(17, 24, 39, 0.34);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .modal {
+      width: min(520px, 100%);
+      background: #fff;
+      border: 1px solid #eef1f6;
+      border-radius: 26px;
+      box-shadow: 0 28px 80px rgba(0,0,0,.24);
+      overflow: hidden;
+    }
+    .modal-head {
+      padding: 24px 26px 18px;
+      border-bottom: 1px solid #eef1f6;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .modal-head h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -.03em;
+      color: #111827;
+    }
+    .modal-head p {
+      margin: 6px 0 0;
+      color: #7b8496;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .x {
+      width: 38px;
+      height: 38px;
+      border: 1px solid #e7eaf1;
+      background: #fff;
+      border-radius: 14px;
+      font-size: 20px;
+      line-height: 1;
+      color: #667085;
+      cursor: pointer;
+    }
+    .modal-body {
+      padding: 24px 26px;
+    }
+    .field {
+      margin-bottom: 18px;
+    }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #344054;
+    }
+    .optional {
+      color: #9aa3b4;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .hint {
+      color: #7b8496;
+      font-size: 12px;
+      line-height: 1.55;
+      margin-top: 8px;
+    }
+    .modal-footer {
+      padding: 18px 26px 24px;
+      border-top: 1px solid #eef1f6;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
   `],
     template: `
   <div class="flex h-full overflow-hidden" style="min-height:calc(100vh - 64px)">
 
     <!-- ─── LEFT: Categories Panel (desktop only) ──────────────── -->
-    <aside class="hidden lg:flex w-64 flex-shrink-0 border-r border-gray-200 bg-white flex-col overflow-y-auto">
-      <div class="p-4 border-b border-gray-100">
-        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Categorías</h2>
+    <aside class="hidden lg:flex w-[300px] sections-panel">
+      <div class="sections-header">
+        <div class="sections-title-row">
+          <div class="sections-title">Secciones del menú</div>
+          <button class="add-section" title="Nueva sección" aria-label="Nueva sección" (click)="openNewCategoryForm()">+</button>
+        </div>
+        <p class="sections-help mb-0">Organiza tus productos por grupos visibles para el cliente.</p>
+
+        <div class="quick-create-card block">
+          <strong>Crear sección rápido</strong>
+          <div class="quick-row">
+            <input
+              [(ngModel)]="quickSectionName"
+              (keyup.enter)="createQuickSection()"
+              placeholder="Ej: Burgers, Bebidas, Combos"
+              aria-label="Nombre de sección" />
+            <button type="button" (click)="createQuickSection()">Crear</button>
+          </div>
+        </div>
       </div>
 
-      <!-- All category -->
-      <button
-        class="cat-item flex items-center justify-between px-4 py-2.5 text-sm font-medium text-gray-700 w-full text-left"
-        [class.active]="selectedCategoryId() === null"
-        (click)="selectCategory(null)">
-        <span>Todos los productos</span>
-        <span class="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{{ allProducts().length }}</span>
-      </button>
-
-      <!-- Category list -->
-      @for (cat of categories(); track cat.id; let i = $index) {
-        <div class="cat-item flex items-center gap-1 px-2 py-1.5"
-          [class.active]="selectedCategoryId() === cat.id">
-          <!-- Up/Down reorder -->
-          <div class="flex flex-col gap-0 flex-shrink-0">
-            <button (click)="moveCategory(i, -1)" [disabled]="i === 0"
-              class="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
-            </button>
-            <button (click)="moveCategory(i, 1)" [disabled]="i === categories().length - 1"
-              class="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
-            </button>
+      <div class="section-list">
+        <div class="section-item" [class.active]="selectedCategoryId() === null" (click)="selectCategory(null)">
+          <div class="drag">☰</div>
+          <div>
+            <div class="section-name">Todos los productos</div>
+            <span class="section-meta">Vista completa</span>
           </div>
-
-          <!-- Name click -->
-          <button class="flex-1 text-left text-sm font-medium truncate" (click)="selectCategory(cat.id)">
-            {{ cat.name }}
-          </button>
-
-          <!-- Count -->
-          <span class="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5 flex-shrink-0">
-            {{ productCountByCategory()[cat.id] }}
-          </span>
-
-          <!-- Active toggle -->
-          <button (click)="toggleCategory(cat)"
-            [title]="cat.is_active ? 'Desactivar' : 'Activar'"
-            class="flex-shrink-0 p-1 rounded transition-colors"
-            [class]="cat.is_active ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'">
-            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-              <circle cx="10" cy="10" r="5" />
-            </svg>
-          </button>
-
-          <!-- Delete -->
-          <button (click)="deleteCategory(cat)"
-            class="flex-shrink-0 p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div class="count">{{ allProducts().length }}</div>
+          <button class="dots" title="Opciones" aria-label="Opciones">⋮</button>
         </div>
-      }
 
-      <!-- Add category -->
-      <div class="p-3 border-t border-gray-100 mt-auto">
-        @if (addingCategory()) {
-          <div class="flex gap-1">
-            <input [(ngModel)]="newCategoryName" (keyup.enter)="saveNewCategory()"
-              placeholder="Nombre de categoría"
-              class="input-field flex-1 text-sm py-1.5" #catInput autofocus />
-            <button (click)="saveNewCategory()" class="btn-primary px-3 py-1.5 text-sm">OK</button>
-            <button (click)="addingCategory.set(false)" class="px-2 py-1.5 text-gray-500 hover:bg-gray-100 rounded-lg text-sm">✕</button>
+        @for (cat of categories(); track cat.id; let i = $index) {
+          <div
+            class="section-item"
+            [class.active]="selectedCategoryId() === cat.id"
+            draggable="true"
+            (dragstart)="onCategoryDragStart(i)"
+            (dragover)="onCategoryDragOver($event)"
+            (dragend)="onCategoryDragEnd()"
+            (drop)="onCategoryDrop(i)"
+            (click)="selectCategory(cat.id)">
+            <div class="drag">☰</div>
+            <div>
+              <div class="section-name">{{ cat.name }}</div>
+              <span class="section-meta">{{ sectionMeta(cat) || 'Nueva sección' }}</span>
+            </div>
+            <div class="count">{{ productCountByCategory()[cat.id] }}</div>
+            <button type="button" class="dots opacity-100" title="Opciones" aria-label="Opciones" (click)="toggleSectionMenu(cat.id, $event)">⋮</button>
+
+            @if (sectionMenuOpenId() === cat.id) {
+              <div class="section-menu" (click)="$event.stopPropagation()">
+                <button (click)="moveCategory(i, -1); closeSectionMenu()">Subir</button>
+                <button (click)="moveCategory(i, 1); closeSectionMenu()">Bajar</button>
+                <button (click)="toggleCategory(cat); closeSectionMenu()">{{ cat.is_active ? 'Desactivar' : 'Activar' }}</button>
+                <button class="danger" (click)="deleteCategory(cat); closeSectionMenu()">Eliminar</button>
+              </div>
+            }
           </div>
-        } @else {
-          <button (click)="addingCategory.set(true)"
-            class="w-full flex items-center gap-2 text-sm text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-lg px-3 py-2 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Nueva categoría
-          </button>
         }
       </div>
     </aside>
@@ -133,65 +595,88 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
       </div>
 
       <!-- Top bar -->
-      <div class="bg-white border-b border-gray-200 p-4 flex flex-wrap items-center gap-3">
-        <h1 class="text-lg font-bold text-gray-900 mr-2">{{ catalogTitle() }}</h1>
-
-        <!-- Search -->
-        <div class="relative flex-1 min-w-48">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.804 7.5 7.5 0 0 0 15.803 15.803Z"/>
-          </svg>
-          <input [(ngModel)]="searchQuery" placeholder="Buscar producto..."
-            class="input-field pl-9 pr-3 py-2 text-sm w-full" />
-        </div>
-
-        <!-- Filter chips -->
-        <div class="flex items-center gap-2 flex-wrap">
-          <button class="chip" [class.on]="fAvailable()" (click)="toggleFilter('available')">Disponible</button>
-          <button class="chip" [class.on]="fOutOfStock()" (click)="toggleFilter('outOfStock')">Sin stock</button>
-          <button class="chip" [class.on]="fDiscounted()" (click)="toggleFilter('discounted')">Con descuento</button>
-          <button class="chip" [class.on]="fFeatured()" (click)="toggleFilter('featured')">Destacados</button>
-        </div>
-
-        <!-- View toggle -->
-        <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-          <button (click)="viewMode.set('grid')" [class.bg-gray-100]="viewMode() === 'grid'"
-            class="p-2 transition-colors" title="Cuadrícula">
-            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+      <div class="bg-white border-b border-gray-200 px-3 py-3 md:px-4 md:py-4 min-w-0">
+        <div class="flex flex-wrap items-center gap-2 md:gap-3 min-w-0">
+          <h1 class="text-lg font-bold text-gray-900 flex-1 min-w-[180px]">{{ catalogTitle() }}</h1>
+          <button (click)="newProduct()"
+            class="btn-primary flex items-center gap-2 text-sm py-2 flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-          </button>
-          <button (click)="viewMode.set('list')" [class.bg-gray-100]="viewMode() === 'list'"
-            class="p-2 transition-colors" title="Lista">
-            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-            </svg>
+            Nuevo producto
           </button>
         </div>
 
-        <!-- Actions -->
-        <button (click)="showBulkImport.set(true)"
-          class="btn-secondary flex items-center gap-2 text-sm py-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-          </svg>
-          CSV
-        </button>
-        <button (click)="newProduct()"
-          class="btn-primary flex items-center gap-2 text-sm py-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Nuevo producto
-        </button>
+        <div class="menu-filters-row">
+          <div class="menu-search">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.804 7.5 7.5 0 0 0 15.803 15.803Z"/>
+            </svg>
+            <input [(ngModel)]="searchQuery" placeholder="Buscar producto..." />
+          </div>
+
+          <div class="menu-chip-group">
+            <button class="toolbar-chip" [class.is-on]="allFiltersOff()" (click)="resetFilters()">
+              Todos
+            </button>
+            <button class="toolbar-chip" [class.is-on]="fAvailable()" (click)="toggleFilter('available')">
+              Disponible
+              <span class="chip-count" [class.has-value]="filterCounts().available > 0">{{ filterCounts().available }}</span>
+            </button>
+            <button class="toolbar-chip" [class.is-on]="fOutOfStock()" (click)="toggleFilter('outOfStock')">
+              Sin stock
+              <span class="chip-count" [class.has-value]="filterCounts().outOfStock > 0">{{ filterCounts().outOfStock }}</span>
+            </button>
+            <button class="toolbar-chip" [class.is-on]="fDiscounted()" (click)="toggleFilter('discounted')">
+              Con descuento
+              <span class="chip-count" [class.has-value]="filterCounts().discounted > 0">{{ filterCounts().discounted }}</span>
+            </button>
+            <button class="toolbar-chip" [class.is-on]="fFeatured()" (click)="toggleFilter('featured')">
+              Destacados
+              <span class="chip-count" [class.has-value]="filterCounts().featured > 0">{{ filterCounts().featured }}</span>
+            </button>
+          </div>
+
+          <div class="menu-action-group">
+            <div class="view-toggle">
+              <button (click)="viewMode.set('grid')" [class.active]="viewMode() === 'grid'" title="Cuadrícula">
+                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                </svg>
+              </button>
+              <button (click)="viewMode.set('list')" [class.active]="viewMode() === 'list'" title="Lista">
+                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+              </button>
+            </div>
+
+            <button (click)="showBulkImport.set(true)"
+              class="csv-btn"
+              title="Exportar productos visibles a CSV">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+              </svg>
+              CSV
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Products area -->
-      <div class="flex-1 overflow-y-auto p-4">
+      <div class="flex-1 overflow-y-auto p-3 md:p-4 min-w-0">
         @if (isLoading()) {
           <div class="flex justify-center py-16">
             <div class="w-8 h-8 border-4 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
+          </div>
+        } @else if (filteredProducts().length === 0 && selectedCategoryId() && !searchQuery.trim() && !fAvailable() && !fOutOfStock() && !fDiscounted() && !fFeatured()) {
+          <div class="h-full min-h-[340px] flex flex-col items-center justify-center text-gray-400 text-center px-6">
+            <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+            <p class="font-medium text-gray-600">Esta sección está vacía</p>
+            <p class="text-sm mt-1">Agrega productos para que aparezcan en esta sección del menú.</p>
+            <button (click)="newProduct()" class="btn-primary mt-4">+ Nuevo producto</button>
           </div>
         } @else if (filteredProducts().length === 0) {
           <div class="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -202,7 +687,7 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
             <p class="text-sm mt-1">Agrega un producto para comenzar</p>
           </div>
         } @else if (viewMode() === 'grid') {
-          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div class="grid gap-4 min-w-0" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
             @for (product of filteredProducts(); track product.id) {
               <app-product-card
                 [product]="product"
@@ -301,6 +786,54 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
     </main>
   </div>
 
+  <!-- ─── New Section Modal ────────────────────────────────────── -->
+  @if (addingCategory()) {
+    <div class="modal-overlay" (click)="cancelNewCategory()">
+      <div class="modal section-form-enter" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <div>
+            <h2>Nueva sección del menú</h2>
+            <p>Crea un grupo visible para organizar los productos dentro del menú del comercio.</p>
+          </div>
+          <button class="x" (click)="cancelNewCategory()" aria-label="Cerrar">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="field">
+            <label>Nombre de la sección</label>
+            <input
+              #newSectionInput
+              [(ngModel)]="newCategoryName"
+              (keyup.enter)="saveNewCategory()"
+              class="input-field w-full text-sm py-2"
+              placeholder="Ej: Burgers, Bebidas, Combos" />
+          </div>
+
+          <div class="field">
+            <label>
+              Categoría relacionada de Tuttyno
+              <span class="optional">Opcional</span>
+            </label>
+            <select class="input-field w-full text-sm py-2" [(ngModel)]="newCategoryTuttyId">
+              <option [ngValue]="null">Sin categoría relacionada</option>
+              @for (cat of tuttyCategoriesForPicker(); track cat.id) {
+                <option [value]="cat.id">{{ cat.name }}</option>
+              }
+            </select>
+            <div class="hint">
+              Esto ayuda a clasificar el comercio en Tuttyno, pero la sección del menú puede tener el nombre que el comercio necesite.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button (click)="cancelNewCategory()" class="btn-secondary secondary-btn text-sm">Cancelar</button>
+          <button (click)="saveNewCategory()" class="btn-primary primary-btn text-sm">Crear sección</button>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- ─── Bulk Import Modal ────────────────────────────────────── -->
   @if (showBulkImport()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -384,10 +917,12 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
 export class StoreCatalogPageComponent implements OnInit, OnDestroy {
     private readonly storeService = inject(StoreAdminService);
     private readonly catalogService = inject(StoreCatalogService);
+    private readonly settingsSvc = inject(SettingsService);
     private readonly toast = inject(ToastService);
     private readonly confirmSvc = inject(ConfirmService);
     private readonly router = inject(Router);
     private sub?: Subscription;
+    @ViewChild('newSectionInput') private newSectionInput?: ElementRef<HTMLInputElement>;
 
     // ─── State ────────────────────────────────────────────────────────────────
     readonly categories = signal<MenuCategory[]>([]);
@@ -406,7 +941,12 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
 
     // Add category
     readonly addingCategory = signal(false);
+    readonly draggingCategoryIndex = signal<number | null>(null);
+    readonly sectionMenuOpenId = signal<string | null>(null);
     newCategoryName = '';
+    quickSectionName = '';
+    newCategoryTuttyId: string | null = null;
+    readonly tuttyCategoriesForPicker = signal<CommerceCategory[]>([]);
 
     // Bulk import
     readonly showBulkImport = signal(false);
@@ -441,6 +981,14 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
         return map;
     });
 
+    readonly tuttyCategoryNameMap = computed(() => {
+        const map: Record<string, string> = {};
+        for (const c of this.tuttyCategoriesForPicker()) {
+            map[c.id] = c.name;
+        }
+        return map;
+    });
+
     readonly filteredProducts = computed(() => {
         const q = this.searchQuery.toLowerCase().trim();
         const catId = this.selectedCategoryId();
@@ -459,6 +1007,20 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
             return true;
         });
     });
+
+    readonly filterCounts = computed(() => {
+        const products = this.allProducts();
+        return {
+            available: products.filter(p => p.is_available).length,
+            outOfStock: products.filter(p => (p.stock_count ?? 1) <= 0).length,
+            discounted: products.filter(p => !!p.discount_price).length,
+            featured: products.filter(p => !!p.is_featured).length,
+        };
+    });
+
+    readonly allFiltersOff = computed(() =>
+        !this.fAvailable() && !this.fOutOfStock() && !this.fDiscounted() && !this.fFeatured()
+    );
 
     constructor() {
         effect(() => {
@@ -488,6 +1050,14 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
             next: prods => { this.allProducts.set(prods); prodsLoaded = true; checkDone(); },
             error: () => { prodsLoaded = true; checkDone(); },
         });
+
+        // Load Tuttyno categories for the "new menu category" picker
+        const commerceType = this.storeService.activeStore()?.commerce_type;
+        if (commerceType) {
+            this.settingsSvc.getStoreCategories(commerceType).then(
+                cats => this.tuttyCategoriesForPicker.set(cats),
+            ).catch(() => { });
+        }
     }
 
     // ─── Category actions ─────────────────────────────────────────────────────
@@ -495,11 +1065,83 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
         this.selectedCategoryId.set(id);
     }
 
+    sectionMeta(cat: MenuCategory): string {
+        if (!cat.tutty_category_id) return 'Sin categoría Tuttyno';
+        return this.tuttyCategoryNameMap()[cat.tutty_category_id] ?? 'Categoría Tuttyno';
+    }
+
+    toggleSectionMenu(id: string, event: MouseEvent) {
+        event.stopPropagation();
+        this.sectionMenuOpenId.update(current => (current === id ? null : id));
+    }
+
+    closeSectionMenu() {
+        this.sectionMenuOpenId.set(null);
+    }
+
+    openNewCategoryForm() {
+        this.addingCategory.set(true);
+        setTimeout(() => this.newSectionInput?.nativeElement.focus(), 0);
+    }
+
+    cancelNewCategory() {
+        this.addingCategory.set(false);
+        this.newCategoryName = '';
+        this.newCategoryTuttyId = null;
+    }
+
+    async createQuickSection() {
+        const name = this.quickSectionName.trim();
+        const storeId = this.storeService.activeStoreId();
+        if (!name || !storeId) return;
+        try {
+            const cat = await this.catalogService.createCategory(storeId, name, null);
+            this.categories.update(list => [...list, cat]);
+            this.quickSectionName = '';
+            this.toast.success('Categoría creada');
+        } catch {
+            this.toast.error('Error al crear categoría');
+        }
+    }
+
     async moveCategory(index: number, dir: -1 | 1) {
         const cats = [...this.categories()];
         const target = index + dir;
         if (target < 0 || target >= cats.length) return;
         [cats[index], cats[target]] = [cats[target], cats[index]];
+        const reordered = cats.map((c, i) => ({ ...c, display_order: i }));
+        this.categories.set(reordered);
+        try {
+            await this.catalogService.reorderCategories(
+                reordered.map(c => ({ id: c.id, display_order: c.display_order })),
+            );
+        } catch {
+            this.toast.error('Error al reordenar categorías');
+        }
+    }
+
+    onCategoryDragStart(index: number) {
+        this.draggingCategoryIndex.set(index);
+    }
+
+    onCategoryDragOver(event: DragEvent) {
+        event.preventDefault();
+    }
+
+    onCategoryDragEnd() {
+        this.draggingCategoryIndex.set(null);
+    }
+
+    async onCategoryDrop(targetIndex: number) {
+        const sourceIndex = this.draggingCategoryIndex();
+        this.draggingCategoryIndex.set(null);
+        if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+        const cats = [...this.categories()];
+        const [moved] = cats.splice(sourceIndex, 1);
+        if (!moved) return;
+        cats.splice(targetIndex, 0, moved);
+
         const reordered = cats.map((c, i) => ({ ...c, display_order: i }));
         this.categories.set(reordered);
         try {
@@ -527,10 +1169,9 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
         const storeId = this.storeService.activeStoreId();
         if (!name || !storeId) return;
         try {
-            const cat = await this.catalogService.createCategory(storeId, name);
+            const cat = await this.catalogService.createCategory(storeId, name, this.newCategoryTuttyId);
             this.categories.update(list => [...list, cat]);
-            this.newCategoryName = '';
-            this.addingCategory.set(false);
+            this.cancelNewCategory();
             this.toast.success('Categoría creada');
         } catch {
             this.toast.error('Error al crear categoría');
@@ -553,12 +1194,24 @@ export class StoreCatalogPageComponent implements OnInit, OnDestroy {
         }
     }
 
+    @HostListener('document:click')
+    onDocumentClick() {
+        this.closeSectionMenu();
+    }
+
     // ─── Filter chips ─────────────────────────────────────────────────────────
     toggleFilter(key: 'available' | 'outOfStock' | 'discounted' | 'featured') {
         if (key === 'available') this.fAvailable.update(v => !v);
         else if (key === 'outOfStock') this.fOutOfStock.update(v => !v);
         else if (key === 'discounted') this.fDiscounted.update(v => !v);
         else this.fFeatured.update(v => !v);
+    }
+
+    resetFilters() {
+        this.fAvailable.set(false);
+        this.fOutOfStock.set(false);
+        this.fDiscounted.set(false);
+        this.fFeatured.set(false);
     }
 
     // ─── Product actions ──────────────────────────────────────────────────────

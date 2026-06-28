@@ -41,7 +41,7 @@ export class StoreCatalogService {
     );
   }
 
-  async createCategory(storeId: string, name: string): Promise<MenuCategory> {
+  async createCategory(storeId: string, name: string, tuttyCategoryId?: string | null): Promise<MenuCategory> {
     const { data: existing } = await this.supabase
       .from('menu_categories')
       .select('display_order')
@@ -54,7 +54,13 @@ export class StoreCatalogService {
 
     const { data, error } = await this.supabase
       .from('menu_categories')
-      .insert({ commerce_id: storeId, name, display_order: nextOrder, is_active: true })
+      .insert({
+        commerce_id: storeId,
+        name,
+        display_order: nextOrder,
+        is_active: true,
+        tutty_category_id: tuttyCategoryId ?? null,
+      })
       .select()
       .single();
 

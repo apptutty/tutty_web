@@ -108,7 +108,7 @@ export class TuttyMapComponent implements OnInit, OnChanges {
 
     readonly markerOptions: google.maps.MarkerOptions = {
         draggable: false,
-        animation: google.maps.Animation?.DROP,
+        animation: undefined,
     };
 
     readonly circleOptions: google.maps.CircleOptions = {
@@ -142,12 +142,16 @@ export class TuttyMapComponent implements OnInit, OnChanges {
 
     private loadApi(): void {
         if ((window as any).google?.maps) {
+            this.markerOptions.animation = (window as any).google.maps.Animation?.DROP;
             this.apiLoaded = true;
             return;
         }
         const existing = document.getElementById('gmaps-script');
         if (existing) {
-            existing.addEventListener('load', () => { this.apiLoaded = true; });
+            existing.addEventListener('load', () => {
+                this.markerOptions.animation = (window as any).google?.maps?.Animation?.DROP;
+                this.apiLoaded = true;
+            });
             return;
         }
         const script = document.createElement('script');
@@ -155,7 +159,10 @@ export class TuttyMapComponent implements OnInit, OnChanges {
         script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
-        script.onload = () => { this.apiLoaded = true; };
+        script.onload = () => {
+            this.markerOptions.animation = (window as any).google?.maps?.Animation?.DROP;
+            this.apiLoaded = true;
+        };
         document.head.appendChild(script);
     }
 

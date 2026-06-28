@@ -9,6 +9,7 @@ module.exports = {
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
+        poppins: ['Poppins', 'Inter', 'sans-serif'],
       },
       colors: {
         // --- Tutty Primary ---

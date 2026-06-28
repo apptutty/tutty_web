@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { StoreAdminService } from '../store-admin.service';
 
 @Component({
@@ -7,100 +8,197 @@ import { StoreAdminService } from '../store-admin.service';
     standalone: true,
     imports: [CommonModule],
     styles: [`
-    .toggle-track {
-      @apply relative inline-flex items-center cursor-pointer select-none;
-      min-height: 60px;
+    .store-state-panel {
+      background: #fff;
+      border: 1px solid #e7eaf1;
+      border-radius: 22px;
+      box-shadow: 0 8px 24px rgba(18, 24, 40, .07);
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+      min-width: 0;
     }
-    .toggle-knob {
-      @apply absolute left-1 transition-all duration-300 ease-in-out;
-      width: 52px;
-      height: 52px;
+    .store-state-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .store-state-title {
+      margin: 0;
+    }
+    .store-state-header p {
+      margin: 6px 0 0;
+      font-size: 12.5px;
+      color: #667085;
+      line-height: 1.45;
+    }
+    .store-switch {
+      position: relative;
+      width: 66px;
+      height: 38px;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: .2s ease;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .store-switch.on { background: #19b65b; }
+    .store-switch.off { background: #ef4444; }
+    .store-switch-knob {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+      transition: transform .2s ease;
+      display: grid;
+      place-items: center;
     }
-    .toggle-knob.on  { transform: translateX(72px); }
-    .toggle-knob.off { transform: translateX(0px); }
-    .toggle-bg {
-      width: 132px;
-      height: 60px;
-      border-radius: 30px;
-      transition: background 0.3s;
+    .store-switch.on .store-switch-knob {
+      transform: translateX(28px);
     }
-    .toggle-bg.on  { background: linear-gradient(90deg, #16a34a, #22c55e); }
-    .toggle-bg.off { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .store-state-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+    .admin-badge--success {
+      background: #eafbf1;
+      color: #067647;
+    }
+    .admin-badge--danger {
+      background: #feefef;
+      color: #b42318;
+    }
+    .admin-badge--warning {
+      background: #fff6e6;
+      color: #b54708;
+    }
+    .store-schedule-box {
+      border: 1px solid #eef1f6;
+      border-radius: 16px;
+      padding: 13px;
+      background: #fbfcff;
+    }
+    .store-schedule-label {
+      display: block;
+      font-size: 11px;
+      color: #667085;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 800;
+    }
+    .store-schedule-box strong {
+      font-size: 14px;
+      color: #111827;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+    .state-primary-btn {
+      height: 42px;
+      border: 0;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #f2299b, #df117f);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 12px 22px rgba(235, 27, 141, .24);
+    }
+    .state-primary-btn:hover { filter: brightness(.97); }
+    .outside-confirm {
+      border: 1px solid #ffd9b0;
+      background: #fff6e6;
+      border-radius: 16px;
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .outside-confirm p {
+      margin: 0;
+      color: #b54708;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .outside-confirm-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
   `],
     template: `
-    <div class="card p-5 space-y-4">
-      <!-- Header -->
-      <div class="flex items-center justify-between">
+    <div class="store-state-panel">
+      <div class="store-state-header">
         <div>
-          <h2 class="font-semibold text-gray-900 text-sm">Estado del comercio</h2>
-          @if (scheduleText()) {
-            <p class="text-xs text-gray-500 mt-0.5">{{ scheduleText() }}</p>
-          }
+          <h2 class="admin-card-title store-state-title">Estado del comercio</h2>
+          <p>Controla si el comercio puede recibir pedidos ahora.</p>
         </div>
 
-        <!-- Big toggle -->
         <button
-          class="toggle-track focus:outline-none"
+          class="store-switch focus:outline-none"
+          [class.on]="isOpen()"
+          [class.off]="!isOpen()"
+          role="switch"
+          [attr.aria-checked]="isOpen()"
           [attr.aria-label]="isOpen() ? 'Cerrar comercio' : 'Abrir comercio'"
           (click)="handleToggle()"
           [disabled]="busy()"
         >
-          <div class="toggle-bg" [class.on]="isOpen()" [class.off]="!isOpen()">
-            <div class="toggle-knob" [class.on]="isOpen()" [class.off]="!isOpen()"
-              [class.animate-spin]="busy()">
-              @if (busy()) {
-                <div class="w-full h-full flex items-center justify-center">
-                  <svg class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
-                </div>
-              }
-            </div>
-          </div>
+          <span class="store-switch-knob" [class.animate-spin]="busy()"></span>
         </button>
       </div>
 
-      <!-- Status label -->
-      <div class="flex items-center gap-2">
+      <div class="store-state-badges">
         @if (isOpen()) {
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-50 text-success-700 text-sm font-semibold">
-            <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse"></span>
+          <span class="admin-badge admin-badge--success">
+            <span class="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse"></span>
             ABIERTO
           </span>
         } @else {
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-50 text-error-700 text-sm font-semibold">
-            <span class="w-2 h-2 rounded-full bg-error-400"></span>
+          <span class="admin-badge admin-badge--danger">
+            <span class="w-1.5 h-1.5 rounded-full bg-error-400"></span>
             CERRADO
           </span>
         }
         @if (outsideSchedule()) {
-          <span class="flex items-center gap-1 text-xs text-warning-600 font-medium">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            Fuera de horario
+          <span class="admin-badge admin-badge--warning">
+            ⚠ Fuera de horario
           </span>
         }
       </div>
 
-      <!-- Out-of-schedule confirmation modal -->
+      <div class="store-schedule-box">
+        <span class="store-schedule-label">Horario de hoy</span>
+        <strong>{{ simpleScheduleText() }}</strong>
+      </div>
+
+      <button class="state-primary-btn w-full justify-center text-sm" (click)="goToSettings()">Editar horario</button>
+
       @if (showConfirm()) {
-        <div class="mt-2 p-3 rounded-xl bg-warning-50 border border-warning-200 space-y-3">
-          <div class="flex gap-2">
-            <svg class="w-5 h-5 text-warning-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            <p class="text-sm text-warning-700">
-              ⚠️ Estás abriendo fuera de tu horario configurado
-              @if (scheduleText()) { <strong>({{ scheduleText() }})</strong>. }
-              ¿Deseas abrirlo de todas formas?
-            </p>
-          </div>
-          <div class="flex gap-2">
+        <div class="outside-confirm">
+          <p>
+            Estas abriendo fuera del horario configurado
+            @if (simpleScheduleText()) { <strong>({{ simpleScheduleText() }})</strong>. }
+            ¿Deseas abrirlo de todas formas?
+          </p>
+          <div class="outside-confirm-actions">
             <button class="btn-primary text-xs px-3 py-1.5" (click)="confirmOpen()">Sí, abrir</button>
             <button class="btn-secondary text-xs px-3 py-1.5" (click)="showConfirm.set(false)">Cancelar</button>
           </div>
@@ -111,6 +209,7 @@ import { StoreAdminService } from '../store-admin.service';
 })
 export class OpenCloseToggleComponent {
     private readonly storeService = inject(StoreAdminService);
+    private readonly router = inject(Router);
 
     readonly busy = signal(false);
     readonly showConfirm = signal(false);
@@ -125,6 +224,12 @@ export class OpenCloseToggleComponent {
             ? this.formatDays(store.open_days)
             : 'Todos los días';
         return `${days} ${this.fmt12(store.opening_time)} – ${this.fmt12(store.closing_time)}`;
+    });
+
+    readonly simpleScheduleText = computed(() => {
+        const store = this.storeService.activeStore();
+        if (!store?.opening_time || !store?.closing_time) return 'Horario no configurado';
+        return `${this.fmt12(store.opening_time)} - ${this.fmt12(store.closing_time)}`;
     });
 
     async handleToggle() {
@@ -142,6 +247,10 @@ export class OpenCloseToggleComponent {
     async confirmOpen() {
         this.showConfirm.set(false);
         await this.doToggle();
+    }
+
+    goToSettings() {
+        this.router.navigate(['/store/settings']);
     }
 
     private async doToggle() {

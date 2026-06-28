@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
-import { AppSetting, Holiday, StoreCategory, AuditLogEntry, CommerceType } from '../../core/supabase/database.types';
+import { AppSetting, Holiday, CommerceCategory, TuttyDomain, AuditLogEntry, CommerceType } from '../../core/supabase/database.types';
+
+// Re-export for backward compat
+export type StoreCategory = CommerceCategory;
 
 export interface AdminUser {
     id: string;
@@ -115,30 +118,40 @@ export class SettingsService {
         if (error) throw error;
     }
 
-    async getStoreCategories(commerceType?: CommerceType): Promise<StoreCategory[]> {
-        let q = this.supabase.from('restaurant_categories')
-            .select('id, name, slug, display_order, commerce_type, is_active, created_at')
+    async getStoreCategories(commerceType?: CommerceType | string): Promise<CommerceCategory[]> {
+        let q = this.supabase.from('commerce_categories')
+            .select('id, name, slug, icon_url, commerce_type, display_order, is_active, created_at, domain_id, applies_to, color, domain:tutty_domains(id,name,slug,icon,color,display_order)')
             .order('display_order');
-        if (commerceType) q = q.eq('commerce_type', commerceType);
+        if (commerceType) q = (q as any).eq('commerce_type', commerceType);
         const { data, error } = await q;
         if (error) throw error;
-        return (data ?? []) as StoreCategory[];
+        return (data ?? []) as unknown as CommerceCategory[];
     }
 
-    async saveStoreCategory(cat: Partial<StoreCategory>): Promise<StoreCategory> {
-        // Strip icon — column does not exist in DB
-        const { ...payload } = cat as any;
-        delete payload['icon'];
+    async getTuttyDomains(): Promise<TuttyDomain[]> {
+        const { data, error } = await this.supabase
+            .from('tutty_domains')
+            .select('id, name, slug, description, icon, color, display_order, is_active')
+            .eq('is_active', true)
+            .order('display_order');
+        if (error) throw error;
+        return (data ?? []) as TuttyDomain[];
+    }
+
+    async saveStoreCategory(cat: Partial<CommerceCategory>): Promise<CommerceCategory> {
+        const { domain, ...payload } = cat as any;
         const op = payload.id
-            ? this.supabase.from('restaurant_categories').update(payload).eq('id', payload.id).select('id, name, slug, display_order, commerce_type, is_active, created_at').single()
-            : this.supabase.from('restaurant_categories').insert(payload).select('id, name, slug, display_order, commerce_type, is_active, created_at').single();
+            ? this.supabase.from('commerce_categories').update(payload).eq('id', payload.id)
+                .select('id, name, slug, display_order, commerce_type, is_active, created_at, domain_id, applies_to').single()
+            : this.supabase.from('commerce_categories').insert(payload)
+                .select('id, name, slug, display_order, commerce_type, is_active, created_at, domain_id, applies_to').single();
         const { data, error } = await op;
         if (error) throw error;
-        return data as StoreCategory;
+        return data as CommerceCategory;
     }
 
     async deleteStoreCategory(id: string): Promise<void> {
-        const { error } = await this.supabase.from('restaurant_categories').delete().eq('id', id);
+        const { error } = await this.supabase.from('commerce_categories').delete().eq('id', id);
         if (error) throw error;
     }
 
@@ -146,7 +159,7 @@ export class SettingsService {
         await Promise.all(
             updates.map(u =>
                 this.supabase
-                    .from('restaurant_categories')
+                    .from('commerce_categories')
                     .update({ display_order: u.order })
                     .eq('id', u.id)
                     .then(({ error }) => { if (error) throw error; })
