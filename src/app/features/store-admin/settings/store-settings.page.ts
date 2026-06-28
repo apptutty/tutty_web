@@ -18,6 +18,10 @@ import { AdminGeoService, PlaceSuggestion } from '../../../core/services/admin-g
 import { AdminImageFieldComponent } from '../../../shared/ui/image-field/admin-image-field.component';
 import { CommerceCategoryPickerComponent } from '../../../shared/ui/category-picker/commerce-category-picker.component';
 import { SettingsService } from '../../settings/settings.service';
+import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component';
+import { AdminBadgeComponent } from '../shared/admin-badge.component';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
+import { AdminFormSectionComponent } from '../shared/admin-form-section.component';
 
 type Tab = 'perfil' | 'horarios' | 'delivery' | 'notificaciones' | 'equipo' | 'finanzas';
 
@@ -49,7 +53,17 @@ interface DeliveryForm {
 @Component({
     selector: 'app-store-settings',
     standalone: true,
-    imports: [CommonModule, FormsModule, TuttyMapComponent, AdminImageFieldComponent, CommerceCategoryPickerComponent],
+    imports: [
+        CommonModule,
+        FormsModule,
+        TuttyMapComponent,
+        AdminImageFieldComponent,
+        CommerceCategoryPickerComponent,
+        AdminEmptyStateComponent,
+        AdminBadgeComponent,
+        AdminPageHeaderComponent,
+        AdminFormSectionComponent,
+    ],
     styles: [`
     .settings-page {
       min-height: 100dvh;
@@ -124,14 +138,6 @@ interface DeliveryForm {
       background: #fff;
       box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
     }
-    .section-title {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #64748b;
-      margin-bottom: 12px;
-    }
     .day-btn { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
     .day-btn.on { background: #e91e8c; border-color: #e91e8c; color: white; }
     .day-btn:not(.on):hover { border-color: #e91e8c; color: #e91e8c; }
@@ -159,18 +165,19 @@ interface DeliveryForm {
     <!-- Header + Tabs -->
     <div class="settings-head">
       <div class="settings-head-inner">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="settings-title">Configuración del comercio</h1>
-            <p class="settings-subtitle">Ajusta perfil, operación, notificaciones, equipo y finanzas.</p>
-          </div>
-        @if (isSaving()) {
-          <div class="flex items-center gap-2 text-sm text-gray-500">
-            <div class="w-4 h-4 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin"></div>
-            Guardando...
-          </div>
-        }
-        </div>
+        <app-admin-page-header
+          title="Configuración del comercio"
+          subtitle="Ajusta perfil, operación, notificaciones, equipo y finanzas."
+        >
+          <ng-container actions>
+            @if (isSaving()) {
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <div class="w-4 h-4 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin"></div>
+                Guardando...
+              </div>
+            }
+          </ng-container>
+        </app-admin-page-header>
       <div class="settings-tabs" role="tablist" aria-label="Secciones de configuración">
         @for (t of tabs; track t.key) {
           <button class="tab-btn" [class.active]="activeTab() === t.key"
@@ -186,22 +193,19 @@ interface DeliveryForm {
       @if (activeTab() === 'perfil') {
 
         <!-- Images -->
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Imágenes</p>
+        <app-admin-form-section title="Imágenes" subtitle="Logo y banner del comercio">
           <div class="flex gap-4 flex-wrap">
-            <!-- Logo -->
             <div class="w-32">
               <app-admin-image-field
-                label="Logo (1:1)"
-                aspect="1/1"
-                [maxMb]="3"
-                [currentUrl]="profileForm.logo_url"
-                [uploading]="uploadingLogo()"
-                (fileSelected)="onLogoSelected($event)"
-                (removed)="onLogoRemoved()">
+                  label="Logo (1:1)"
+                  aspect="1/1"
+                  [maxMb]="3"
+                  [currentUrl]="profileForm.logo_url"
+                  [uploading]="uploadingLogo()"
+                  (fileSelected)="onLogoSelected($event)"
+                  (removed)="onLogoRemoved()">
               </app-admin-image-field>
             </div>
-            <!-- Banner -->
             <div class="flex-1 min-w-48">
               <app-admin-image-field
                 label="Banner (16:9)"
@@ -214,11 +218,10 @@ interface DeliveryForm {
               </app-admin-image-field>
             </div>
           </div>
-        </div>
+        </app-admin-form-section>
 
         <!-- Basic info -->
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Información básica</p>
+        <app-admin-form-section title="Información básica" subtitle="Datos principales del comercio">
           <div class="grid grid-cols-2 gap-3">
             <div class="col-span-2">
               <label class="label">Nombre del comercio *</label>
@@ -245,11 +248,10 @@ interface DeliveryForm {
               </app-commerce-category-picker>
             </div>
           </div>
-        </div>
+        </app-admin-form-section>
 
         <!-- Location -->
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Ubicación</p>
+        <app-admin-form-section title="Ubicación" subtitle="Dirección y coordenadas del comercio">
 
           @if (!profileForm.lat || !profileForm.lng) {
             <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-sm text-amber-800">
@@ -324,17 +326,16 @@ interface DeliveryForm {
               (locationChange)="onMapPick($event)"
             />
           </div>
-        </div>
+        </app-admin-form-section>
 
         <!-- Slug (read-only) -->
-        <div class="card p-5">
-          <p class="section-title">Identificador (slug)</p>
+        <app-admin-form-section title="Identificador (slug)" subtitle="URL pública del comercio">
           <div class="flex items-center gap-3">
             <span class="text-gray-500 text-sm">tutty.do/</span>
             <code class="bg-gray-100 px-3 py-1.5 rounded-lg text-sm text-gray-700">{{ store()?.slug }}</code>
             <span class="text-xs text-gray-400 italic">Solo superadmin puede modificarlo</span>
           </div>
-        </div>
+        </app-admin-form-section>
 
         <div class="flex justify-end">
           <button (click)="saveProfile()" [disabled]="isSaving()"
@@ -344,8 +345,7 @@ interface DeliveryForm {
 
       <!-- ═══ TAB: HORARIOS ═══════════════════════════════════════ -->
       @if (activeTab() === 'horarios') {
-        <div class="card p-5 space-y-5">
-          <p class="section-title">Días de apertura</p>
+        <app-admin-form-section title="Días de apertura" subtitle="Configura horario general y excepciones por día">
           <div class="flex gap-2 flex-wrap">
             @for (day of days; track day.key) {
               <button type="button" class="day-btn"
@@ -405,7 +405,7 @@ interface DeliveryForm {
               </div>
             }
           </div>
-        </div>
+        </app-admin-form-section>
         <div class="flex justify-end">
           <button (click)="saveSchedule()" [disabled]="isSaving()"
             class="btn-primary px-6 py-2 disabled:opacity-50">Guardar horarios</button>
@@ -424,8 +424,7 @@ interface DeliveryForm {
             <button class="ml-auto btn-secondary text-xs py-1" (click)="activeTab.set('perfil')">Ir a ubicación</button>
           </div>
         }
-        <div class="card p-5 space-y-5">
-          <p class="section-title">Condiciones de pedido</p>
+        <app-admin-form-section title="Condiciones de pedido" subtitle="Reglas mínimas y opciones de delivery">
 
           <div>
             <label class="label">Monto mínimo de pedido (RD\$)</label>
@@ -466,7 +465,7 @@ interface DeliveryForm {
           <!-- Express: farmacia only -->
           @if (commerceType() === 'farmacia') {
             <div class="border-t border-gray-100 pt-4 space-y-3">
-              <p class="section-title">Farmacia — Entregas express</p>
+              <p class="text-sm font-semibold text-gray-700">Farmacia — Entregas express</p>
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-700">¿Acepta entregas express (&lt;20 min)?</p>
@@ -488,7 +487,7 @@ interface DeliveryForm {
               }
             </div>
           }
-        </div>
+        </app-admin-form-section>
         <div class="flex justify-end">
           <button (click)="saveDelivery()" [disabled]="isSaving()"
             class="btn-primary px-6 py-2 disabled:opacity-50">Guardar delivery</button>
@@ -497,8 +496,7 @@ interface DeliveryForm {
 
       <!-- ═══ TAB: NOTIFICACIONES ══════════════════════════════════ -->
       @if (activeTab() === 'notificaciones') {
-        <div class="card p-5 space-y-5">
-          <p class="section-title">Preferencias de notificación</p>
+        <app-admin-form-section title="Preferencias de notificación" subtitle="Alertas de pedidos, WhatsApp e inventario">
 
           <div class="flex items-center justify-between py-2">
             <div>
@@ -552,7 +550,7 @@ interface DeliveryForm {
               </div>
             }
           </div>
-        </div>
+        </app-admin-form-section>
         <!-- No save button: auto-saved to localStorage on each toggle -->
         <p class="text-center text-xs text-gray-400">Las preferencias se guardan automáticamente en este dispositivo.</p>
       }
@@ -589,7 +587,14 @@ interface DeliveryForm {
               <div class="w-6 h-6 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin mx-auto"></div>
             </div>
           } @else if (teamMembers().length === 0) {
-            <div class="p-8 text-center text-gray-400 text-sm">No hay admins vinculados</div>
+            <div class="p-4">
+              <app-admin-empty-state
+                icon="users"
+                title="No hay admins vinculados"
+                description="Invita administradores para compartir la gestión del comercio."
+                actionLabel="Invitar admin"
+                (action)="showInvitePanel.set(true)" />
+            </div>
           } @else {
             <div class="divide-y divide-gray-100">
               @for (member of teamMembers(); track member.user_id) {
@@ -626,8 +631,7 @@ interface DeliveryForm {
       <!-- ═══ TAB: FINANZAS ════════════════════════════════════════ -->
       @if (activeTab() === 'finanzas') {
         <!-- Commission info -->
-        <div class="card p-5 space-y-4">
-          <p class="section-title">Comisión y tier</p>
+        <app-admin-form-section title="Comisión y tier" subtitle="Tarifa actual y nivel comercial">
           <div class="flex items-center gap-4 flex-wrap">
             <div class="flex-1">
               <p class="text-xs text-gray-500 mb-1">Tasa de comisión actual</p>
@@ -645,18 +649,16 @@ interface DeliveryForm {
               <strong>{{ onboardingDaysLeft() }} días</strong>
             </div>
           }
-        </div>
+        </app-admin-form-section>
 
         <!-- Pending balance -->
-        <div class="card p-5">
-          <p class="section-title">Saldo pendiente de cobro</p>
+        <app-admin-form-section title="Saldo pendiente de cobro" subtitle="Pedidos entregados aún no liquidados">
           @if (pendingBalanceLoading()) {
             <div class="h-8 w-24 bg-gray-100 rounded animate-pulse"></div>
           } @else {
             <p class="text-3xl font-bold text-gray-900">RD\$ {{ pendingBalance() | number:'1.0-0' }}</p>
-            <p class="text-xs text-gray-400 mt-1">Pedidos entregados aún no liquidados</p>
           }
-        </div>
+        </app-admin-form-section>
 
         <!-- Payouts table -->
         <div class="card overflow-hidden">
@@ -690,8 +692,7 @@ interface DeliveryForm {
                     <td class="px-4 py-2.5 text-right text-red-600">-RD\$ {{ p.commission_total | number:'1.0-0' }}</td>
                     <td class="px-4 py-2.5 text-right font-semibold">RD\$ {{ p.net_amount | number:'1.0-0' }}</td>
                     <td class="px-4 py-2.5 text-center">
-                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
-                        [class]="payoutStatusClass(p.status)">{{ p.status }}</span>
+                      <app-admin-badge [variant]="payoutBadgeVariant(p.status)">{{ p.status }}</app-admin-badge>
                     </td>
                   </tr>
                 }
@@ -1123,5 +1124,11 @@ export class StoreSettingsPageComponent implements OnInit {
         if (status === 'pagado') return 'bg-green-100 text-green-700';
         if (status === 'pendiente') return 'bg-amber-100 text-amber-700';
         return 'bg-red-100 text-red-700';
+    }
+
+    payoutBadgeVariant(status: string): 'success' | 'warning' | 'danger' {
+        if (status === 'pagado') return 'success';
+        if (status === 'pendiente') return 'warning';
+        return 'danger';
     }
 }

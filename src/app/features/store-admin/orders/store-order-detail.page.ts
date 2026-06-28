@@ -2,11 +2,13 @@ import {
     Component, OnInit, OnDestroy, inject, signal, computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { StoreOrdersService, StoreOrderDetail } from './store-orders.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { OrderStatus } from '../../../core/supabase/database.types';
 import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
+import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
     recibido: 'Nuevo',
@@ -31,7 +33,7 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
 @Component({
     selector: 'app-store-order-detail',
     standalone: true,
-    imports: [CommonModule, RouterLink, TuttyMapComponent],
+    imports: [CommonModule, TuttyMapComponent, AdminPageHeaderComponent, AdminEmptyStateComponent],
     styles: [`
     :host { display: block; }
     .print-only { display: none; }
@@ -47,46 +49,45 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
     <div class="p-4 lg:p-6 space-y-5 max-w-3xl mx-auto">
 
       <!-- Header -->
-      <div class="flex items-center gap-3 no-print">
-        <a routerLink="../" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-        </a>
-        <div class="flex-1">
-          <h1 class="text-xl font-bold text-gray-900">
-            Pedido #{{ order()?.order_number ?? '…' }}
-          </h1>
-          @if (order()) {
-            <span class="inline-flex mt-0.5 items-center px-2.5 py-0.5 rounded-full text-xs font-semibold" [class]="statusColor(order()!.status)">
-              {{ statusLabel(order()!.status) }}
-            </span>
-          }
-        </div>
-        <!-- Action buttons -->
-        @if (order()) {
-          <div class="flex gap-2 no-print">
-            @if (order()!.customer_phone) {
-              <a
-                [href]="whatsappUrl()"
-                target="_blank"
-                rel="noopener"
-                class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition-colors"
-              >
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.555 4.122 1.528 5.855L.057 23.5l5.784-1.517A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.805 9.805 0 01-5.004-1.371l-.359-.213-3.432.9.916-3.346-.234-.375A9.82 9.82 0 012.182 12c0-5.42 4.398-9.818 9.818-9.818 5.42 0 9.818 4.398 9.818 9.818 0 5.42-4.398 9.818-9.818 9.818z"/>
-                </svg>
-                WhatsApp
-              </a>
+      <div class="no-print space-y-2">
+        <app-admin-page-header
+          [title]="'Pedido #' + (order()?.order_number ?? '…')"
+          subtitle="Detalle completo del pedido, cliente, entrega y estado."
+          [showBack]="true"
+          backAriaLabel="Volver a pedidos"
+          (back)="goBackToOrders()"
+        >
+          <ng-container actions>
+            @if (order()) {
+              <div class="flex gap-2 no-print">
+                @if (order()!.customer_phone) {
+                  <a
+                    [href]="whatsappUrl()"
+                    target="_blank"
+                    rel="noopener"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition-colors"
+                  >
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.555 4.122 1.528 5.855L.057 23.5l5.784-1.517A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.805 9.805 0 01-5.004-1.371l-.359-.213-3.432.9.916-3.346-.234-.375A9.82 9.82 0 012.182 12c0-5.42 4.398-9.818 9.818-9.818 5.42 0 9.818 4.398 9.818 9.818 0 5.42-4.398 9.818-9.818 9.818z"/>
+                    </svg>
+                    WhatsApp
+                  </a>
+                }
+                <button
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                  (click)="printTicket()"
+                >
+                  🖨 Imprimir ticket
+                </button>
+              </div>
             }
-            <button
-              class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
-              (click)="printTicket()"
-            >
-              🖨 Imprimir ticket
-            </button>
-          </div>
+          </ng-container>
+        </app-admin-page-header>
+        @if (order()) {
+          <span class="inline-flex mt-0.5 items-center px-2.5 py-0.5 rounded-full text-xs font-semibold" [class]="statusColor(order()!.status)">
+            {{ statusLabel(order()!.status) }}
+          </span>
         }
       </div>
 
@@ -269,10 +270,12 @@ const STATUS_ORDER: OrderStatus[] = ['recibido', 'confirmado', 'en_preparacion',
 
       <!-- Error state -->
       @if (!isLoading() && !order()) {
-        <div class="card p-10 text-center text-gray-400">
-          <p class="font-medium">No se pudo cargar el pedido</p>
-          <a routerLink="../" class="text-sm text-brand-600 mt-2 inline-block" style="color:#e91e8c">Volver a pedidos</a>
-        </div>
+        <app-admin-empty-state
+          icon="orders"
+          title="No se pudo cargar el pedido"
+          description="Verifica conexión o vuelve al listado para intentarlo otra vez."
+          actionLabel="Volver a pedidos"
+          (action)="goBackToOrders()" />
       }
 
     </div>
@@ -282,6 +285,7 @@ export class StoreOrderDetailPageComponent implements OnInit, OnDestroy {
     private readonly ordersService = inject(StoreOrdersService);
     private readonly toast = inject(ToastService);
     private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
 
     readonly isLoading = signal(true);
     readonly order = signal<StoreOrderDetail | null>(null);
@@ -440,5 +444,9 @@ export class StoreOrderDetailPageComponent implements OnInit, OnDestroy {
         return new Date(iso).toLocaleString('es-DO', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
         });
+    }
+
+    goBackToOrders(): void {
+        this.router.navigate(['../'], { relativeTo: this.route });
     }
 }

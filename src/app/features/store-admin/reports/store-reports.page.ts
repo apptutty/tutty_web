@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { StoreAdminService } from '../store-admin.service';
 import { StoreReportsService, ReportKPIs, DailySale, TopProduct, StoreReview } from './store-reports.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
 
 type Preset = 'hoy' | 'semana' | 'mes' | 'custom';
 
@@ -15,7 +16,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 @Component({
   selector: 'app-store-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminPageHeaderComponent],
   styles: [`
     .preset-btn { padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; border: 1px solid #e5e7eb; cursor: pointer; transition: all .15s; background: white; color: #374151; }
     .preset-btn.active { background: #e91e8c; border-color: #e91e8c; color: white; }
@@ -31,26 +32,32 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
   <div class="min-h-screen bg-gray-50">
 
     <!-- Header -->
-    <div class="bg-white border-b border-gray-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-10">
-      <h1 class="text-xl font-bold text-gray-900">Reportes de ventas</h1>
-      <div class="flex items-center gap-2 flex-wrap">
-        @for (p of presets; track p.key) {
-          <button class="preset-btn" [class.active]="preset() === p.key"
-            (click)="setPreset(p.key)">{{ p.label }}</button>
-        }
-        @if (preset() === 'custom') {
-          <input type="date" [(ngModel)]="customFrom" (change)="loadAll()" class="text-sm border border-gray-200 rounded-lg px-2 py-1" />
-          <span class="text-gray-400 text-sm">—</span>
-          <input type="date" [(ngModel)]="customTo" (change)="loadAll()" class="text-sm border border-gray-200 rounded-lg px-2 py-1" />
-        }
-        <button (click)="exportCSV()" [disabled]="exporting()"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          {{ exporting() ? 'Generando...' : 'Exportar CSV' }}
-        </button>
-      </div>
+    <div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+      <app-admin-page-header
+        title="Reportes de ventas"
+        subtitle="Analiza desempeño comercial, tendencias y reseñas del comercio."
+      >
+        <ng-container actions>
+          <div class="flex items-center gap-2 flex-wrap">
+            @for (p of presets; track p.key) {
+              <button class="preset-btn" [class.active]="preset() === p.key"
+                (click)="setPreset(p.key)">{{ p.label }}</button>
+            }
+            @if (preset() === 'custom') {
+              <input type="date" [(ngModel)]="customFrom" (change)="loadAll()" class="text-sm border border-gray-200 rounded-lg px-2 py-1" />
+              <span class="text-gray-400 text-sm">—</span>
+              <input type="date" [(ngModel)]="customTo" (change)="loadAll()" class="text-sm border border-gray-200 rounded-lg px-2 py-1" />
+            }
+            <button (click)="exportCSV()" [disabled]="exporting()"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              {{ exporting() ? 'Generando...' : 'Exportar CSV' }}
+            </button>
+          </div>
+        </ng-container>
+      </app-admin-page-header>
     </div>
 
     <div class="max-w-6xl mx-auto p-6 space-y-6">

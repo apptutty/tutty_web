@@ -21,11 +21,13 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { MenuItem, MenuCategory, CommerceCategory } from '../../../core/supabase/database.types';
 import { SettingsService } from '../../settings/settings.service';
+import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
 
 @Component({
     selector: 'app-store-catalog',
     standalone: true,
-    imports: [CommonModule, FormsModule, ProductCardComponent],
+    imports: [CommonModule, FormsModule, ProductCardComponent, AdminEmptyStateComponent, AdminPageHeaderComponent],
     styles: [`
     .sections-panel {
       background: #fff;
@@ -596,16 +598,19 @@ import { SettingsService } from '../../settings/settings.service';
 
       <!-- Top bar -->
       <div class="bg-white border-b border-gray-200 px-3 py-3 md:px-4 md:py-4 min-w-0">
-        <div class="flex flex-wrap items-center gap-2 md:gap-3 min-w-0">
-          <h1 class="text-lg font-bold text-gray-900 flex-1 min-w-[180px]">{{ catalogTitle() }}</h1>
-          <button (click)="newProduct()"
-            class="btn-primary flex items-center gap-2 text-sm py-2 flex-shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Nuevo producto
-          </button>
-        </div>
+        <app-admin-page-header
+          [title]="catalogTitle()"
+          subtitle="Organiza productos, ajusta disponibilidad y aplica filtros rápidos."
+        >
+          <ng-container actions>
+            <button (click)="newProduct()"
+              class="btn-primary flex items-center gap-2 text-sm py-2 flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Nuevo producto
+            </button>
+          </ng-container>
 
         <div class="menu-filters-row">
           <div class="menu-search">
@@ -661,6 +666,7 @@ import { SettingsService } from '../../settings/settings.service';
             </button>
           </div>
         </div>
+        </app-admin-page-header>
       </div>
 
       <!-- Products area -->
@@ -670,21 +676,21 @@ import { SettingsService } from '../../settings/settings.service';
             <div class="w-8 h-8 border-4 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
           </div>
         } @else if (filteredProducts().length === 0 && selectedCategoryId() && !searchQuery.trim() && !fAvailable() && !fOutOfStock() && !fDiscounted() && !fFeatured()) {
-          <div class="h-full min-h-[340px] flex flex-col items-center justify-center text-gray-400 text-center px-6">
-            <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-            <p class="font-medium text-gray-600">Esta sección está vacía</p>
-            <p class="text-sm mt-1">Agrega productos para que aparezcan en esta sección del menú.</p>
-            <button (click)="newProduct()" class="btn-primary mt-4">+ Nuevo producto</button>
+          <div class="h-full min-h-[340px] flex items-center justify-center px-6">
+            <app-admin-empty-state
+              title="Esta sección está vacía"
+              description="Agrega productos para que aparezcan en esta sección del menú."
+              actionLabel="+ Nuevo producto"
+              (action)="newProduct()" />
           </div>
         } @else if (filteredProducts().length === 0) {
-          <div class="flex flex-col items-center justify-center py-20 text-gray-400">
-            <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.804 7.5 7.5 0 0 0 15.803 15.803Z" />
-            </svg>
-            <p class="font-medium">No hay productos</p>
-            <p class="text-sm mt-1">Agrega un producto para comenzar</p>
+          <div class="py-20">
+            <app-admin-empty-state
+              icon="search"
+              title="No hay productos"
+              description="Ajusta tus filtros o agrega un producto para comenzar."
+              actionLabel="+ Nuevo producto"
+              (action)="newProduct()" />
           </div>
         } @else if (viewMode() === 'grid') {
           <div class="grid gap-4 min-w-0" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">

@@ -7,21 +7,24 @@ import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { getSupabaseClient } from '../../../core/supabase/supabase.client';
 import { DeliveryZone } from '../../../core/supabase/database.types';
 import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
+import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component';
 
 @Component({
     selector: 'app-store-zones',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, TuttyMapComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, TuttyMapComponent, AdminPageHeaderComponent, AdminEmptyStateComponent],
     template: `
     <div class="p-6 lg:p-8 space-y-6">
       <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Delivery Zones</h1>
-          <p class="text-sm text-gray-500 mt-0.5">Configure the areas and fees where you deliver</p>
-        </div>
-        <button class="btn-primary w-full sm:w-auto" (click)="openForm()">+ New Zone</button>
-      </div>
+      <app-admin-page-header
+        title="Delivery Zones"
+        subtitle="Configure the areas and fees where you deliver."
+      >
+        <ng-container actions>
+          <button class="btn-primary w-full sm:w-auto" (click)="openForm()">+ New Zone</button>
+        </ng-container>
+      </app-admin-page-header>
 
       <!-- Coverage summary -->
       @if (zones().length > 0) {
@@ -79,14 +82,13 @@ import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
             }
           </div>
         } @else if (zones().length === 0) {
-          <div class="py-16 text-center text-gray-400">
-            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-            </svg>
-            <p class="font-medium text-gray-600">No delivery zones configured</p>
-            <p class="text-sm mt-1">Add zones to let customers know where you deliver</p>
-            <button class="mt-4 btn-primary" (click)="openForm()">+ Add First Zone</button>
+          <div class="py-16">
+            <app-admin-empty-state
+              icon="map"
+              title="No delivery zones configured"
+              description="Add zones to let customers know where you deliver."
+              actionLabel="+ Add First Zone"
+              (action)="openForm()" />
           </div>
         } @else {
           <!-- Mobile cards (hidden on md+) -->

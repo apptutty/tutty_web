@@ -7,6 +7,8 @@ import { StoreAdminService } from '../store-admin.service';
 import { StoreDashboardService, StoreKPIs, ActiveOrder, TopProduct, SalesDay, LowStockItem } from './store-dashboard.service';
 import { OpenCloseToggleComponent } from './open-close-toggle.component';
 import { ScheduleWarningCardComponent } from '../shared/schedule-warning-card.component';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
+import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component';
 
 const STATUS_CFG: Record<string, { label: string; classes: string; pulse: boolean }> = {
     recibido: { label: 'Nuevo', classes: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200', pulse: true },
@@ -24,7 +26,14 @@ const NEXT_BTN: Record<string, string> = {
 @Component({
     selector: 'app-store-dashboard',
     standalone: true,
-    imports: [CommonModule, FormsModule, OpenCloseToggleComponent, ScheduleWarningCardComponent],
+    imports: [
+        CommonModule,
+        FormsModule,
+        OpenCloseToggleComponent,
+        ScheduleWarningCardComponent,
+        AdminPageHeaderComponent,
+        AdminEmptyStateComponent,
+    ],
     styles: [`
       .admin-dashboard-page {
         padding: 30px 34px 38px;
@@ -32,34 +41,6 @@ const NEXT_BTN: Record<string, string> = {
         background: var(--admin-bg, #f6f7fb);
       }
       .dashboard-stack { display: grid; gap: 16px; min-width: 0; }
-      .dashboard-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 22px;
-        flex-wrap: wrap;
-        padding: 24px;
-        border-radius: 26px;
-        border: 1px solid #e7eaf1;
-        background:
-          radial-gradient(circle at 92% 15%, rgba(235,27,141,.12), transparent 26%),
-          linear-gradient(180deg, #fff, #fbfcff);
-        box-shadow: 0 8px 24px rgba(18, 24, 40, .07);
-      }
-      .dashboard-header h1 {
-        margin: 0;
-        font-size: 26px;
-        line-height: 1.1;
-        color: #111827;
-        letter-spacing: -0.04em;
-        font-weight: 700;
-      }
-      .dashboard-header p {
-        margin: 8px 0 0;
-        color: #667085;
-        font-size: 14px;
-        font-weight: 600;
-      }
       .admin-header-actions {
         display: flex;
         align-items: center;
@@ -381,7 +362,6 @@ const NEXT_BTN: Record<string, string> = {
       }
       @media (max-width: 980px) {
         .admin-dashboard-page { padding: 22px; }
-        .dashboard-header { flex-direction: column; }
         .admin-header-actions { justify-content: flex-start; }
         .order-row {
           grid-template-columns: 1fr;
@@ -397,8 +377,6 @@ const NEXT_BTN: Record<string, string> = {
       }
       @media (max-width: 680px) {
         .admin-dashboard-page { padding: 16px; }
-        .dashboard-header { padding: 18px; }
-        .dashboard-header h1 { font-size: 24px; }
         .metric-value { font-size: 24px; }
         .admin-metrics-grid { grid-template-columns: 1fr; }
       }
@@ -406,16 +384,17 @@ const NEXT_BTN: Record<string, string> = {
     template: `
     <div class="admin-dashboard-page">
       <div class="dashboard-stack">
-        <section class="dashboard-header">
-          <div>
-            <h1>Dashboard</h1>
-            <p>Resumen de ventas, pedidos y operación de {{ storeName() }}.</p>
-          </div>
-          <div class="admin-header-actions">
-            <span class="admin-chip"><strong>Hoy</strong> · {{ today }}</span>
-            <span class="admin-chip">Actualiza cada <strong>30 seg</strong></span>
-          </div>
-        </section>
+        <app-admin-page-header
+          title="Dashboard"
+          [subtitle]="'Resumen de ventas, pedidos y operación de ' + storeName() + '.'"
+        >
+          <ng-container actions>
+            <div class="admin-header-actions">
+              <span class="admin-chip"><strong>Hoy</strong> · {{ today }}</span>
+              <span class="admin-chip">Actualiza cada <strong>30 seg</strong></span>
+            </div>
+          </ng-container>
+        </app-admin-page-header>
 
         @if (showOutsideScheduleAlert() && !warningDismissed()) {
           <app-schedule-warning-card
@@ -512,11 +491,12 @@ const NEXT_BTN: Record<string, string> = {
             </div>
 
             @if (activeOrders().length === 0) {
-              <div class="py-12 text-center text-gray-400">
-                <svg class="w-10 h-10 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p class="text-sm font-medium">Sin pedidos activos</p>
+              <div class="py-4">
+                <app-admin-empty-state
+                  icon="orders"
+                  title="Sin pedidos activos"
+                  description="Cuando entren pedidos en tiempo real aparecerán aquí."
+                  variant="soft" />
               </div>
             } @else {
               <div class="orders-list divide-y divide-gray-100">
@@ -559,15 +539,19 @@ const NEXT_BTN: Record<string, string> = {
               <h2 class="admin-card-title">Ventas últimos 7 días</h2>
             </div>
             @if (weeklySales().length === 0) {
-              <div class="admin-empty-state">
-                <h3>Cargando datos</h3>
-              </div>
+              <app-admin-empty-state
+                icon="money"
+                title="Cargando datos"
+                description="Estamos consultando el rendimiento de los últimos días."
+                variant="soft" />
             } @else if (!hasSalesData()) {
-              <div class="admin-empty-state">
-                <h3>Aún no hay suficientes ventas</h3>
-                <p>Los datos aparecerán cuando el comercio tenga pedidos completados.</p>
-                <button class="secondary-btn" (click)="goToOrders()">Ver pedidos</button>
-              </div>
+              <app-admin-empty-state
+                icon="money"
+                title="Aún no hay suficientes ventas"
+                description="Los datos aparecerán cuando el comercio tenga pedidos completados."
+                actionLabel="Ver pedidos"
+                variant="soft"
+                (action)="goToOrders()" />
             } @else {
               <div class="sales-bars">
                 @for (day of weeklySales(); track day.date) {
@@ -586,14 +570,13 @@ const NEXT_BTN: Record<string, string> = {
               <h2 class="admin-card-title">Top productos hoy</h2>
             </div>
             @if (topProducts().length === 0) {
-              <div class="admin-empty-state">
-                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
-                </svg>
-                <h3>Sin ventas hoy</h3>
-                <p>Cuando recibas pedidos, aquí verás tus productos más vendidos.</p>
-                <button class="secondary-btn" (click)="goToMenu()">Ver menú</button>
-              </div>
+              <app-admin-empty-state
+                icon="orders"
+                title="Sin ventas hoy"
+                description="Cuando recibas pedidos, aquí verás tus productos más vendidos."
+                actionLabel="Ver menú"
+                variant="soft"
+                (action)="goToMenu()" />
             } @else {
               <div class="top-list">
                 @for (p of topProducts(); track p.name; let i = $index) {

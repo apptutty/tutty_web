@@ -16,6 +16,8 @@ import { MenuItem, MenuCategory, ProductVariant, CommerceCategory } from '../../
 import { CommerceCategoryPickerComponent } from '../../../shared/ui/category-picker/commerce-category-picker.component';
 import { SettingsService } from '../../settings/settings.service';
 import { ScheduleWarningCardComponent } from '../shared/schedule-warning-card.component';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
+import { AdminFormSectionComponent } from '../shared/admin-form-section.component';
 
 const UNIT_TYPES = ['unidad', 'par', 'caja', 'frasco', 'pastilla', 'ml', 'mg', 'g', 'kg', 'litro', 'metro'];
 const DAYS = [
@@ -63,7 +65,16 @@ interface ProductForm {
 @Component({
     selector: 'app-store-product-form',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, VariantsManagerComponent, CommerceCategoryPickerComponent, ScheduleWarningCardComponent],
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterLink,
+        VariantsManagerComponent,
+        CommerceCategoryPickerComponent,
+        ScheduleWarningCardComponent,
+        AdminPageHeaderComponent,
+        AdminFormSectionComponent,
+    ],
     styles: [`
     :host {
       display: block;
@@ -75,54 +86,6 @@ interface ProductForm {
       gap: 16px;
       background: var(--admin-bg, #f6f7fb);
       min-width: 0;
-    }
-    .product-editor-header {
-      border: 1px solid #e7eaf1;
-      background:
-        radial-gradient(circle at 94% 8%, rgba(235,27,141,.10), transparent 24%),
-        linear-gradient(180deg, #fff, #fbfcff);
-      border-radius: 26px;
-      box-shadow: 0 8px 24px rgba(18, 24, 40, .07);
-      padding: 22px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .product-editor-heading {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      min-width: 0;
-      flex: 1;
-    }
-    .product-editor-back {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      border: 1px solid #e7eaf1;
-      background: #fff;
-      color: #647084;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(18,24,40,.04);
-    }
-    .product-editor-title {
-      margin: 0;
-      font-size: 28px;
-      line-height: 1.1;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      color: #111827;
-    }
-    .product-editor-subtitle {
-      margin: 8px 0 0;
-      font-size: 14px;
-      color: #667085;
-      font-weight: 500;
     }
     .product-editor-actions {
       display: inline-flex;
@@ -176,30 +139,6 @@ interface ProductForm {
       flex-direction: column;
       gap: 16px;
       min-width: 0;
-    }
-    .product-form-card {
-      background: #fff;
-      border: 1px solid #e7eaf1;
-      border-radius: 24px;
-      box-shadow: 0 8px 24px rgba(18,24,40,.07);
-      padding: 22px;
-      display: grid;
-      gap: 14px;
-      min-width: 0;
-    }
-    .product-card-head h2 {
-      margin: 0;
-      font-size: 16px;
-      color: #111827;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    .product-card-head p {
-      margin: 6px 0 0;
-      color: #7b8496;
-      font-size: 12.5px;
-      line-height: 1.5;
-      font-weight: 500;
     }
     .product-basic-grid {
       display: grid;
@@ -660,18 +599,6 @@ interface ProductForm {
       .product-editor-page {
         padding: 16px;
       }
-      .product-editor-header {
-        padding: 16px;
-      }
-      .product-editor-heading {
-        width: 100%;
-      }
-      .product-editor-title {
-        font-size: 26px;
-      }
-      .product-editor-subtitle {
-        font-size: 13px;
-      }
       .product-editor-actions {
         width: 100%;
         justify-content: flex-end;
@@ -687,12 +614,6 @@ interface ProductForm {
       }
     }
     @media (max-width: 680px) {
-      .product-editor-title {
-        font-size: 24px;
-      }
-      .product-editor-subtitle {
-        font-size: 13px;
-      }
       .product-editor-actions {
         flex-direction: column;
         align-items: stretch;
@@ -721,38 +642,31 @@ interface ProductForm {
           (close)="warningDismissed.set(true)" />
       }
 
-      <section class="product-editor-header">
-        <div class="product-editor-heading">
-          <a routerLink="/store/catalog" class="product-editor-back" aria-label="Volver">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-          </a>
-          <div>
-            <h1 class="product-editor-title">{{ isEditMode() ? 'Editar producto' : 'Nuevo producto' }}</h1>
-            <p class="product-editor-subtitle">
-              {{ isEditMode()
-                ? 'Actualiza la información, precio y disponibilidad del producto.'
-                : ('Crea un producto para el menú de ' + storeName() + '.') }}
-            </p>
+      <app-admin-page-header
+        [title]="isEditMode() ? 'Editar producto' : 'Nuevo producto'"
+        [subtitle]="isEditMode()
+          ? 'Actualiza la información, precio y disponibilidad del producto.'
+          : ('Crea un producto para el menú de ' + storeName() + '.')"
+        [showBack]="true"
+        backAriaLabel="Volver al catálogo"
+        (back)="goBackToCatalog()"
+      >
+        <ng-container actions>
+          <div class="product-editor-actions">
+            <a routerLink="/store/catalog" class="action-secondary">Cancelar</a>
+            <button type="button" class="action-primary" [disabled]="isSaving()" (click)="submit()">
+              {{ isSaving() ? 'Guardando...' : (isEditMode() ? 'Guardar cambios' : 'Crear producto') }}
+            </button>
           </div>
-        </div>
-        <div class="product-editor-actions">
-          <a routerLink="/store/catalog" class="action-secondary">Cancelar</a>
-          <button type="button" class="action-primary" [disabled]="isSaving()" (click)="submit()">
-            {{ isSaving() ? 'Guardando...' : (isEditMode() ? 'Guardar cambios' : 'Crear producto') }}
-          </button>
-        </div>
-      </section>
+        </ng-container>
+      </app-admin-page-header>
 
       <div class="product-editor-layout">
         <form (ngSubmit)="submit()" class="product-editor-main">
-          <section class="product-form-card">
-            <div class="product-card-head">
-              <h2>Información básica</h2>
-              <p>Define cómo se verá el producto dentro del menú.</p>
-            </div>
-
+          <app-admin-form-section
+            title="Información básica"
+            subtitle="Define cómo se verá el producto dentro del menú."
+          >
             <div class="product-basic-grid">
               <div>
                 <label class="product-dropzone-label">Foto del producto</label>
@@ -824,14 +738,12 @@ interface ProductForm {
                 </div>
               </div>
             </div>
-          </section>
+          </app-admin-form-section>
 
-          <section class="product-form-card">
-            <div class="product-card-head">
-              <h2>Precio y disponibilidad</h2>
-              <p>Configura precio, visibilidad y etiquetas comerciales.</p>
-            </div>
-
+          <app-admin-form-section
+            title="Precio y disponibilidad"
+            subtitle="Configura precio, visibilidad y etiquetas comerciales."
+          >
             <div class="product-field-grid">
               <div class="product-field">
                 <label>Precio *</label>
@@ -870,14 +782,12 @@ interface ProductForm {
                 Destacado
               </label>
             </div>
-          </section>
+          </app-admin-form-section>
 
-          <section class="product-form-card">
-            <div class="product-card-head">
-              <h2>Horario y límites</h2>
-              <p>Controla cuándo y cuánto puede ordenar el cliente.</p>
-            </div>
-
+          <app-admin-form-section
+            title="Horario y límites"
+            subtitle="Controla cuándo y cuánto puede ordenar el cliente."
+          >
             <div class="product-check-row">
               <label class="product-check-pill">
                 <input type="checkbox" [(ngModel)]="form.use_hours" name="use_hours" />
@@ -916,15 +826,13 @@ interface ProductForm {
               <label>Máxima cantidad por pedido</label>
               <input type="number" [(ngModel)]="form.max_qty_per_order" name="max_qty_per_order" min="1" class="product-input" placeholder="Sin límite" />
             </div>
-          </section>
+          </app-admin-form-section>
 
           @if (commerceType() === 'restaurante') {
-            <section class="product-form-card">
-              <div class="product-card-head">
-                <h2>Opciones de menú</h2>
-                <p>Agrega detalles operativos y nutricionales.</p>
-              </div>
-
+            <app-admin-form-section
+              title="Opciones de menú"
+              subtitle="Agrega detalles operativos y nutricionales."
+            >
               <div class="product-range-wrap">
                 <div class="range-head">
                   <strong>Tiempo de preparación</strong>
@@ -947,15 +855,14 @@ interface ProductForm {
                   </label>
                 </div>
               </div>
-            </section>
+            </app-admin-form-section>
           }
 
           @if (commerceType() === 'farmacia') {
-            <section class="product-form-card">
-              <div class="product-card-head">
-                <h2>Información farmacéutica</h2>
-                <p>Configura datos regulatorios y de inventario para farmacia.</p>
-              </div>
+            <app-admin-form-section
+              title="Información farmacéutica"
+              subtitle="Configura datos regulatorios y de inventario para farmacia."
+            >
               <div class="product-check-row">
                 <label class="product-check-pill">
                   <input type="checkbox" [(ngModel)]="form.requires_prescription" name="requires_prescription" />
@@ -987,15 +894,14 @@ interface ProductForm {
                   <input [(ngModel)]="form.barcode" name="barcode" class="product-input" placeholder="7501234567890" />
                 </div>
               </div>
-            </section>
+            </app-admin-form-section>
           }
 
           @if (commerceType() === 'bodega' || commerceType() === 'colmado' || commerceType() === 'supermercado') {
-            <section class="product-form-card">
-              <div class="product-card-head">
-                <h2>Información del producto</h2>
-                <p>Completa atributos comerciales para catálogo e inventario.</p>
-              </div>
+            <app-admin-form-section
+              title="Información del producto"
+              subtitle="Completa atributos comerciales para catálogo e inventario."
+            >
               <div class="product-field-grid">
                 <div class="product-field">
                   <label>Marca</label>
@@ -1017,15 +923,14 @@ interface ProductForm {
                   <input [(ngModel)]="form.barcode" name="barcode_gro" class="product-input" />
                 </div>
               </div>
-            </section>
+            </app-admin-form-section>
           }
 
           @if (commerceType() === 'tienda_ropa' || commerceType() === 'electronica') {
-            <section class="product-form-card">
-              <div class="product-card-head">
-                <h2>{{ commerceType() === 'tienda_ropa' ? 'Tallas y colores' : 'Variantes' }}</h2>
-                <p>Gestiona las variaciones comerciales del producto.</p>
-              </div>
+            <app-admin-form-section
+              [title]="commerceType() === 'tienda_ropa' ? 'Tallas y colores' : 'Variantes'"
+              subtitle="Gestiona las variaciones comerciales del producto."
+            >
               <div class="product-field-grid">
                 <div class="product-field">
                   <label>SKU base</label>
@@ -1042,15 +947,14 @@ interface ProductForm {
                   [commerceType]="commerceType()"
                   (variantsChange)="pendingVariants = $event" />
               }
-            </section>
+            </app-admin-form-section>
           }
 
           @if (commerceType() !== 'restaurante') {
-            <section class="product-form-card">
-              <div class="product-card-head">
-                <h2>Control de inventario</h2>
-                <p>Configura stock, alertas y disponibilidad automática.</p>
-              </div>
+            <app-admin-form-section
+              title="Control de inventario"
+              subtitle="Configura stock, alertas y disponibilidad automática."
+            >
               <label class="product-check-pill">
                 <input type="checkbox" [(ngModel)]="form.track_stock" name="track_stock" />
                 Rastrear stock de este producto
@@ -1067,7 +971,7 @@ interface ProductForm {
                   </div>
                 </div>
               }
-            </section>
+            </app-admin-form-section>
           }
 
           <div class="product-footer-actions">
@@ -1250,6 +1154,10 @@ export class StoreProductFormPageComponent implements OnInit {
 
     goToSettings() {
         this.router.navigate(['/store/settings']);
+    }
+
+    goBackToCatalog() {
+        this.router.navigate(['/store/catalog']);
     }
 
     private loadProduct(id: string) {

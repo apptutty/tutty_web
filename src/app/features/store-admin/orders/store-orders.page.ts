@@ -10,6 +10,9 @@ import { StoreAdminService } from '../store-admin.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { OrderStatus } from '../../../core/supabase/database.types';
 import { ScheduleWarningCardComponent } from '../shared/schedule-warning-card.component';
+import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component';
+import { OrderKanbanCardComponent } from './components/order-kanban-card.component';
+import { AdminPageHeaderComponent } from '../shared/admin-page-header.component';
 
 type ViewTab = 'kanban' | 'lista' | 'mapa';
 type OrdersChip = 'all' | 'new' | 'preparing' | 'route' | 'today';
@@ -84,27 +87,30 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
 @Component({
     selector: 'app-store-orders',
     standalone: true,
-    imports: [CommonModule, FormsModule, ScheduleWarningCardComponent],
+    imports: [CommonModule, FormsModule, ScheduleWarningCardComponent, AdminEmptyStateComponent, OrderKanbanCardComponent, AdminPageHeaderComponent],
     template: `
     <div class="orders-page">
       <section class="orders-page-header">
         <div class="orders-header-top">
-          <div class="orders-heading">
-            <h1>Pedidos</h1>
-            <p>Gestiona pedidos activos, preparación y entregas de {{ storeName() }}.</p>
-          </div>
-          <div class="orders-view-switch">
-            @for (tab of tabs; track tab.id) {
-              <button
-                class="orders-view-btn"
-                [class.orders-view-btn--active]="activeView() === tab.id"
-                (click)="setView(tab.id)"
-                [attr.aria-label]="'Vista ' + tab.label"
-              >
-                {{ tab.label }}
-              </button>
-            }
-          </div>
+          <app-admin-page-header
+            title="Pedidos"
+            [subtitle]="'Gestiona pedidos activos, preparación y entregas de ' + storeName() + '.'"
+          >
+            <ng-container actions>
+              <div class="orders-view-switch">
+                @for (tab of tabs; track tab.id) {
+                  <button
+                    class="orders-view-btn"
+                    [class.orders-view-btn--active]="activeView() === tab.id"
+                    (click)="setView(tab.id)"
+                    [attr.aria-label]="'Vista ' + tab.label"
+                  >
+                    {{ tab.label }}
+                  </button>
+                }
+              </div>
+            </ng-container>
+          </app-admin-page-header>
         </div>
 
         <div class="orders-toolbar">
@@ -167,43 +173,23 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
                     </header>
                     <div class="kanban-column__body">
                       @if (ordersForColumn(col.statuses).length === 0) {
-                        <div class="kanban-empty">
-                          <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                          </svg>
-                          <h3>{{ col.emptyTitle }}</h3>
-                          <p>{{ col.emptyText }}</p>
-                        </div>
+                        <app-admin-empty-state
+                          icon="orders"
+                          [title]="col.emptyTitle"
+                          [description]="col.emptyText"
+                          variant="soft" />
                       } @else {
                         @for (order of ordersForColumn(col.statuses); track order.id) {
-                          <article class="order-card" (click)="selectOrder(order.id)">
-                            <div class="order-card__top">
-                              <p class="order-card__id">#{{ order.order_number }}</p>
-                              <p class="order-card__time">{{ elapsedLabel(order.created_at) }}</p>
-                            </div>
-                            <p class="order-card__customer">{{ order.customer_name }}</p>
-                            <div class="order-card__products">
-                              <p>{{ order.items_preview }}</p>
-                            </div>
-                            <div class="order-card__total-row">
-                              <span [class]="statusColor(order.status)">
-                                {{ statusLabel(order.status) }}
-                              </span>
-                              <p class="order-card__total">RD$ {{ order.total | number:'1.0-0' }}</p>
-                            </div>
-                            <div class="order-card__actions">
-                              <button class="order-btn-secondary" (click)="goToDetail(order.id); $event.stopPropagation()">Ver detalle</button>
-                              @if (primaryActionLabel(order)) {
-                                <button
-                                  class="order-btn-primary"
-                                  [disabled]="advancingId() === order.id"
-                                  (click)="advanceOrder(order, $event)"
-                                >
-                                  @if (advancingId() === order.id) { Procesando… } @else { {{ primaryActionLabel(order)! }} }
-                                </button>
-                              }
-                            </div>
-                          </article>
+                          <app-order-kanban-card
+                            [order]="order"
+                            [elapsedLabel]="elapsedLabel(order.created_at)"
+                            [statusClass]="statusColor(order.status)"
+                            [statusText]="statusLabel(order.status)"
+                            [primaryActionLabel]="primaryActionLabel(order)"
+                            [isBusy]="advancingId() === order.id"
+                            (select)="selectOrder($event)"
+                            (detail)="goToDetail($event)"
+                            (advance)="advanceOrderFromCard($event)" />
                         }
                       }
                     </div>
@@ -237,10 +223,11 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
                   <p class="order-card__total mt-3">RD$ {{ selectedOrder()!.total | number:'1.0-0' }}</p>
                   <button class="order-btn-secondary w-full mt-3" (click)="goToDetail(selectedOrder()!.id)">Ver detalle</button>
                 } @else {
-                  <div class="kanban-empty">
-                    <h3>Selecciona un pedido</h3>
-                    <p>Verás aquí el detalle rápido del pedido.</p>
-                  </div>
+                  <app-admin-empty-state
+                    icon="orders"
+                    title="Selecciona un pedido"
+                    description="Verás aquí el detalle rápido del pedido."
+                    variant="soft" />
                 }
               </section>
             </aside>
@@ -298,9 +285,12 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
                 </tbody>
               </table>
               @if (listOrders().length === 0) {
-                <div class="kanban-empty my-6">
-                  <h3>No hay pedidos para mostrar</h3>
-                  <p>Intenta cambiar los filtros o espera nuevos pedidos.</p>
+                <div class="my-6">
+                  <app-admin-empty-state
+                    icon="search"
+                    title="No hay pedidos para mostrar"
+                    description="Intenta cambiar los filtros o espera nuevos pedidos."
+                    variant="soft" />
                 </div>
               }
             </div>
@@ -320,9 +310,12 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
           <section class="admin-card map-card">
             <h2 class="admin-card-title">Mapa de entregas</h2>
             <p class="map-subtitle">Visualiza pedidos activos y rutas de entrega.</p>
-            <div class="kanban-empty map-empty">
-              <h3>No hay entregas activas en el mapa</h3>
-              <p>Los pedidos con dirección aparecerán aquí.</p>
+            <div class="map-empty">
+              <app-admin-empty-state
+                icon="map"
+                title="No hay entregas activas en el mapa"
+                description="Los pedidos con dirección aparecerán aquí."
+                variant="soft" />
             </div>
           </section>
         }
@@ -389,20 +382,6 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
       justify-content: space-between;
       gap: 14px;
       flex-wrap: wrap;
-    }
-    .orders-heading h1 {
-      margin: 0;
-      font-size: 28px;
-      line-height: 1.1;
-      letter-spacing: -0.04em;
-      color: #111827;
-      font-weight: 800;
-    }
-    .orders-heading p {
-      margin: 8px 0 0;
-      font-size: 14px;
-      color: #667085;
-      font-weight: 600;
     }
     .orders-view-switch {
       display: inline-flex;
@@ -843,7 +822,6 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
       .list-toolbar { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 680px) {
-      .orders-heading h1 { font-size: 24px; }
       .orders-filter-chips { gap: 6px; }
       .orders-chip { height: 36px; padding: 0 12px; font-size: 12px; }
       .list-toolbar { grid-template-columns: 1fr; }
@@ -1097,8 +1075,8 @@ export class StoreOrdersPageComponent implements OnInit, OnDestroy {
         return this.ordersService.nextStatus(current);
     }
 
-    async advanceOrder(order: StoreOrder, event: Event): Promise<void> {
-        event.stopPropagation();
+    async advanceOrder(order: StoreOrder, event?: Event): Promise<void> {
+        event?.stopPropagation();
         const next = this.nextStatus(order.status);
         if (!next || this.advancingId() === order.id) return;
 
@@ -1114,6 +1092,10 @@ export class StoreOrdersPageComponent implements OnInit, OnDestroy {
         } finally {
             this.advancingId.set(null);
         }
+    }
+
+    advanceOrderFromCard(order: StoreOrder): void {
+        void this.advanceOrder(order);
     }
 
     goToDetail(id: string): void {
@@ -1164,4 +1146,3 @@ export class StoreOrdersPageComponent implements OnInit, OnDestroy {
         return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
     }
 }
-
