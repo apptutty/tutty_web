@@ -71,7 +71,10 @@ export class AuthService {
                     if (noSessionTimer) clearTimeout(noSessionTimer);
                     resolveReady(true);
                 } else if (event === 'INITIAL_SESSION') {
-                    noSessionTimer = setTimeout(() => resolveReady(false), 800);
+                    noSessionTimer = setTimeout(() => {
+                        initialSessionReceived = true;
+                        resolveReady(false);
+                    }, 800);
                     return;
                 } else {
                     resolveReady(false);

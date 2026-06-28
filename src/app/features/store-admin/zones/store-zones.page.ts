@@ -15,12 +15,12 @@ import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
     template: `
     <div class="p-6 lg:p-8 space-y-6">
       <!-- Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Delivery Zones</h1>
           <p class="text-sm text-gray-500 mt-0.5">Configure the areas and fees where you deliver</p>
         </div>
-        <button class="btn-primary" (click)="openForm()">+ New Zone</button>
+        <button class="btn-primary w-full sm:w-auto" (click)="openForm()">+ New Zone</button>
       </div>
 
       <!-- Coverage summary -->
@@ -89,7 +89,55 @@ import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
             <button class="mt-4 btn-primary" (click)="openForm()">+ Add First Zone</button>
           </div>
         } @else {
-          <div class="overflow-x-auto">
+          <!-- Mobile cards (hidden on md+) -->
+          <div class="md:hidden divide-y divide-gray-100">
+            @for (zone of zones(); track zone.id) {
+              <div class="p-4 space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-800">{{ zone.name }}</p>
+                    <p class="text-xs text-gray-400">Prioridad {{ zone.priority }}</p>
+                  </div>
+                  <button
+                    (click)="toggleActive(zone)"
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 transition-colors"
+                    [class]="zone.is_active ? 'bg-success-50 text-success-700' : 'bg-gray-100 text-gray-500'">
+                    <span class="w-1.5 h-1.5 rounded-full mr-1.5"
+                      [class]="zone.is_active ? 'bg-success-500' : 'bg-gray-400'"></span>
+                    {{ zone.is_active ? 'Active' : 'Inactive' }}
+                  </button>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                  <div class="bg-gray-50 rounded-lg p-2 text-center">
+                    <p class="text-gray-400">Fee</p>
+                    <p class="font-semibold text-gray-800">RD$ {{ zone.delivery_fee }}</p>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-2 text-center">
+                    <p class="text-gray-400">Min. pedido</p>
+                    <p class="font-semibold text-gray-800">RD$ {{ zone.min_order }}</p>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-2 text-center">
+                    <p class="text-gray-400">Radio</p>
+                    <p class="font-semibold text-gray-800">{{ zone.max_distance_km ?? '—' }} km</p>
+                  </div>
+                </div>
+                @if (zone.sector_list.length > 0) {
+                  <div class="flex flex-wrap gap-1">
+                    @for (sector of zone.sector_list; track sector) {
+                      <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{ sector }}</span>
+                    }
+                  </div>
+                }
+                <div class="flex gap-3 pt-1">
+                  <button class="text-sm text-brand-500 font-medium" (click)="openForm(zone)">Editar</button>
+                  <button class="text-sm text-error-500 font-medium" (click)="deleteZone(zone)">Eliminar</button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Desktop table (hidden below md) -->
+          <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
@@ -155,6 +203,7 @@ import { TuttyMapComponent } from '../../../shared/ui/map/tutty-map.component';
               </tbody>
             </table>
           </div>
+          <!-- /Desktop table -->
         }
       </div>
     </div>

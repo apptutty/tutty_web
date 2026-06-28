@@ -13,6 +13,7 @@ import { StoreCatalogService } from './store-catalog.service';
 import { VariantsManagerComponent } from './variants-manager.component';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { MenuItem, MenuCategory, ProductVariant } from '../../../core/supabase/database.types';
+import { AdminImageFieldComponent } from '../../../shared/ui/image-field/admin-image-field.component';
 
 const UNIT_TYPES = ['unidad', 'par', 'caja', 'frasco', 'pastilla', 'ml', 'mg', 'g', 'kg', 'litro', 'metro'];
 const DAYS = [
@@ -59,7 +60,7 @@ interface ProductForm {
 @Component({
     selector: 'app-store-product-form',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, VariantsManagerComponent],
+    imports: [CommonModule, FormsModule, RouterLink, VariantsManagerComponent, AdminImageFieldComponent],
     styles: [`
     .section-title { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:12px; }
     .day-btn { width:32px; height:32px; border-radius:50%; border:2px solid #e5e7eb; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
@@ -98,29 +99,16 @@ interface ProductForm {
 
         <!-- Photo -->
         <div class="flex gap-4 items-start">
-          <div class="flex-shrink-0">
-            <div class="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center relative group cursor-pointer"
-              (click)="photoInput.click()">
-              @if (photoPreview()) {
-                <img [src]="photoPreview()!" class="w-full h-full object-cover" alt="Foto" />
-              } @else {
-                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 18h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v10.5A1.5 1.5 0 0 0 3.75 18Z" />
-                </svg>
-              }
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-                </svg>
-              </div>
-            </div>
-            <input #photoInput type="file" accept="image/*" class="hidden"
-              (change)="onPhotoSelected($event)" />
-            @if (photoPreview()) {
-              <button type="button" (click)="clearPhoto()"
-                class="mt-1 text-xs text-red-500 hover:underline block text-center">Quitar</button>
-            }
+          <div class="w-28 flex-shrink-0">
+            <app-admin-image-field
+              label="Foto del producto"
+              aspect="1/1"
+              [maxMb]="5"
+              [currentUrl]="photoPreview()"
+              [uploading]="uploadingPhoto()"
+              (fileSelected)="onPhotoSelected($event)"
+              (removed)="clearPhoto()">
+            </app-admin-image-field>
           </div>
 
           <div class="flex-1 space-y-3">
@@ -434,6 +422,7 @@ export class StoreProductFormPageComponent implements OnInit {
     pendingVariants: Partial<ProductVariant>[] = [];
     tagInput = '';
     private photoFile: File | null = null;
+    readonly uploadingPhoto = signal(false);
 
     readonly unitTypes = UNIT_TYPES;
     readonly days = DAYS;
@@ -537,18 +526,14 @@ export class StoreProductFormPageComponent implements OnInit {
     }
 
     // ─── Photo ────────────────────────────────────────────────────────────────
-    onPhotoSelected(event: Event) {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (!file) return;
+    onPhotoSelected(file: File): void {
         this.photoFile = file;
-        const url = URL.createObjectURL(file);
-        this.photoPreviewSignal.set(url);
+        this.photoPreviewSignal.set(URL.createObjectURL(file));
     }
 
-    clearPhoto() {
+    clearPhoto(): void {
         this.photoFile = null;
         this.photoPreviewSignal.set(null);
-        if (this.form) (this.form as unknown as Record<string, unknown>)['photo_url'] = null;
     }
 
     // ─── Submit ───────────────────────────────────────────────────────────────
@@ -564,7 +549,14 @@ export class StoreProductFormPageComponent implements OnInit {
         try {
             let photoUrl: string | null = null;
             if (this.photoFile) {
-                photoUrl = await this.catalogService.uploadProductImage(this.photoFile, storeId);
+                this.uploadingPhoto.set(true);
+                photoUrl = await this.catalogService.uploadProductImage(
+                    this.photoFile,
+                    storeId,
+                    this.productId() ?? undefined,
+                );
+                this.uploadingPhoto.set(false);
+                this.photoFile = null;
             }
 
             const payload: Partial<MenuItem> = {

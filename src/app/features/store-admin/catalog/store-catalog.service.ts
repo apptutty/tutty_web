@@ -1,7 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { getSupabaseClient } from '../../../core/supabase/supabase.client';
 import { MenuItem, MenuCategory, ProductVariant } from '../../../core/supabase/database.types';
+import { StorageUploadService } from '../../../shared/services/storage-upload.service';
 
 export interface ProductFilters {
   categoryId?: string | null;
@@ -20,6 +21,7 @@ export interface CsvImportResult {
 @Injectable({ providedIn: 'root' })
 export class StoreCatalogService {
   private readonly supabase = getSupabaseClient();
+  private readonly storageSvc = inject(StorageUploadService);
 
   readonly isLoading = signal(false);
 
@@ -148,16 +150,33 @@ export class StoreCatalogService {
 
   // ─── Image upload ──────────────────────────────────────────────────────────
 
-  async uploadProductImage(file: File, storeId: string): Promise<string> {
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `stores/${storeId}/products/${crypto.randomUUID()}.${ext}`;
-    const { error } = await this.supabase.storage.from('media').upload(path, file, {
-      upsert: true,
-      contentType: file.type,
-    });
-    if (error) throw error;
-    const { data } = this.supabase.storage.from('media').getPublicUrl(path);
-    return data.publicUrl;
+  async uploadProductImage(file: File, storeId: string, productId?: string): Promise<string> {
+    const bucket = 'menu-items';
+    const path = productId
+      ? this.storageSvc.productImagePath(storeId, productId)
+      : this.storageSvc.newProductImagePath(storeId);
+
+    const { publicUrl, asset } = await this.storageSvc.uploadAndRegister(
+      file,
+      { bucket, path, maxSizeMb: 5 },
+      { commerceId: storeId, kind: 'product_primary' },
+    );
+
+    // If saving a known product, assign primary via RPC
+    if (asset.id && productId) {
+      try {
+        await this.supabase.rpc('assign_media_as_primary', {
+          p_media_asset_id: asset.id,
+          p_entity_type: 'menu_item',
+          p_entity_id: productId,
+          p_role: 'primary',
+        });
+      } catch {
+        // best-effort
+      }
+    }
+
+    return publicUrl;
   }
 
   // ─── Variants ──────────────────────────────────────────────────────────────

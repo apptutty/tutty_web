@@ -171,16 +171,23 @@ export class LoginPageComponent {
 
         try {
             await this.authService.signIn(email!, password!);
-            // Wait for the profile to load before navigating
+            // Wait up to 8 s for the auth event to load the profile.
+            // `isLoading` is set to false at startup, so we can't rely on it
+            // here — poll for isAuthenticated() instead.
             await new Promise<void>(resolve => {
+                const deadline = Date.now() + 8000;
                 const check = () => {
-                    if (!this.authService.isLoading()) { resolve(); return; }
+                    if (this.authService.isAuthenticated() || Date.now() > deadline) {
+                        resolve();
+                        return;
+                    }
                     setTimeout(check, 50);
                 };
                 check();
             });
             if (this.authService.isAuthenticated()) {
-                await this.router.navigate(['/dashboard']);
+                const role = this.authService.currentUser()?.role;
+                await this.router.navigate([role === 'store_admin' ? '/store' : '/dashboard']);
             } else {
                 this.errorMessage.set('No se encontró el perfil de usuario. Contacta al administrador.');
             }

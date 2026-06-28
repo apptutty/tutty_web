@@ -164,7 +164,7 @@ const NEXT_BTN: Record<string, string> = {
                   <p class="text-xs text-gray-400 mt-0.5 truncate">{{ itemSummary(order) }}</p>
                 </div>
 
-                <div class="flex-shrink-0 text-right hidden sm:block">
+                <div class="flex-shrink-0 text-right">
                   <p class="text-xs text-gray-400">{{ elapsed(order.created_at) }}</p>
                   <p class="text-sm font-semibold text-gray-800 mt-0.5">RD&#36;{{ fmtN(order.total) }}</p>
                 </div>

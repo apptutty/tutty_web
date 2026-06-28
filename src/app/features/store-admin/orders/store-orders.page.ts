@@ -319,7 +319,9 @@ export class StoreOrdersPageComponent implements OnInit, OnDestroy {
 
     // ── Signals ────────────────────────────────────────────────────────────────
     readonly isLoading = signal(true);
-    readonly activeView = signal<ViewTab>('kanban');
+    readonly activeView = signal<ViewTab>(
+        typeof window !== 'undefined' && window.innerWidth < 1024 ? 'lista' : 'kanban'
+    );
     readonly allOrders = signal<StoreOrder[]>([]);
     readonly listOrders = signal<StoreOrder[]>([]);
     readonly totalOrders = signal(0);

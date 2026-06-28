@@ -15,6 +15,7 @@ import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { Restaurant, StoreCategory, Payout } from '../../../core/supabase/database.types';
 import { TuttyMapComponent, LatLng } from '../../../shared/ui/map/tutty-map.component';
 import { AdminGeoService, PlaceSuggestion } from '../../../core/services/admin-geo.service';
+import { AdminImageFieldComponent } from '../../../shared/ui/image-field/admin-image-field.component';
 
 type Tab = 'perfil' | 'horarios' | 'delivery' | 'notificaciones' | 'equipo' | 'finanzas';
 
@@ -46,7 +47,7 @@ interface DeliveryForm {
 @Component({
     selector: 'app-store-settings',
     standalone: true,
-    imports: [CommonModule, FormsModule, TuttyMapComponent],
+    imports: [CommonModule, FormsModule, TuttyMapComponent, AdminImageFieldComponent],
     styles: [`
     .tab-btn { padding: 8px 16px; border-bottom: 2px solid transparent; font-size: 0.875rem; font-weight: 500; color: #6b7280; transition: all 0.15s; white-space: nowrap; cursor: pointer; }
     .tab-btn.active { border-bottom-color: #e91e8c; color: #e91e8c; }
@@ -92,38 +93,28 @@ interface DeliveryForm {
           <p class="section-title">Imágenes</p>
           <div class="flex gap-4 flex-wrap">
             <!-- Logo -->
-            <div>
-              <p class="text-xs text-gray-500 mb-1">Logo (1:1)</p>
-              <div class="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
-                (click)="logoInput.click()">
-                @if (profileForm.logo_url) {
-                  <img [src]="profileForm.logo_url" class="w-full h-full object-cover" alt="Logo" />
-                } @else {
-                  <div class="w-full h-full flex items-center justify-center text-gray-300 text-2xl">🏪</div>
-                }
-                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <span class="text-white text-xs">Cambiar</span>
-                </div>
-              </div>
-              <input #logoInput type="file" accept="image/*" class="hidden"
-                (change)="onImageSelected($event, 'logo')" />
+            <div class="w-32">
+              <app-admin-image-field
+                label="Logo (1:1)"
+                aspect="1/1"
+                [maxMb]="3"
+                [currentUrl]="profileForm.logo_url"
+                [uploading]="uploadingLogo()"
+                (fileSelected)="onLogoSelected($event)"
+                (removed)="onLogoRemoved()">
+              </app-admin-image-field>
             </div>
             <!-- Banner -->
             <div class="flex-1 min-w-48">
-              <p class="text-xs text-gray-500 mb-1">Banner (16:9)</p>
-              <div class="h-24 rounded-xl overflow-hidden bg-gray-100 relative group cursor-pointer"
-                (click)="bannerInput.click()">
-                @if (profileForm.banner_url) {
-                  <img [src]="profileForm.banner_url" class="w-full h-full object-cover" alt="Banner" />
-                } @else {
-                  <div class="w-full h-full flex items-center justify-center text-gray-300 text-sm">Banner del comercio</div>
-                }
-                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <span class="text-white text-xs">Cambiar</span>
-                </div>
-              </div>
-              <input #bannerInput type="file" accept="image/*" class="hidden"
-                (change)="onImageSelected($event, 'banner')" />
+              <app-admin-image-field
+                label="Banner (16:9)"
+                aspect="16/9"
+                [maxMb]="8"
+                [currentUrl]="profileForm.banner_url"
+                [uploading]="uploadingBanner()"
+                (fileSelected)="onBannerSelected($event)"
+                (removed)="onBannerRemoved()">
+              </app-admin-image-field>
             </div>
           </div>
         </div>
@@ -642,6 +633,8 @@ export class StoreSettingsPageComponent implements OnInit {
     readonly storeCategories = signal<StoreCategory[]>([]);
     private logoFile: File | null = null;
     private bannerFile: File | null = null;
+    readonly uploadingLogo = signal(false);
+    readonly uploadingBanner = signal(false);
 
     // Location / map
     readonly addressSearch = signal('');
@@ -767,15 +760,20 @@ export class StoreSettingsPageComponent implements OnInit {
         }).catch(() => this.pendingBalanceLoading.set(false));
     }
 
-    // ─── Profile ────────────────────────────────────────────────────────────
-    async onImageSelected(event: Event, type: 'logo' | 'banner') {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (!file) return;
-        const storeId = this.storeAdminSvc.activeStoreId();
-        if (!storeId) return;
-        const preview = URL.createObjectURL(file);
-        if (type === 'logo') { this.logoFile = file; this.profileForm.logo_url = preview; }
-        else { this.bannerFile = file; this.profileForm.banner_url = preview; }
+    // ─── Profile images ─────────────────────────────────────────────────────
+    onLogoSelected(file: File): void {
+        this.logoFile = file;
+    }
+    onLogoRemoved(): void {
+        this.logoFile = null;
+        this.profileForm.logo_url = null;
+    }
+    onBannerSelected(file: File): void {
+        this.bannerFile = file;
+    }
+    onBannerRemoved(): void {
+        this.bannerFile = null;
+        this.profileForm.banner_url = null;
     }
 
     async saveProfile() {
@@ -790,13 +788,26 @@ export class StoreSettingsPageComponent implements OnInit {
                 lat: this.profileForm.lat ?? null,
                 lng: this.profileForm.lng ?? null,
             };
-            if (this.logoFile) patch.logo_url = await this.settingsSvc.uploadImage(this.logoFile, storeId, 'logo');
-            if (this.bannerFile) patch.banner_url = await this.settingsSvc.uploadImage(this.bannerFile, storeId, 'banner');
+            if (this.logoFile) {
+                this.uploadingLogo.set(true);
+                patch.logo_url = await this.settingsSvc.uploadImage(this.logoFile, storeId, 'logo');
+                this.uploadingLogo.set(false);
+                this.logoFile = null;
+            }
+            if (this.bannerFile) {
+                this.uploadingBanner.set(true);
+                patch.banner_url = await this.settingsSvc.uploadImage(this.bannerFile, storeId, 'banner');
+                this.uploadingBanner.set(false);
+                this.bannerFile = null;
+            }
             await this.settingsSvc.updateStore(storeId, patch);
             this.storeAdminSvc.stores.update(list => list.map(s => s.id === storeId ? { ...s, ...patch } : s));
-            this.logoFile = null; this.bannerFile = null;
             this.toast.success('Perfil actualizado');
-        } catch { this.toast.error('Error al guardar perfil'); }
+        } catch (err) {
+            this.uploadingLogo.set(false);
+            this.uploadingBanner.set(false);
+            this.toast.error(err instanceof Error ? err.message : 'Error al guardar perfil');
+        }
     }
 
     toggleDay(key: string) {

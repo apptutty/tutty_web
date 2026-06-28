@@ -2,6 +2,8 @@ import { Injectable, signal } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { getSupabaseClient } from '../../../core/supabase/supabase.client';
 import { Restaurant, StoreCategory, Payout, CommissionTier } from '../../../core/supabase/database.types';
+import { StorageUploadService } from '../../../shared/services/storage-upload.service';
+import { inject } from '@angular/core';
 
 export interface TeamMember {
   user_id: string;
@@ -38,6 +40,7 @@ const DEFAULT_NOTIF: StoreNotifPrefs = {
 @Injectable({ providedIn: 'root' })
 export class StoreSettingsService {
   private readonly supabase = getSupabaseClient();
+  private readonly storageSvc = inject(StorageUploadService);
   readonly isSaving = signal(false);
 
   // ─── Store profile ─────────────────────────────────────────────────────────
@@ -53,15 +56,36 @@ export class StoreSettingsService {
   }
 
   async uploadImage(file: File, storeId: string, type: 'logo' | 'banner'): Promise<string> {
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `stores/${storeId}/${type}.${ext}`;
-    const { error } = await this.supabase.storage.from('media').upload(path, file, {
-      upsert: true,
-      contentType: file.type,
-    });
-    if (error) throw error;
-    const { data } = this.supabase.storage.from('media').getPublicUrl(path);
-    return data.publicUrl;
+    const bucket = 'restaurants';
+    const path = type === 'logo'
+      ? this.storageSvc.logoPath(storeId)
+      : this.storageSvc.coverPath(storeId);
+
+    const { publicUrl, asset } = await this.storageSvc.uploadAndRegister(
+      file,
+      { bucket, path, maxSizeMb: type === 'logo' ? 3 : 8 },
+      {
+        commerceId: storeId,
+        kind: type === 'logo' ? 'commerce_logo' : 'commerce_cover',
+        displayName: type === 'logo' ? 'Logo principal' : 'Cover / banner',
+      },
+    );
+
+    // If we got a proper asset ID, assign as primary via RPC
+    if (asset.id) {
+      try {
+        await this.supabase.rpc('assign_media_as_primary', {
+          p_media_asset_id: asset.id,
+          p_entity_type: 'commerce',
+          p_entity_id: storeId,
+          p_role: type === 'logo' ? 'logo' : 'cover',
+        });
+      } catch {
+        // RPC is best-effort; direct URL update below is the fallback
+      }
+    }
+
+    return publicUrl;
   }
 
   getStoreCategories(commerceType: string): Observable<StoreCategory[]> {

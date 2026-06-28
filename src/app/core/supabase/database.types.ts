@@ -800,6 +800,114 @@ export interface OperatorRegistrationDraft {
   phone: string;
 }
 
+// ── Media Layer ───────────────────────────────────────────────────────────────
+
+export type MediaKind =
+  | 'commerce_logo'
+  | 'commerce_cover'
+  | 'commerce_gallery'
+  | 'product_primary'
+  | 'product_gallery'
+  | 'excursion_cover'
+  | 'excursion_gallery'
+  | 'operator_logo'
+  | 'avatar'
+  | 'document'
+  | 'other';
+
+export type MediaEntityType =
+  | 'commerce'
+  | 'menu_item'
+  | 'excursion'
+  | 'excursion_operator'
+  | 'user'
+  | 'repartidor';
+
+export type BulkUploadStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type BulkItemMatchStatus = 'pending' | 'auto_matched' | 'manually_matched' | 'no_match' | 'conflict';
+
+export interface MediaAsset {
+  id: string;
+  bucket: string;
+  path: string;
+  public_url: string;
+  commerce_id: string | null;
+  operator_id: string | null;
+  uploaded_by: string | null;
+  kind: MediaKind;
+  mime_type: string;
+  size_bytes: number | null;
+  width: number | null;
+  height: number | null;
+  original_filename: string | null;
+  display_name: string | null;
+  alt_text: string | null;
+  caption: string | null;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MediaAssetLink {
+  id: string;
+  media_asset_id: string;
+  entity_type: MediaEntityType;
+  entity_id: string;
+  role: string;
+  display_order: number;
+  is_primary: boolean;
+  created_at: string;
+}
+
+export interface BulkUploadSession {
+  id: string;
+  commerce_id: string | null;
+  operator_id: string | null;
+  created_by: string | null;
+  status: BulkUploadStatus;
+  total_items: number;
+  matched_items: number;
+  applied_items: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BulkUploadItem {
+  id: string;
+  session_id: string;
+  entity_type: MediaEntityType;
+  entity_id: string | null;
+  entity_name: string | null;
+  entity_sku: string | null;
+  media_asset_id: string | null;
+  match_status: BulkItemMatchStatus;
+  match_confidence: number | null;
+  match_reason: string | null;
+  applied: boolean;
+  created_at: string;
+}
+
+/** Row returned by the `get_entity_media` RPC. */
+export interface EntityMedia {
+  id: string;
+  bucket: string;
+  path: string;
+  public_url: string;
+  kind: MediaKind;
+  role: string;
+  display_order: number;
+  is_primary: boolean;
+  display_name: string | null;
+  alt_text: string | null;
+  caption: string | null;
+  mime_type: string;
+  size_bytes: number | null;
+  created_at: string;
+}
+
+// ── Registration flows ────────────────────────────────────────────────────────
+
 export interface RegistrationDraft {
   // Step 1 – commerce type
   commerce_type: CommerceType | null;

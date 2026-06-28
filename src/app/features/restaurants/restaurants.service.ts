@@ -75,8 +75,10 @@ export class RestaurantsService {
 
     async saveMenuItem(item: Partial<MenuItem>): Promise<void> {
         if (item.id) {
-            const { error } = await this.supabase.from('menu_items').update(item).eq('id', item.id);
+            const { data, error } = await this.supabase
+                .from('menu_items').update(item).eq('id', item.id).select('id');
             if (error) throw error;
+            if (!data || data.length === 0) throw new Error('No rows updated — check RLS policies');
         } else {
             const { error } = await this.supabase.from('menu_items').insert(item);
             if (error) throw error;

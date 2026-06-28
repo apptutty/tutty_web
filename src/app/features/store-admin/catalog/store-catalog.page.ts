@@ -33,8 +33,8 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
     template: `
   <div class="flex h-full overflow-hidden" style="min-height:calc(100vh - 64px)">
 
-    <!-- ─── LEFT: Categories Panel ─────────────────────────────── -->
-    <aside class="w-64 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-y-auto">
+    <!-- ─── LEFT: Categories Panel (desktop only) ──────────────── -->
+    <aside class="hidden lg:flex w-64 flex-shrink-0 border-r border-gray-200 bg-white flex-col overflow-y-auto">
       <div class="p-4 border-b border-gray-100">
         <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Categorías</h2>
       </div>
@@ -118,6 +118,19 @@ import { MenuItem, MenuCategory } from '../../../core/supabase/database.types';
 
     <!-- ─── RIGHT: Products Panel ───────────────────────────────── -->
     <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+
+      <!-- Mobile category selector (lg: hidden — uses aside instead) -->
+      <div class="lg:hidden bg-white border-b border-gray-200 px-4 py-3">
+        <select
+          class="input-field text-sm w-full"
+          [ngModel]="selectedCategoryId()"
+          (ngModelChange)="selectCategory($event === 'null' ? null : $event)">
+          <option value="null">Todos los productos ({{ allProducts().length }})</option>
+          @for (cat of categories(); track cat.id) {
+            <option [value]="cat.id">{{ cat.name }} ({{ productCountByCategory()[cat.id] ?? 0 }})</option>
+          }
+        </select>
+      </div>
 
       <!-- Top bar -->
       <div class="bg-white border-b border-gray-200 p-4 flex flex-wrap items-center gap-3">
