@@ -8,6 +8,7 @@ import {
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 const COMMERCE_ICONS: Record<string, string> = {
     restaurante: '🍽️', farmacia: '💊', bodega: '📦',
@@ -36,7 +37,7 @@ const COMMERCE_TYPES = [
 @Component({
     selector: 'app-catalog-manager',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent, TimeAgoPipe],
+    imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent, TimeAgoPipe, AdminEmptyStateComponent],
     template: `
 <app-page-header title="Gestión de Catálogos" subtitle="Administra el catálogo de todos los comercios en la plataforma">
   <a routerLink="/catalog/search"
@@ -212,9 +213,12 @@ const COMMERCE_TYPES = [
 
 <!-- ─── Store grid ─────────────────────────────────────────────────────────── -->
 @if (!loading() && stores().length === 0) {
-  <div class="flex flex-col items-center justify-center py-24 text-gray-400">
-    <span class="text-5xl mb-4">📦</span>
-    <p class="text-base font-medium text-gray-500">Sin comercios para estos filtros</p>
+  <div class="py-16">
+    <app-admin-empty-state
+      icon="search"
+      title="Sin comercios para estos filtros"
+      description="Ajusta los filtros para ver resultados en el catálogo."
+      variant="soft" />
   </div>
 }
 

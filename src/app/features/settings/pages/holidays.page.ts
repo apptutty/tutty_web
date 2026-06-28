@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { Holiday } from '../../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-settings-holidays',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminEmptyStateComponent],
   template: `
     <div class="max-w-2xl">
       <div class="card p-6">
@@ -24,7 +25,11 @@ import { Holiday } from '../../../core/supabase/database.types';
             }
           </div>
         } @else if (holidays().length === 0) {
-          <p class="text-center text-gray-500 py-8">No hay feriados registrados</p>
+          <app-admin-empty-state
+            icon="search"
+            title="No hay feriados registrados"
+            description="Agrega feriados para aplicar reglas especiales de operación y recargo."
+            variant="soft" />
         } @else {
           <div class="space-y-2">
             @for (h of holidays(); track h.id) {

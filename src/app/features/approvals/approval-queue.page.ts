@@ -10,6 +10,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
 import { StoreApproval, ApprovalStatus, CommerceType } from '../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 type ApprovalTab = 'pendiente' | 'aprobado' | 'rechazado' | 'suspendido';
 
@@ -28,7 +29,7 @@ const COMMERCE_LABELS: Record<CommerceType, string> = {
   selector: 'app-approval-queue-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, TimeAgoPipe],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, TimeAgoPipe, AdminEmptyStateComponent],
   template: `
     <app-page-header title="Aprobación de Comercios" subtitle="Revisa y gestiona las solicitudes de nuevos comercios">
       <div class="flex items-center gap-3">
@@ -89,9 +90,10 @@ const COMMERCE_LABELS: Record<CommerceType, string> = {
       </div>
     } @else if (stores().length === 0) {
       <div class="flex flex-col items-center justify-center py-24 text-center">
-        <p class="text-5xl mb-4">🏪</p>
-        <p class="text-lg font-semibold text-gray-700">Sin comercios {{ tabLabel(activeTab()) }}</p>
-        <p class="text-sm text-gray-400 mt-1">No hay solicitudes en esta categoría por el momento.</p>
+        <app-admin-empty-state
+          icon="map"
+          [title]="'Sin comercios ' + tabLabel(activeTab())"
+          description="No hay solicitudes en esta categoría por el momento." />
       </div>
     } @else {
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

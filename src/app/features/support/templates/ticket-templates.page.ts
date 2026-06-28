@@ -10,6 +10,7 @@ import {
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../../layout/admin-shell/page-header.component';
 import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
+import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@ function emptyForm(): TemplatePayload {
 @Component({
     selector: 'app-ticket-templates-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent],
+    imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent, AdminEmptyStateComponent],
     template: `
 <app-page-header
   title="Plantillas de respuesta"
@@ -94,11 +95,14 @@ function emptyForm(): TemplatePayload {
 
 <!-- ─── Empty state ──────────────────────────────────────────────────────── -->
 @if (!loading() && templates().length === 0) {
-  <div class="flex flex-col items-center justify-center py-24 text-center text-gray-400">
-    <span class="text-5xl mb-4">📝</span>
-    <p class="text-base font-medium text-gray-500">Sin plantillas aún</p>
-    <p class="text-sm mt-1">Crea tu primera plantilla de respuesta para agilizar el soporte</p>
-    <button class="btn-primary mt-6" (click)="openCreate()">+ Nueva plantilla</button>
+  <div class="py-16">
+    <app-admin-empty-state
+      icon="search"
+      title="Sin plantillas aún"
+      description="Crea tu primera plantilla de respuesta para agilizar el soporte"
+      actionLabel="+ Nueva plantilla"
+      (action)="openCreate()"
+      variant="soft" />
   </div>
 }
 

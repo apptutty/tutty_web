@@ -12,6 +12,7 @@ import {
 import { SupportTicketListComponent } from './components/ticket-list/ticket-list.component';
 import { SupportTicketDetailComponent } from './components/ticket-detail/ticket-detail.component';
 import { NewTicketModalComponent } from './components/new-ticket-modal/new-ticket-modal.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 // ─── Quick-filter presets ─────────────────────────────────────────────────────
 
@@ -40,7 +41,7 @@ const ALL_STATUSES: TicketStatus[] = [
 @Component({
     selector: 'app-support-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, SupportTicketListComponent, SupportTicketDetailComponent, NewTicketModalComponent],
+    imports: [CommonModule, FormsModule, RouterLink, SupportTicketListComponent, SupportTicketDetailComponent, NewTicketModalComponent, AdminEmptyStateComponent],
     template: `
     <!-- Mobile drawer overlay -->
     @if (sidebarOpen()) {
@@ -382,12 +383,12 @@ const ALL_STATUSES: TicketStatus[] = [
             </div>
           } @else if (!loading() && tickets().length === 0) {
             <!-- Empty state (no detail panel) -->
-            <div class="flex-1 flex flex-col items-center justify-center text-gray-400">
-              <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <p class="text-sm font-medium">Sin tickets para estos filtros</p>
+            <div class="flex-1 flex items-center justify-center px-6">
+              <app-admin-empty-state
+                icon="search"
+                title="Sin tickets para estos filtros"
+                description="Prueba ajustando los filtros o creando un ticket nuevo."
+                variant="soft" />
             </div>
           }
 

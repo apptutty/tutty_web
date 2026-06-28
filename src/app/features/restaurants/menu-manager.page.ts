@@ -7,11 +7,12 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { MenuCategory, MenuItem } from '../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-menu-manager-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, AdminEmptyStateComponent],
   template: `
     <app-page-header [title]="'Menú — ' + commerceId" subtitle="Gestión de categorías e ítems">
       <button class="btn-secondary" (click)="openCategoryModal()">+ Categoría</button>
@@ -41,7 +42,13 @@ import { MenuCategory, MenuItem } from '../../core/supabase/database.types';
             </li>
           }
           @if (categories().length === 0 && !categoriesLoading()) {
-            <li class="px-4 py-6 text-center text-sm text-gray-400">Sin categorías</li>
+            <li class="px-3 py-3">
+              <app-admin-empty-state
+                icon="search"
+                title="Sin categorías"
+                description="Crea una categoría para empezar."
+                variant="soft" />
+            </li>
           }
         </ul>
       </div>
@@ -89,18 +96,22 @@ import { MenuCategory, MenuItem } from '../../core/supabase/database.types';
               </div>
             }
             @if (items().length === 0 && !itemsLoading()) {
-              <div class="sm:col-span-2 xl:col-span-3 text-center py-12 text-gray-400">
-                <p class="text-3xl mb-2">🍽️</p>
-                <p class="text-sm">Sin ítems en esta categoría</p>
+              <div class="sm:col-span-2 xl:col-span-3 py-6">
+                <app-admin-empty-state
+                  icon="search"
+                  title="Sin ítems en esta categoría"
+                  description="Agrega un nuevo ítem para comenzar."
+                  variant="soft" />
               </div>
             }
           </div>
         } @else {
-          <div class="flex-1 flex items-center justify-center text-gray-400">
-            <div class="text-center">
-              <p class="text-4xl mb-2">👈</p>
-              <p class="text-sm">Selecciona una categoría</p>
-            </div>
+          <div class="flex-1 flex items-center justify-center px-6">
+            <app-admin-empty-state
+              icon="search"
+              title="Selecciona una categoría"
+              description="Elige una categoría para administrar sus ítems."
+              variant="soft" />
           </div>
         }
       </div>

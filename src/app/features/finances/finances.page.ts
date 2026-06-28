@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { PayoutsService } from './payouts.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 import {
   FinanceKpi, FinanceDailyPoint, PayoutSummary,
   SurchargeStats, DeliveryFeeRange, PayoutMethod,
@@ -43,7 +44,7 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
 @Component({
   selector: 'app-finances-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, PageHeaderComponent, AdminEmptyStateComponent],
   template: `
     <app-page-header title="Finanzas" subtitle="Liquidaciones, comisiones y reportes financieros" />
 
@@ -133,8 +134,12 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
         @if (chartLoading()) {
           <div class="h-40 animate-pulse bg-gray-100 rounded-lg"></div>
         } @else if (chartData().length === 0) {
-          <div class="h-32 flex items-center justify-center text-gray-300 text-sm">
-            Sin datos para el período
+          <div class="h-32 flex items-center justify-center">
+            <app-admin-empty-state
+              icon="orders"
+              title="Sin datos para el período"
+              description="Ajusta el rango para ver ventas y comisiones diarias."
+              variant="soft" />
           </div>
         } @else {
           <div class="overflow-x-auto">
@@ -196,7 +201,7 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
         <button class="btn-secondary text-sm ml-auto" (click)="exportCsv()">⬇ Exportar CSV</button>
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+      <div class="admin-table-card">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
@@ -222,7 +227,11 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
               } @else if (payoutSummaries().length === 0) {
                 <tr>
                   <td colspan="7" class="px-4 py-12 text-center text-gray-400 text-sm">
-                    Sin datos para el período seleccionado
+                    <app-admin-empty-state
+                      icon="money"
+                      title="Sin datos para el período seleccionado"
+                      description="No hay liquidaciones en el rango actual."
+                      variant="soft" />
                   </td>
                 </tr>
               } @else {
@@ -297,7 +306,7 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
       </div>
 
       <!-- Reuse payouts summary data filtered for commission view -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+      <div class="admin-table-card">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
@@ -317,7 +326,15 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
                   </tr>
                 }
               } @else if (commSummaries().length === 0) {
-                <tr><td colspan="5" class="px-4 py-10 text-center text-gray-400 text-sm">Sin datos</td></tr>
+                <tr>
+                  <td colspan="5" class="px-4 py-10 text-center text-gray-400 text-sm">
+                    <app-admin-empty-state
+                      icon="search"
+                      title="Sin datos"
+                      description="No hay comisiones para el período seleccionado."
+                      variant="soft" />
+                  </td>
+                </tr>
               } @else {
                 @for (s of commSummaries(); track s.store_id) {
                   <tr class="hover:bg-gray-50">

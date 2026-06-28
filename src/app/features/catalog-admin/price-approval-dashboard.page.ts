@@ -6,6 +6,7 @@ import { CatalogAdminService, PendingPriceItem } from './services/catalog-admin.
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 type DirectionFilter = 'all' | 'up' | 'down';
 type PctFilter = 0 | 10 | 20 | 30;
@@ -13,7 +14,7 @@ type PctFilter = 0 | 10 | 20 | 30;
 @Component({
     selector: 'app-price-approval-dashboard',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe, PageHeaderComponent, TimeAgoPipe],
+    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe, PageHeaderComponent, TimeAgoPipe, AdminEmptyStateComponent],
     template: `
 <app-page-header title="Precios pendientes de aprobación" subtitle="Revisa y aprueba las propuestas de precio de los comercios">
   <a routerLink="/catalog" class="btn-secondary text-sm flex items-center gap-1.5">
@@ -132,11 +133,11 @@ type PctFilter = 0 | 10 | 20 | 30;
 }
 
 @if (!loading() && filteredItems().length === 0) {
-  <div class="bg-white border border-gray-200 rounded-xl p-16 text-center">
-    <p class="text-5xl mb-4">🎉</p>
-    <p class="text-base font-semibold text-gray-700 mb-1">¡Todo al día!</p>
-    <p class="text-sm text-gray-400">No hay precios pendientes de aprobación</p>
-  </div>
+  <app-admin-empty-state
+    icon="search"
+    title="¡Todo al día!"
+    description="No hay precios pendientes de aprobación."
+    variant="soft" />
 }
 
 @if (!loading() && filteredItems().length > 0) {

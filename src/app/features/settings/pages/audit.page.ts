@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { AuditLogEntry } from '../../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-settings-audit',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, AdminEmptyStateComponent],
   template: `
     <div>
       <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3 mb-4">
@@ -60,8 +61,12 @@ import { AuditLogEntry } from '../../../core/supabase/database.types';
                 }
               } @else if (logs().length === 0) {
                 <tr>
-                  <td colspan="6" class="px-4 py-12 text-center text-gray-400">
-                    Sin registros de auditoría para los filtros seleccionados
+                  <td colspan="6" class="px-4 py-6">
+                    <app-admin-empty-state
+                      icon="search"
+                      title="Sin registros de auditoría"
+                      description="No hay registros para los filtros seleccionados."
+                      variant="soft" />
                   </td>
                 </tr>
               } @else {

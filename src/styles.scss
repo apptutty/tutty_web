@@ -52,6 +52,7 @@
   body {
     @apply font-poppins bg-gray-50 text-base font-normal text-gray-800;
     background: var(--admin-bg);
+    overflow-x: hidden;
   }
 
   * {
@@ -95,6 +96,11 @@
     border-color: var(--admin-muted-border);
     border-radius: var(--admin-radius-md);
     background: #fff;
+    min-height: 46px;
+  }
+  .input-field:focus {
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 4px rgba(235, 27, 141, .10);
   }
 
   .label {
@@ -124,6 +130,12 @@
     border-color: var(--admin-card-border);
     border-radius: var(--admin-radius-lg);
     box-shadow: var(--admin-shadow-sm);
+  }
+  .admin-table-card {
+    @apply bg-white border rounded-2xl;
+    border-color: var(--admin-card-border);
+    box-shadow: var(--admin-shadow-soft);
+    overflow-x: auto;
   }
   .admin-panel-card {
     @apply bg-white border;

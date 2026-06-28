@@ -9,11 +9,12 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
 import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { Restaurant, CommissionTier, CommerceType } from '../../core/supabase/database.types';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-restaurants-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, AdminEmptyStateComponent],
   template: `
     <app-page-header title="Restaurantes" subtitle="Gestión de establecimientos">
       <button class="btn-primary" (click)="openForm()">+ Nuevo restaurante</button>
@@ -55,7 +56,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+    <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -81,9 +82,12 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
               }
             } @else if (restaurants().length === 0) {
               <tr>
-                <td colspan="8" class="px-4 py-12 text-center text-gray-400">
-                  <p class="text-4xl mb-2">🏪</p>
-                  <p class="text-sm">Sin restaurantes</p>
+                <td colspan="8" class="px-4 py-6">
+                  <app-admin-empty-state
+                    icon="search"
+                    title="Sin restaurantes"
+                    description="No hay restaurantes disponibles con los filtros actuales."
+                    variant="soft" />
                 </td>
               </tr>
             } @else {

@@ -9,6 +9,7 @@ import {
 } from './services/catalog-admin.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 const COMMERCE_TYPES = [
     { value: '', label: 'Todos los tipos' },
@@ -62,7 +63,7 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
 @Component({
     selector: 'app-catalog-global-search',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe, PageHeaderComponent],
+    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe, PageHeaderComponent, AdminEmptyStateComponent],
     template: `
 <app-page-header title="Búsqueda global de productos" subtitle="Busca en el catálogo completo de todos los comercios">
   <a routerLink="/catalog" class="btn-secondary text-sm flex items-center gap-1.5">
@@ -261,20 +262,20 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
 
 <!-- ─── Empty state ───────────────────────────────────────────────────────────── -->
 @if (!loading() && !errorMsg() && hasSearched() && results().length === 0) {
-  <div class="bg-white border border-gray-200 rounded-xl py-20 flex flex-col items-center text-gray-400">
-    <span class="text-5xl mb-4">🔍</span>
-    <p class="text-base font-medium text-gray-500 mb-1">Sin resultados</p>
-    <p class="text-sm text-gray-400">Prueba con otros términos o ajusta los filtros</p>
-  </div>
+  <app-admin-empty-state
+    icon="search"
+    title="Sin resultados"
+    description="Prueba con otros términos o ajusta los filtros."
+    variant="soft" />
 }
 
 <!-- ─── Initial empty state ─────────────────────────────────────────────────── -->
 @if (!loading() && !hasSearched()) {
-  <div class="bg-white border border-gray-200 rounded-xl py-20 flex flex-col items-center text-gray-400">
-    <span class="text-5xl mb-4">🔎</span>
-    <p class="text-base font-medium text-gray-500 mb-1">Escribe para buscar</p>
-    <p class="text-sm text-gray-400">Busca en nombre, descripción, marca, SKU o código de barras</p>
-  </div>
+  <app-admin-empty-state
+    icon="search"
+    title="Escribe para buscar"
+    description="Busca en nombre, descripción, marca, SKU o código de barras."
+    variant="soft" />
 }
 
 <!-- ─── Results list ──────────────────────────────────────────────────────────── -->

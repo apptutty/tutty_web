@@ -12,6 +12,7 @@ import { MenuCategory } from '../../core/supabase/database.types';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 type PageTab = 'products' | 'categories' | 'combos' | 'history';
 
@@ -45,7 +46,7 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
 @Component({
     selector: 'app-store-product-manager',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe, TimeAgoPipe],
+    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe, TimeAgoPipe, AdminEmptyStateComponent],
     template: `
 <!-- ─── Breadcrumb ─────────────────────────────────────────────────────────── -->
 <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
@@ -349,8 +350,12 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
             }
             @if (products().length === 0) {
               <tr>
-                <td colspan="9" class="px-4 py-12 text-center text-gray-400 text-sm">
-                  Sin productos para estos filtros
+                <td colspan="9" class="px-4 py-6">
+                  <app-admin-empty-state
+                    icon="search"
+                    title="Sin productos para estos filtros"
+                    description="Ajusta la búsqueda o cambia los filtros aplicados."
+                    variant="soft" />
                 </td>
               </tr>
             }
@@ -427,7 +432,13 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
         </div>
       }
       @if (categories().length === 0) {
-        <p class="px-4 py-8 text-center text-sm text-gray-400">Sin categorías aún. Crea la primera.</p>
+        <div class="px-4 py-4">
+          <app-admin-empty-state
+            icon="search"
+            title="Sin categorías aún"
+            description="Crea la primera categoría para organizar el catálogo."
+            variant="soft" />
+        </div>
       }
     </div>
   </div>
@@ -441,10 +452,11 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
   </div>
 
   @if (combos().length === 0 && !combosLoading()) {
-    <div class="bg-white border border-gray-200 rounded-xl p-12 text-center text-gray-400">
-      <p class="text-4xl mb-3">🎁</p>
-      <p class="text-sm font-medium text-gray-500">Sin combos configurados</p>
-    </div>
+    <app-admin-empty-state
+      icon="search"
+      title="Sin combos configurados"
+      description="Crea un nuevo combo para este comercio."
+      variant="soft" />
   }
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -514,7 +526,13 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
           </div>
         }
         @if (changeLog().length === 0) {
-          <p class="px-4 py-8 text-center text-sm text-gray-400">Sin historial aún</p>
+          <div class="px-4 py-4">
+            <app-admin-empty-state
+              icon="search"
+              title="Sin historial aún"
+              description="Todavía no hay cambios registrados para este comercio."
+              variant="soft" />
+          </div>
         }
       </div>
     }

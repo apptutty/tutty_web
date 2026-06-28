@@ -7,6 +7,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { Restaurant, CommerceType, CommissionTier, ApprovalStatus } from '../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 const COMMERCE_TABS: { label: string; value: CommerceType | '' }[] = [
     { label: 'Todos', value: '' },
@@ -51,7 +52,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 @Component({
     selector: 'app-stores-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, AdminEmptyStateComponent],
     template: `
     <app-page-header title="Comercios" subtitle="Gestión de todos los tipos de comercio">
       <button class="btn-primary" (click)="openForm()">+ Nuevo comercio</button>
@@ -106,7 +107,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+    <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
@@ -133,8 +134,10 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
             } @else if (stores().length === 0) {
               <tr>
                 <td colspan="8" class="px-4 py-12 text-center text-gray-400">
-                  <p class="text-4xl mb-2">🏪</p>
-                  <p class="text-sm">Sin comercios</p>
+                  <app-admin-empty-state
+                    icon="map"
+                    title="Sin comercios"
+                    description="No hay comercios para los filtros actuales." />
                 </td>
               </tr>
             } @else {

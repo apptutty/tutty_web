@@ -13,6 +13,7 @@ import {
 import { COMMERCE_ICONS, COMMERCE_LABELS } from './stores.page';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
 import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 type StoreTab = 'info' | 'catalog' | 'zones' | 'orders' | 'finance' | 'admins' | 'history';
 
@@ -26,7 +27,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 @Component({
     selector: 'app-store-detail-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe, TuttyMapComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe, TuttyMapComponent, AdminEmptyStateComponent],
     template: `
     <!-- Back nav -->
     <div class="mb-4">
@@ -45,9 +46,12 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
         }
       </div>
     } @else if (!store()) {
-      <div class="text-center py-16 text-gray-400">
-        <p class="text-4xl mb-2">🏪</p>
-        <p>Comercio no encontrado</p>
+      <div class="py-10">
+        <app-admin-empty-state
+          icon="search"
+          title="Comercio no encontrado"
+          description="No se pudo cargar la información del comercio."
+          variant="soft" />
       </div>
     } @else {
       <!-- Header card -->
@@ -249,7 +253,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 
       <!-- Tab: Catálogo -->
       @if (activeTab() === 'catalog') {
-        <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+        <div class="admin-table-card">
           <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-semibold text-gray-800">Catálogo de productos</h3>
             <button class="btn-primary text-sm"
@@ -295,7 +299,13 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                   }
                 } @else if (items().length === 0) {
                   <tr>
-                    <td colspan="8" class="px-4 py-10 text-center text-gray-400 text-sm">Sin productos</td>
+                    <td colspan="8" class="px-4 py-6">
+                      <app-admin-empty-state
+                        icon="search"
+                        title="Sin productos"
+                        description="Este comercio todavía no tiene productos."
+                        variant="soft" />
+                    </td>
                   </tr>
                 } @else {
                   @for (item of items(); track item.id) {
@@ -387,9 +397,12 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
               }
             </div>
           } @else if (storeOrders().length === 0) {
-            <div class="py-12 text-center text-gray-400">
-              <p class="text-2xl mb-2">📦</p>
-              <p class="text-sm">No orders found for this store</p>
+            <div class="py-8 px-4">
+              <app-admin-empty-state
+                icon="orders"
+                title="Sin pedidos para este comercio"
+                description="No hay pedidos recientes en los últimos 30 registros."
+                variant="soft" />
             </div>
           } @else {
             <div class="overflow-x-auto">
@@ -516,7 +529,11 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
               </div>
             </div>
           } @else {
-            <p class="text-gray-400 text-sm">Sin administradores asignados</p>
+            <app-admin-empty-state
+              icon="users"
+              title="Sin administradores asignados"
+              description="Este comercio no tiene un administrador vinculado."
+              variant="soft" />
           }
         </div>
       }
@@ -528,7 +545,13 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
             <h3 class="font-semibold text-gray-800 text-sm">Historial de aprobación</h3>
           </div>
           @if (approvalHistory().length === 0) {
-            <p class="px-4 py-8 text-center text-gray-400 text-sm">Sin historial</p>
+            <div class="px-4 py-6">
+              <app-admin-empty-state
+                icon="search"
+                title="Sin historial"
+                description="Aún no hay eventos de aprobación registrados."
+                variant="soft" />
+            </div>
           } @else {
             <div class="divide-y divide-gray-100">
               @for (ev of approvalHistory(); track ev.date) {

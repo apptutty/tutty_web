@@ -8,11 +8,12 @@ import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { DeliveryZone, Restaurant } from '../../core/supabase/database.types';
 import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
     selector: 'app-delivery-zones-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, TuttyMapComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, TuttyMapComponent, AdminEmptyStateComponent],
     template: `
     <app-page-header
       [title]="'Zonas de Entrega' + (restaurant() ? ' — ' + restaurant()!.name : '')"
@@ -69,7 +70,7 @@ import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
     }
 
     <!-- Table -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+    <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -95,9 +96,12 @@ import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
               }
             } @else if (zones().length === 0) {
               <tr>
-                <td colspan="8" class="px-4 py-12 text-center text-gray-400">
-                  <p class="text-3xl mb-2">🗺️</p>
-                  <p class="text-sm">Sin zonas de entrega configuradas</p>
+                <td colspan="8" class="px-4 py-6">
+                  <app-admin-empty-state
+                    icon="map"
+                    title="Sin zonas de entrega configuradas"
+                    description="Crea una zona para habilitar cobertura de delivery."
+                    variant="soft" />
                 </td>
               </tr>
             } @else {

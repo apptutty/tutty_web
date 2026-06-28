@@ -11,7 +11,18 @@ import { ToastContainerComponent } from '../../shared/ui/toast/toast-container.c
 import { ConfirmModalComponent } from '../../shared/ui/modal/confirm-modal.component';
 import { ApprovalQueueService } from '../../features/approvals/approval-queue.service';
 
-interface NavItem { label: string; path: string; roles?: string[]; svgPath: string; mobileLabel?: string; }
+interface NavItem {
+  label: string;
+  path: string;
+  roles?: string[];
+  svgPath: string;
+  mobileLabel?: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
 
 // Mobile bottom-nav items (5 most important)
 const MOBILE_NAV_ITEMS = [
@@ -22,18 +33,51 @@ const MOBILE_NAV_ITEMS = [
   { label: 'Config.', path: '/settings', svgPath: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ];
 
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard', svgPath: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-  { label: 'Pedidos', path: '/orders', svgPath: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
-  { label: 'Aprobaciones', path: '/approvals', roles: ['super_admin'], svgPath: 'M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z' },
-  { label: 'Comercios', path: '/stores', roles: ['super_admin'], svgPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-  { label: 'Excursiones', path: '/excursions', roles: ['super_admin', 'excursion_operator'], svgPath: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
-  { label: 'Repartidores', path: '/couriers', roles: ['super_admin'], svgPath: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-  { label: 'Promociones', path: '/promotions', roles: ['super_admin'], svgPath: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' },
-  { label: 'Reportes', path: '/reports', roles: ['super_admin'], svgPath: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { label: 'Finanzas', path: '/finances', roles: ['super_admin'], svgPath: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Soporte', path: '/support', roles: ['super_admin'], svgPath: 'M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z' },
-  { label: 'Configuración', path: '/settings', roles: ['super_admin'], svgPath: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+const SUPER_ADMIN_NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { label: 'Dashboard', path: '/dashboard', roles: ['super_admin'], svgPath: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { label: 'Pedidos', path: '/orders', roles: ['super_admin'], svgPath: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
+      { label: 'Comercios', path: '/stores', roles: ['super_admin'], svgPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+      { label: 'Repartidores', path: '/couriers', roles: ['super_admin'], svgPath: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+      { label: 'Excursiones', path: '/excursions', roles: ['super_admin'], svgPath: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      { label: 'Catálogos', path: '/catalog', roles: ['super_admin'], svgPath: 'M4 6.75A2.25 2.25 0 016.25 4.5h11.5A2.25 2.25 0 0120 6.75v10.5A2.25 2.25 0 0117.75 19.5H6.25A2.25 2.25 0 014 17.25V6.75zM8.25 8.25h7.5M8.25 12h7.5M8.25 15.75h4.5' },
+      { label: 'Promociones', path: '/promotions', roles: ['super_admin'], svgPath: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' },
+    ],
+  },
+  {
+    label: 'Finance',
+    items: [
+      { label: 'Reportes', path: '/reports', roles: ['super_admin'], svgPath: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { label: 'Finanzas', path: '/finances', roles: ['super_admin'], svgPath: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+    ],
+  },
+  {
+    label: 'Governance',
+    items: [
+      { label: 'Aprobaciones', path: '/approvals', roles: ['super_admin'], svgPath: 'M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z' },
+      { label: 'Soporte', path: '/support', roles: ['super_admin'], svgPath: 'M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z' },
+      { label: 'Auditoría', path: '/settings/auditoria', roles: ['super_admin'], svgPath: 'M9 12.75l2.25 2.25L15 9.75m6 2.25a8.966 8.966 0 01-5.84 8.394 2.25 2.25 0 01-1.31.126A8.966 8.966 0 013 12V6.873a2.25 2.25 0 011.522-2.137l6-2a2.25 2.25 0 011.456 0l6 2A2.25 2.25 0 0121 6.873V12z' },
+    ],
+  },
+  {
+    label: 'Settings',
+    items: [
+      { label: 'Configuración', path: '/settings', roles: ['super_admin'], svgPath: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+      { label: 'Usuarios', path: '/settings/usuarios', roles: ['super_admin'], svgPath: 'M15 19.128a9.38 9.38 0 002.625.372c1.035 0 2.037-.165 2.976-.47M4.5 19.5a9.38 9.38 0 012.625-.372m0 0a9.373 9.373 0 015.25 0m-5.25 0a9.387 9.387 0 00-2.625.372m2.625-.372V17.25m5.25 1.878V17.25m0 1.878a9.386 9.386 0 012.625.372M9 7.5a3 3 0 116 0 3 3 0 01-6 0z' },
+    ],
+  },
 ];
 
 @Component({
@@ -41,46 +85,67 @@ const NAV_ITEMS: NavItem[] = [
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <ul class="space-y-0.5">
-      @for (item of visibleItems(); track item.path) {
-        <li class="relative group">
-          <a
-            [routerLink]="item.path"
-            routerLinkActive="bg-white/10 text-white"
-            [routerLinkActiveOptions]="{ exact: false }"
-            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-400 hover:bg-white/5 hover:text-gray-300 transition-colors text-sm font-medium"
-            [class.justify-center]="collapsed"
-            [class.px-0]="collapsed"
-            (click)="navClick.emit()"
-          >
-            <span [class.mx-auto]="collapsed">
-              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.svgPath" />
-              </svg>
-            </span>
-            @if (!collapsed) {
-              <span class="flex-1">{{ item.label }}</span>
-              @if (item.path === '/approvals' && pendingCount() > 0) {
-                <span class="flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-error-500 text-white text-[10px] font-bold">
-                  {{ pendingCount() > 9 ? '9+' : pendingCount() }}
-                </span>
-              }
-            }
-            @if (collapsed && item.path === '/approvals' && pendingCount() > 0) {
-              <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error-500"></span>
-            }
-          </a>
-          @if (collapsed) {
-            <!-- Tooltip on hover when collapsed -->
-            <div class="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap
-                        opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50 shadow-lg">
-              {{ item.label }}
-              <div class="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-800"></div>
-            </div>
+    <div class="space-y-5">
+      @for (group of visibleGroups(); track group.label) {
+        <section>
+          @if (!collapsed) {
+            <p class="px-3 mb-2 text-[11px] uppercase tracking-wider text-gray-500 font-semibold">
+              {{ group.label }}
+            </p>
           }
-        </li>
+          <ul class="space-y-1">
+            @for (item of group.items; track item.path) {
+              <li class="relative group">
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="bg-white/10 text-white border border-white/10"
+                  [routerLinkActiveOptions]="{ exact: false }"
+                  class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-gray-300 hover:bg-white/5 hover:text-white transition-colors text-sm font-medium border border-transparent"
+                  [class.justify-center]="collapsed"
+                  [class.px-0]="collapsed"
+                  (click)="navClick.emit()"
+                >
+                  <span [class.mx-auto]="collapsed">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.svgPath" />
+                    </svg>
+                  </span>
+                  @if (!collapsed) {
+                    <span class="flex-1">{{ item.label }}</span>
+                    @if (item.path === '/approvals' && pendingCount() > 0) {
+                      <span class="flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-error-500 text-white text-[10px] font-bold">
+                        {{ pendingCount() > 9 ? '9+' : pendingCount() }}
+                      </span>
+                    }
+                  }
+                  @if (collapsed && item.path === '/approvals' && pendingCount() > 0) {
+                    <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error-500"></span>
+                  }
+                </a>
+                @if (collapsed) {
+                  <div class="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap
+                              opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50 shadow-lg">
+                    {{ item.label }}
+                    <div class="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-800"></div>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        </section>
       }
-    </ul>
+      @if (!collapsed) {
+        <div class="mt-3 px-3">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-semibold text-white border border-white/10">
+            SUPER ADMIN
+          </span>
+        </div>
+      } @else {
+        <div class="px-1 flex justify-center">
+          <span class="w-2 h-2 rounded-full bg-brand-500" title="SUPER ADMIN"></span>
+        </div>
+      }
+    </div>
   `,
 })
 export class SidebarNavComponent {
@@ -89,9 +154,14 @@ export class SidebarNavComponent {
   private readonly authService = inject(AuthService);
   private readonly approvalService = inject(ApprovalQueueService);
 
-  readonly visibleItems = computed(() => {
+  readonly visibleGroups = computed(() => {
     const role = this.authService.userRole();
-    return NAV_ITEMS.filter(item => !item.roles || (role && item.roles.includes(role)));
+    return SUPER_ADMIN_NAV_GROUPS
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item => !item.roles || (role && item.roles.includes(role))),
+      }))
+      .filter(group => group.items.length > 0);
   });
 
   readonly pendingCount = toSignal(
@@ -103,12 +173,12 @@ export class SidebarNavComponent {
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
-    <header class="sticky top-0 z-10 flex-shrink-0 h-16 bg-white border-b border-gray-200 shadow-sm">
-      <div class="flex items-center justify-between h-full px-4 md:px-6">
+    <header class="sticky top-0 z-10 flex-shrink-0 h-16 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm">
+      <div class="flex items-center justify-between h-full px-4 md:px-6 gap-3">
         <!-- LEFT: Hamburger + Title -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
           <button
             class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             (click)="toggleSidebar.emit()"
@@ -118,18 +188,36 @@ export class SidebarNavComponent {
               <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <h1 class="text-base font-semibold text-gray-800 hidden sm:block truncate max-w-[240px]">{{ pageTitle }}</h1>
+          <div class="min-w-0 hidden sm:block">
+            <h1 class="text-base font-semibold text-gray-800 truncate max-w-[260px]">{{ pageTitle }}</h1>
+          </div>
+        </div>
+
+        <!-- CENTER: status + global search -->
+        <div class="hidden lg:flex items-center gap-2 min-w-0">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success-50 text-success-700 border border-success-200 text-xs font-semibold">
+            <span class="w-1.5 h-1.5 rounded-full bg-success-500"></span>
+            Plataforma operativa
+          </span>
+          <a routerLink="/catalog/search" class="admin-btn admin-btn--secondary text-xs py-1.5 px-3">
+            Buscar en catálogo
+          </a>
         </div>
 
         <!-- RIGHT: Notifications + Avatar -->
-        <div class="flex items-center gap-1 sm:gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <!-- Notifications -->
-          <button class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+          <button
+            aria-label="Notificaciones"
+            class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
             </svg>
             @if (notificationCount() > 0) {
-              <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500"></span>
+              <span class="absolute top-1 right-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-brand-500 text-[10px] text-white font-bold">
+                {{ notificationCount() > 9 ? '9+' : notificationCount() }}
+              </span>
             }
           </button>
 
@@ -138,6 +226,7 @@ export class SidebarNavComponent {
             <button
               class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
               (click)="dropdownOpen.update(v => !v)"
+              aria-label="Abrir menú de usuario"
             >
               <div class="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                 {{ initials() }}
@@ -182,8 +271,12 @@ export class TopbarComponent {
   @Input() pageTitle = '';
   @Output() toggleSidebar = new EventEmitter<void>();
   readonly authService = inject(AuthService);
+  private readonly approvalService = inject(ApprovalQueueService);
   readonly dropdownOpen = signal(false);
-  readonly notificationCount = signal(0);
+  readonly notificationCount = toSignal(
+    this.approvalService.watchPending().pipe(map(list => list.length)),
+    { initialValue: 0 }
+  );
   readonly initials = computed(() => {
     const name = this.authService.currentUser()?.full_name ?? '';
     return name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase()).join('');
@@ -203,7 +296,7 @@ export class TopbarComponent {
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, ConfirmModalComponent, SidebarNavComponent, TopbarComponent],
   template: `
-    <div class="flex h-screen bg-gray-50 overflow-hidden font-inter">
+    <div class="flex h-screen bg-[color:var(--admin-bg)] overflow-hidden font-inter">
 
       <!-- Mobile overlay (< lg) -->
       @if (mobileOpen()) {
@@ -213,7 +306,7 @@ export class TopbarComponent {
 
       <!-- Sidebar -->
       <aside
-        class="flex-shrink-0 flex flex-col bg-gray-dark transition-all duration-300 z-30 no-scrollbar overflow-hidden"
+        class="flex-shrink-0 flex flex-col bg-[color:var(--admin-sidebar)] transition-all duration-300 z-30 no-scrollbar overflow-hidden border-r border-white/10"
         [class]="sidebarAsideClass()"
       >
         <!-- Logo header -->
@@ -288,7 +381,7 @@ export class TopbarComponent {
           [pageTitle]="currentPageTitle()"
           (toggleSidebar)="onToggleSidebar()"
         />
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-20 sm:pb-6">
+        <main class="flex-1 overflow-y-auto admin-page pb-20 sm:pb-6">
           <router-outlet />
         </main>
       </div>
@@ -388,7 +481,9 @@ export class AdminShellComponent implements OnInit, OnDestroy {
     ).subscribe(() => {
       // Close mobile sidebar on navigation
       this.mobileOpen.set(false);
+      this.currentPageTitle.set(this.resolvePageTitle(this.router.url));
     });
+    this.currentPageTitle.set(this.resolvePageTitle(this.router.url));
   }
 
   ngOnDestroy() {
@@ -411,5 +506,30 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   onNavClick() {
     // Close overlay on mobile when nav item clicked
     if (this.isMobile()) this.mobileOpen.set(false);
+  }
+
+  private resolvePageTitle(url: string): string {
+    const clean = url.split('?')[0];
+    const map: Array<{ match: string; title: string }> = [
+      { match: '/dashboard', title: 'Dashboard de Plataforma' },
+      { match: '/orders', title: 'Operación de Pedidos' },
+      { match: '/stores', title: 'Gestión de Comercios' },
+      { match: '/restaurants', title: 'Gestión de Restaurantes' },
+      { match: '/couriers', title: 'Gestión de Repartidores' },
+      { match: '/approvals', title: 'Bandeja de Aprobaciones' },
+      { match: '/promotions', title: 'Promociones' },
+      { match: '/reports', title: 'Reportes' },
+      { match: '/finances', title: 'Finanzas' },
+      { match: '/support-dashboard', title: 'Dashboard de Soporte' },
+      { match: '/support/templates', title: 'Plantillas de Soporte' },
+      { match: '/support', title: 'Soporte' },
+      { match: '/catalog/price-approvals', title: 'Aprobaciones de Precio' },
+      { match: '/catalog/search', title: 'Búsqueda Global de Catálogo' },
+      { match: '/catalog', title: 'Gestión de Catálogos' },
+      { match: '/settings', title: 'Configuración de Plataforma' },
+      { match: '/excursions', title: 'Gestión de Excursiones' },
+    ];
+    const found = map.find(entry => clean.startsWith(entry.match));
+    return found?.title ?? 'Panel de Administración';
   }
 }

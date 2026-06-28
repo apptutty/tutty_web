@@ -6,6 +6,7 @@ import { StoresService } from './stores.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { Restaurant, MenuItem, MenuCategory, CommerceType } from '../../core/supabase/database.types';
 import { COMMERCE_ICONS, COMMERCE_LABELS } from './stores.page';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 type ModerationTag = 'verificado' | 'destacado_plataforma' | 'bajo_revision';
 
@@ -19,7 +20,7 @@ interface OverridePending {
 @Component({
     selector: 'app-global-catalog-override',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe],
+    imports: [CommonModule, FormsModule, RouterLink, DecimalPipe, AdminEmptyStateComponent],
     template: `
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
@@ -71,7 +72,7 @@ interface OverridePending {
       </div>
 
       <!-- Table -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+      <div class="admin-table-card">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
@@ -99,7 +100,13 @@ interface OverridePending {
             <tbody class="bg-white divide-y divide-gray-100">
               @if (filteredItems().length === 0) {
                 <tr>
-                  <td colspan="8" class="px-4 py-12 text-center text-gray-400 text-sm">Sin productos</td>
+                  <td colspan="8" class="px-4 py-6">
+                    <app-admin-empty-state
+                      icon="search"
+                      title="Sin productos"
+                      description="No hay productos que coincidan con los filtros actuales."
+                      variant="soft" />
+                  </td>
                 </tr>
               } @else {
                 @for (item of filteredItems(); track item.id) {

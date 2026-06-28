@@ -4,8 +4,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OrdersService } from './orders.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { DataTableComponent, TableColumn } from '../../shared/ui/data-table/data-table.component';
@@ -25,26 +23,47 @@ type StatusTab = 'todos' | 'activos' | OrderStatus;
           📦 {{ newOrderAlert() }}
         </div>
       }
+      <button class="btn-secondary text-sm" (click)="loadOrders()" [disabled]="loading()">
+        {{ loading() ? 'Actualizando…' : 'Actualizar' }}
+      </button>
     </app-page-header>
 
-    <!-- Status tabs (horizontal scroll on mobile) -->
-    <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4">
-      <div class="flex gap-1 bg-gray-100 p-1 rounded-xl w-max min-w-full sm:w-fit">
-        @for (tab of statusTabs; track tab.key) {
-          <button
-            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0"
-            [class]="activeTab() === tab.key
-              ? 'bg-white text-gray-800 shadow-theme-xs'
-              : 'text-gray-500 hover:text-gray-700'"
-            (click)="setTab(tab.key)"
-          >{{ tab.label }}</button>
-        }
+    <!-- KPI summary -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <div class="admin-metric-card">
+        <p class="text-xs text-gray-500">Resultados totales</p>
+        <p class="text-2xl font-bold text-gray-800">{{ totalCount() }}</p>
+      </div>
+      <div class="admin-metric-card">
+        <p class="text-xs text-gray-500">Activos (página actual)</p>
+        <p class="text-2xl font-bold text-warning-600">{{ activeOnPage() }}</p>
+      </div>
+      <div class="admin-metric-card">
+        <p class="text-xs text-gray-500">Entregados (página actual)</p>
+        <p class="text-2xl font-bold text-success-600">{{ deliveredOnPage() }}</p>
+      </div>
+      <div class="admin-metric-card">
+        <p class="text-xs text-gray-500">Cancelados (página actual)</p>
+        <p class="text-2xl font-bold text-error-600">{{ cancelledOnPage() }}</p>
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="flex flex-col sm:flex-row gap-3 mb-4">
-      <div class="relative flex-1">
+    <div class="admin-toolbar">
+      <div class="overflow-x-auto scrollbar-hide w-full lg:w-auto">
+        <div class="flex gap-1 bg-gray-100 p-1 rounded-xl w-max min-w-full sm:w-fit">
+          @for (tab of statusTabs; track tab.key) {
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0"
+              [class]="activeTab() === tab.key
+                ? 'bg-white text-gray-800 shadow-theme-xs'
+                : 'text-gray-500 hover:text-gray-700'"
+              (click)="setTab(tab.key)"
+            >{{ tab.label }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="relative flex-1 min-w-[220px]">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
@@ -56,7 +75,7 @@ type StatusTab = 'todos' | 'activos' | OrderStatus;
           (ngModelChange)="onSearchChange()"
         />
       </div>
-      <select class="input-field sm:w-40" [(ngModel)]="dateRange" (ngModelChange)="applyDateFilter()">
+      <select class="input-field sm:w-44" [(ngModel)]="dateRange" (ngModelChange)="applyDateFilter()">
         <option value="today">Hoy</option>
         <option value="yesterday">Ayer</option>
         <option value="week">Esta semana</option>
@@ -64,8 +83,16 @@ type StatusTab = 'todos' | 'activos' | OrderStatus;
       </select>
     </div>
 
+    @if (loadError()) {
+      <div class="mb-4 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-700 flex items-center gap-3">
+        <span>⚠️</span>
+        <span class="flex-1">{{ loadError() }}</span>
+        <button class="btn-secondary text-xs" (click)="loadOrders()">Reintentar</button>
+      </div>
+    }
+
     <!-- Table -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+    <div class="admin-table-card">
       <app-data-table
         [columns]="columns"
         [data]="orders()"
@@ -87,6 +114,7 @@ export class OrdersPageComponent implements OnInit, OnDestroy {
   readonly orders = signal<any[]>([]);
   readonly totalCount = signal(0);
   readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
   readonly currentPage = signal(1);
   readonly activeTab = signal<StatusTab>('todos');
   readonly newOrderAlert = signal<string | null>(null);
@@ -119,6 +147,12 @@ export class OrdersPageComponent implements OnInit, OnDestroy {
     { key: 'repartidor_name', label: 'Repartidor', type: 'text' },
     { key: 'created_at', label: 'Hora', type: 'date' },
   ];
+
+  readonly activeOnPage = computed(() =>
+    this.orders().filter(o => ['recibido', 'confirmado', 'en_preparacion', 'en_camino'].includes(o.status)).length
+  );
+  readonly deliveredOnPage = computed(() => this.orders().filter(o => o.status === 'entregado').length);
+  readonly cancelledOnPage = computed(() => this.orders().filter(o => o.status === 'cancelado').length);
 
   ngOnInit(): void {
     this.loadOrders();
@@ -167,6 +201,7 @@ export class OrdersPageComponent implements OnInit, OnDestroy {
 
   loadOrders(): void {
     this.loading.set(true);
+    this.loadError.set(null);
     this.ordersService.getOrders(this.getFilters()).subscribe({
       next: ({ data, count }) => {
         this.orders.set(data.map(o => ({ ...o, order_number_display: o.order_number ?? o.id.slice(0, 8).toUpperCase() })));
@@ -174,6 +209,7 @@ export class OrdersPageComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: () => {
+        this.loadError.set('No se pudieron cargar los pedidos con los filtros actuales.');
         this.toastService.error('Error al cargar pedidos');
         this.loading.set(false);
       },

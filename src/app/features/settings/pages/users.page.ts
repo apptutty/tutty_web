@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, AdminUser } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-settings-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminEmptyStateComponent],
   template: `
     <div>
       <div class="flex items-center justify-between mb-4">
@@ -34,27 +35,39 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              @for (u of users(); track u.id) {
+              @if (users().length === 0) {
                 <tr>
-                  <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ u.full_name }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-600">{{ u.email }}</td>
-                  <td class="px-6 py-4">
-                    <span class="px-2 py-1 rounded-full text-xs font-medium"
-                      [class]="u.role === 'super_admin' ? 'bg-brand-100 text-brand-700' : u.role === 'restaurant_admin' ? 'bg-brand-50 text-brand-600' : 'bg-success-50 text-success-700'">
-                      {{ roleLabels[u.role] || u.role }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span [class]="u.is_active ? 'text-success-600' : 'text-error-600'" class="text-sm font-medium">
-                      {{ u.is_active ? 'Activo' : 'Inactivo' }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4">
-                    <button class="text-sm text-brand-500 hover:text-brand-700" (click)="toggle(u)">
-                      {{ u.is_active ? 'Desactivar' : 'Activar' }}
-                    </button>
+                  <td colspan="5" class="px-6 py-6">
+                    <app-admin-empty-state
+                      icon="users"
+                      title="Sin usuarios administradores"
+                      description="Crea el primer usuario para comenzar la gestión."
+                      variant="soft" />
                   </td>
                 </tr>
+              } @else {
+                @for (u of users(); track u.id) {
+                  <tr>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ u.full_name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">{{ u.email }}</td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 rounded-full text-xs font-medium"
+                        [class]="u.role === 'super_admin' ? 'bg-brand-100 text-brand-700' : u.role === 'restaurant_admin' ? 'bg-brand-50 text-brand-600' : 'bg-success-50 text-success-700'">
+                        {{ roleLabels[u.role] || u.role }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span [class]="u.is_active ? 'text-success-600' : 'text-error-600'" class="text-sm font-medium">
+                        {{ u.is_active ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <button class="text-sm text-brand-500 hover:text-brand-700" (click)="toggle(u)">
+                        {{ u.is_active ? 'Desactivar' : 'Activar' }}
+                      </button>
+                    </td>
+                  </tr>
+                }
               }
             </tbody>
           </table>

@@ -11,6 +11,7 @@ import { CurrencyDopPipe } from '../../shared/pipes/currency-dop.pipe';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
 import { OrderDetail, OrderStatus, Courier } from '../../core/supabase/database.types';
 import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
   recibido: ['confirmado', 'cancelado'],
@@ -24,7 +25,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
   standalone: true,
   imports: [
     CommonModule, FormsModule, PageHeaderComponent,
-    StatusBadgeComponent, CurrencyDopPipe, TimeAgoPipe, TuttyMapComponent,
+    StatusBadgeComponent, CurrencyDopPipe, TimeAgoPipe, TuttyMapComponent, AdminEmptyStateComponent,
   ],
   template: `
     @if (loading()) {
@@ -212,7 +213,11 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
                   </label>
                 }
                 @if (availableCouriers().length === 0) {
-                  <p class="text-center text-gray-400 py-4">No hay repartidores disponibles</p>
+                  <app-admin-empty-state
+                    icon="users"
+                    title="No hay repartidores disponibles"
+                    description="Intenta nuevamente en unos minutos."
+                    variant="soft" />
                 }
               </div>
             }
@@ -226,9 +231,12 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
         </div>
       }
     } @else {
-      <div class="text-center py-16 text-gray-400">
-        <p class="text-4xl mb-2">😕</p>
-        <p>Pedido no encontrado</p>
+      <div class="py-10">
+        <app-admin-empty-state
+          icon="orders"
+          title="Pedido no encontrado"
+          description="No se pudo cargar la información del pedido."
+          variant="soft" />
       </div>
     }
   `,

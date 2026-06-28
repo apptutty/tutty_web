@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { StoreCategory, CommerceType } from '../../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-settings-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminEmptyStateComponent],
   template: `
     <div>
       <div class="flex flex-wrap items-center gap-3 mb-4">
@@ -29,9 +30,12 @@ import { StoreCategory, CommerceType } from '../../../core/supabase/database.typ
         </div>
       } @else if (categories().length === 0) {
         <div class="card p-10 text-center text-gray-400">
-          <p class="text-2xl mb-2">🏷</p>
-          <p class="font-medium">No hay categorías registradas</p>
-          <p class="text-sm mt-1">Crea la primera categoría para organizar los comercios</p>
+          <app-admin-empty-state
+            icon="search"
+            title="No hay categorías registradas"
+            description="Crea la primera categoría para organizar los comercios."
+            actionLabel="+ Nueva Categoría"
+            (action)="openForm()" />
         </div>
       } @else {
         <div class="card overflow-hidden">

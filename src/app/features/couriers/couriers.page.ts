@@ -9,11 +9,12 @@ import { StatCardComponent } from '../../shared/ui/stat-card/stat-card.component
 import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { Courier, VehicleType, DriverStats } from '../../core/supabase/database.types';
 import { AuthService } from '../../core/auth/auth.service';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-couriers-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StatCardComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StatCardComponent, StatusBadgeComponent, AdminEmptyStateComponent],
   template: `
     <app-page-header title="Repartidores" subtitle="Gestión del equipo de entrega">
       <button class="btn-primary" (click)="openForm()">+ Repartidor</button>
@@ -68,7 +69,7 @@ import { AuthService } from '../../core/auth/auth.service';
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+    <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -95,9 +96,12 @@ import { AuthService } from '../../core/auth/auth.service';
               }
             } @else if (filteredCouriers().length === 0) {
               <tr>
-                <td colspan="9" class="px-4 py-12 text-center text-gray-400">
-                  <p class="text-3xl mb-2">🛵</p>
-                  <p class="text-sm">{{ couriers().length === 0 ? 'No hay repartidores registrados' : 'Sin repartidores que coincidan con los filtros' }}</p>
+                <td colspan="9" class="px-4 py-6">
+                  <app-admin-empty-state
+                    icon="search"
+                    [title]="couriers().length === 0 ? 'No hay repartidores registrados' : 'Sin repartidores que coincidan con los filtros'"
+                    description="Ajusta los filtros o espera nuevos registros para ver resultados."
+                    variant="soft" />
                 </td>
               </tr>
             } @else {

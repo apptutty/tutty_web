@@ -5,17 +5,18 @@ import { ExcursionsService } from './excursions.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { ExcursionCategoryAdmin } from '../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 @Component({
   selector: 'app-excursion-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, AdminEmptyStateComponent],
   template: `
     <app-page-header title="Categorías de excursiones" subtitle="Gestión de categorías turísticas">
       <button class="btn-primary" (click)="openForm()">+ Nueva categoría</button>
     </app-page-header>
 
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+    <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -39,9 +40,12 @@ import { ExcursionCategoryAdmin } from '../../core/supabase/database.types';
               }
             } @else if (categories().length === 0) {
               <tr>
-                <td colspan="6" class="px-4 py-12 text-center text-gray-400">
-                  <p class="text-3xl mb-2">🏷️</p>
-                  <p class="text-sm">Sin categorías creadas</p>
+                <td colspan="6" class="px-4 py-6">
+                  <app-admin-empty-state
+                    icon="search"
+                    title="Sin categorías creadas"
+                    description="Crea una categoría para clasificar las excursiones."
+                    variant="soft" />
                 </td>
               </tr>
             } @else {

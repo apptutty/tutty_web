@@ -5,13 +5,14 @@ import { PromotionsService } from './promotions.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { Promotion, PromoType, PromoUse } from '../../core/supabase/database.types';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
 
 @Component({
   selector: 'app-promotions-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, AdminEmptyStateComponent],
   template: `
     <app-page-header title="Promociones" subtitle="Códigos de descuento y ofertas">
       <button class="btn-primary" (click)="openForm()">+ Nueva promoción</button>
@@ -45,7 +46,7 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+    <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -73,8 +74,12 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
             } @else if (filteredPromos().length === 0) {
               <tr>
                 <td colspan="9" class="px-4 py-12 text-center text-gray-400">
-                  <p class="text-3xl mb-2">🏷️</p>
-                  <p class="text-sm">Sin promociones</p>
+                  <app-admin-empty-state
+                    icon="money"
+                    title="Sin promociones"
+                    description="Crea una promoción para comenzar a medir descuentos y conversiones."
+                    actionLabel="+ Nueva promoción"
+                    (action)="openForm()" />
                 </td>
               </tr>
             } @else {
@@ -190,7 +195,11 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
                   }
                 </div>
               } @else if (promoUses().length === 0) {
-                <p class="text-sm text-gray-400 text-center py-4">Sin usos registrados</p>
+                <app-admin-empty-state
+                  icon="search"
+                  title="Sin usos registrados"
+                  description="Esta promoción todavía no tiene consumos en pedidos."
+                  variant="soft" />
               } @else {
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden">
                   <thead class="bg-gray-50">

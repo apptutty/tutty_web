@@ -13,6 +13,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { StatCardComponent } from '../../shared/ui/stat-card/stat-card.component';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 Chart.register(...registerables);
 
@@ -47,7 +48,7 @@ function isoDate(d: Date): string { return d.toISOString().slice(0, 10); }
 @Component({
     selector: 'app-support-dashboard',
     standalone: true,
-    imports: [CommonModule, RouterLink, StatCardComponent, PageHeaderComponent],
+    imports: [CommonModule, RouterLink, StatCardComponent, PageHeaderComponent, AdminEmptyStateComponent],
     template: `
     <app-page-header title="Dashboard de Soporte" subtitle="Métricas y KPIs del equipo de soporte">
       <a routerLink="/support"
@@ -204,10 +205,12 @@ function isoDate(d: Date): string { return d.toISOString().slice(0, 10); }
           }
         </div>
       } @else if (breachedTickets().length === 0) {
-        <div class="flex flex-col items-center justify-center py-10 text-gray-400">
-          <span class="text-3xl mb-2">🎉</span>
-          <p class="text-sm font-medium text-gray-600">Sin tickets con SLA vencido</p>
-          <p class="text-xs mt-1">Todo el equipo está respondiendo a tiempo.</p>
+        <div class="py-8">
+          <app-admin-empty-state
+            icon="search"
+            title="Sin tickets con SLA vencido"
+            description="Todo el equipo está respondiendo a tiempo."
+            variant="soft" />
         </div>
       } @else {
         <div class="overflow-x-auto">
@@ -329,7 +332,15 @@ function isoDate(d: Date): string { return d.toISOString().slice(0, 10); }
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="px-5 py-10 text-center text-gray-400">Sin datos</td></tr>
+                <tr>
+                  <td colspan="5" class="px-5 py-10 text-center text-gray-400">
+                    <app-admin-empty-state
+                      icon="search"
+                      title="Sin datos"
+                      description="No hay estadísticas por tipo para el período actual."
+                      variant="soft" />
+                  </td>
+                </tr>
               }
             </tbody>
           </table>
@@ -339,7 +350,7 @@ function isoDate(d: Date): string { return d.toISOString().slice(0, 10); }
 
     <!-- ═══ Row 5: Agent performance (super_admin only) ══════════════════════ -->
     @if (isSuperAdmin()) {
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+      <div class="admin-table-card">
         <div class="px-5 py-4 border-b border-gray-100">
           <h2 class="text-sm font-semibold text-gray-800">Rendimiento de agentes</h2>
         </div>
@@ -394,7 +405,15 @@ function isoDate(d: Date): string { return d.toISOString().slice(0, 10); }
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="px-5 py-10 text-center text-gray-400">Sin agentes asignados aún</td></tr>
+                  <tr>
+                    <td colspan="5" class="px-5 py-6">
+                      <app-admin-empty-state
+                        icon="search"
+                        title="Sin agentes asignados aún"
+                        description="Cuando haya asignaciones activas, verás aquí el rendimiento del equipo."
+                        variant="soft" />
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>

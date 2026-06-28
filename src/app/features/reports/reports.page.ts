@@ -6,13 +6,14 @@ import { PageHeaderComponent } from '../../layout/admin-shell/page-header.compon
 import { CurrencyDopPipe } from '../../shared/pipes/currency-dop.pipe';
 import { StatCardComponent } from '../../shared/ui/stat-card/stat-card.component';
 import { Chart, registerables } from 'chart.js';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-reports-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, CurrencyDopPipe, StatCardComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, CurrencyDopPipe, StatCardComponent, AdminEmptyStateComponent],
   template: `
     <div class="p-6">
       <app-page-header title="Reportes y Analítica" subtitle="Análisis de rendimiento de la plataforma">
@@ -60,7 +61,11 @@ Chart.register(...registerables);
         @if (loadingChart()) {
           <div class="animate-pulse h-64 bg-gray-200 rounded"></div>
         } @else if (salesByDay().length === 0) {
-          <p class="text-center text-gray-500 py-16">No hay datos para el período seleccionado</p>
+          <app-admin-empty-state
+            icon="orders"
+            title="Sin datos para el período"
+            description="Ajusta el rango de fechas para visualizar métricas de ventas."
+            variant="soft" />
         } @else {
           <div class="relative h-72">
             <canvas #salesChart></canvas>
@@ -77,7 +82,7 @@ Chart.register(...registerables);
           @if (loadingRestaurants()) {
             <div class="space-y-2">@for (i of [1,2,3]; track i) { <div class="animate-pulse h-12 bg-gray-200 rounded"></div> }</div>
           } @else if (restaurantSales().length === 0) {
-            <p class="text-center text-gray-500 py-8">Sin datos</p>
+            <app-admin-empty-state icon="search" title="Sin datos" description="No hay ventas de restaurantes en el período seleccionado." variant="soft" />
           } @else {
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
@@ -110,7 +115,7 @@ Chart.register(...registerables);
           @if (loadingProducts()) {
             <div class="space-y-2">@for (i of [1,2,3]; track i) { <div class="animate-pulse h-12 bg-gray-200 rounded"></div> }</div>
           } @else if (topProducts().length === 0) {
-            <p class="text-center text-gray-500 py-8">Sin datos</p>
+            <app-admin-empty-state icon="search" title="Sin datos" description="No hay productos vendidos en el período seleccionado." variant="soft" />
           } @else {
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
@@ -144,7 +149,7 @@ Chart.register(...registerables);
         @if (loadingCouriers()) {
           <div class="animate-pulse h-32 bg-gray-200 rounded"></div>
         } @else if (courierPerformance().length === 0) {
-          <p class="text-center text-gray-500 py-8">Sin datos</p>
+          <app-admin-empty-state icon="users" title="Sin datos" description="No hay actividad de repartidores en el período seleccionado." variant="soft" />
         } @else {
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
@@ -201,7 +206,15 @@ Chart.register(...registerables);
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-100">
                     @if (commerceTypeRows().length === 0) {
-                      <tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">Sin datos para el período</td></tr>
+                      <tr>
+                        <td colspan="6" class="px-4 py-6">
+                          <app-admin-empty-state
+                            icon="search"
+                            title="Sin datos para el período"
+                            description="Ajusta el rango para ver métricas por tipo de comercio."
+                            variant="soft" />
+                        </td>
+                      </tr>
                     }
                     @for (row of commerceTypeRows(); track row.commerce_type) {
                       <tr class="hover:bg-gray-50">
@@ -323,7 +336,15 @@ Chart.register(...registerables);
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                       @if (retentionData()!.inactive.length === 0) {
-                        <tr><td colspan="3" class="px-4 py-8 text-center text-gray-400">Sin clientes inactivos 🎉</td></tr>
+                        <tr>
+                          <td colspan="3" class="px-4 py-6">
+                            <app-admin-empty-state
+                              icon="search"
+                              title="Sin clientes inactivos"
+                              description="No se detectaron clientes inactivos en este período."
+                              variant="soft" />
+                          </td>
+                        </tr>
                       }
                       @for (c of retentionData()!.inactive; track c.user_id) {
                         <tr class="hover:bg-gray-50">
@@ -345,9 +366,11 @@ Chart.register(...registerables);
           @if (loadingPromos()) {
             <div class="animate-pulse h-40 bg-gray-100 rounded-xl"></div>
           } @else if (promoRows().length === 0) {
-            <div class="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400">
-              Sin datos de promociones para el período
-            </div>
+            <app-admin-empty-state
+              icon="search"
+              title="Sin datos de promociones"
+              description="No hay resultados de promociones para el período seleccionado."
+              variant="soft" />
           } @else {
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div class="overflow-x-auto">
@@ -426,9 +449,11 @@ Chart.register(...registerables);
 
             <!-- Daily breakdown table -->
             @if (surchargeDaily().length === 0) {
-              <div class="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400">
-                Sin datos de recargos para el período
-              </div>
+              <app-admin-empty-state
+                icon="search"
+                title="Sin datos de recargos"
+                description="No se registraron recargos en el período seleccionado."
+                variant="soft" />
             } @else {
               <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto">

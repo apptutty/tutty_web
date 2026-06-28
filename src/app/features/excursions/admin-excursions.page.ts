@@ -41,7 +41,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
       <div class="mb-4">
         <input type="search" class="input-field max-w-xs" placeholder="Buscar operador..." [(ngModel)]="operatorSearch" />
       </div>
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+      <div class="admin-table-card">
         <app-data-table
           [columns]="operatorColumns"
           [data]="filteredOperators()"
@@ -64,7 +64,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
           <option value="dificil">Difícil</option>
         </select>
       </div>
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+      <div class="admin-table-card">
         <app-data-table
           [columns]="excursionColumns"
           [data]="filteredExcursions()"
@@ -99,7 +99,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
           <button class="btn-secondary text-sm self-end" (click)="bookingDateFrom = ''; bookingDateTo = ''">✕ Fechas</button>
         }
       </div>
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden">
+      <div class="admin-table-card">
         <app-data-table
           [columns]="bookingColumns"
           [data]="filteredBookings()"
@@ -701,4 +701,3 @@ export class ExcursionsPageComponent implements OnInit {
     } catch { this.toastService.error('Error al actualizar'); }
   }
 }
-
