@@ -4,7 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrdersService } from './orders.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
-import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { CurrencyDopPipe } from '../../shared/pipes/currency-dop.pipe';
@@ -33,7 +32,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
         <div class="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full"></div>
       </div>
     } @else if (order()) {
-      <app-page-header [title]="orderTitle()" [subtitle]="'Detalle completo'">
+      <app-page-header eyebrow="Operations · Order Trace" [title]="orderTitle()" subtitle="Detalle completo del flujo operativo, cliente, repartidor y estados.">
         <button class="btn-secondary" (click)="router.navigate(['/orders'])">← Volver</button>
         @if (nextStatuses().length > 0) {
           <button class="btn-primary" (click)="showStatusModal.set(true)">
@@ -42,11 +41,30 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
         }
       </app-page-header>
 
+      <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
+          <p class="text-xs font-extrabold text-[#7b8496]">Estado actual</p>
+          <p class="mt-1 text-sm font-black text-[#111827]">{{ statusLabels[order()!.status] }}</p>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
+          <p class="text-xs font-extrabold text-[#7b8496]">Total</p>
+          <p class="mt-1 text-sm font-black text-[#111827]">{{ order()!.total | currencyDop }}</p>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
+          <p class="text-xs font-extrabold text-[#7b8496]">Repartidor</p>
+          <p class="mt-1 text-sm font-black text-[#111827]">{{ order()!.repartidor_name || 'Sin asignar' }}</p>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
+          <p class="text-xs font-extrabold text-[#7b8496]">Creado</p>
+          <p class="mt-1 text-sm font-black text-[#111827]">{{ order()!.created_at | timeAgo }}</p>
+        </article>
+      </section>
+
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <!-- Left: main order content (3/5) -->
         <div class="lg:col-span-3 space-y-4">
           <!-- Status & timeline -->
-          <div class="card">
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h2 class="font-semibold text-gray-800">Estado del pedido</h2>
@@ -73,7 +91,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
           </div>
 
           <!-- Items -->
-          <div class="card">
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
             <h2 class="font-semibold text-gray-800 mb-4">Items del pedido</h2>
             <div class="space-y-3">
               @for (item of order()!.items; track item.id) {
@@ -117,13 +135,13 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
         <!-- Right: info cards (2/5) -->
         <div class="lg:col-span-2 space-y-4">
           <!-- Restaurant -->
-          <div class="card">
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
             <h3 class="text-sm font-semibold text-gray-800 mb-3">🏪 Restaurante</h3>
             <p class="text-sm font-medium text-gray-700">{{ order()!.commerce_name }}</p>
           </div>
 
           <!-- Customer -->
-          <div class="card">
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
             <h3 class="text-sm font-semibold text-gray-800 mb-3">👤 Cliente</h3>
             <p class="text-sm font-medium text-gray-700">{{ order()!.customer_name }}</p>
             <p class="text-xs text-gray-500 mt-0.5">{{ order()!.customer_phone }}</p>
@@ -142,7 +160,7 @@ const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus[]>> = {
           </div>
 
           <!-- Repartidor -->
-          <div class="card">
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
             <h3 class="text-sm font-semibold text-gray-800 mb-3">🛵 Repartidor</h3>
             @if (order()!.repartidor_id) {
               <p class="text-sm font-medium text-gray-700">{{ order()!.repartidor_name }}</p>

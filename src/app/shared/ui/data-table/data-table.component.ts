@@ -22,13 +22,13 @@ export interface TableColumn {
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, CurrencyDopPipe, TimeAgoPipe, StatusBadgeComponent],
     template: `
-    <div class="overflow-x-auto touch-scroll">
-      <table class="min-w-full min-w-[600px] divide-y divide-gray-200">
-        <thead class="bg-gray-50 border-b border-gray-200">
+      <div class="overflow-x-auto touch-scroll rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)]">
+        <table class="min-w-full min-w-[720px] divide-y divide-[#eef1f6]">
+          <thead class="bg-[#fbfcff] border-b border-[#e7eaf1]">
           <tr>
             @for (col of columns; track col.key) {
               <th
-                class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                  class="px-4 py-3.5 text-left text-xs font-black text-[#667085] uppercase tracking-wider"
                 [class.cursor-pointer]="sortable && col.sortable !== false"
                 (click)="sortable && col.sortable !== false ? onSort(col.key) : null"
               >
@@ -46,13 +46,13 @@ export interface TableColumn {
             }
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-100">
+        <tbody class="bg-white divide-y divide-[#eef1f6]">
           @if (loading) {
             @for (i of skeletonRows; track i) {
               <tr class="animate-pulse">
                 @for (col of columns; track col.key) {
                   <td class="px-4 py-3">
-                    <div class="h-4 bg-gray-200 rounded-md w-3/4"></div>
+                    <div class="h-4 bg-[#f2f4f8] rounded-md w-3/4"></div>
                   </td>
                 }
               </tr>
@@ -60,9 +60,9 @@ export interface TableColumn {
           } @else if (data.length === 0) {
             <tr>
               <td [colSpan]="columns.length" class="px-4 py-12 text-center">
-                <div class="flex flex-col items-center gap-2 text-gray-400">
+                <div class="flex flex-col items-center gap-2 text-[#98a2b3]">
                   <span class="text-4xl">📭</span>
-                  <p class="text-sm font-medium">Sin resultados</p>
+                  <p class="text-sm font-bold">Sin resultados</p>
                   <p class="text-xs">No se encontraron registros</p>
                 </div>
               </td>
@@ -70,12 +70,12 @@ export interface TableColumn {
           } @else {
             @for (row of data; track $index) {
               <tr
-                class="hover:bg-gray-50 transition-colors"
+                class="hover:bg-[#fbfcff] transition-colors"
                 [class.cursor-pointer]="rowClick.observed"
                 (click)="rowClick.emit(row)"
               >
                 @for (col of columns; track col.key) {
-                  <td class="px-4 py-3.5 text-sm text-gray-700 whitespace-nowrap" [class]="col.class ?? ''">
+                  <td class="px-4 py-3.5 text-sm text-[#344054] whitespace-nowrap" [class]="col.class ?? ''">
                     @switch (col.type) {
                       @case ('badge') {
                         <app-status-badge [status]="row[col.key]" [type]="col.badgeType ?? 'order'" />
@@ -87,8 +87,8 @@ export interface TableColumn {
                         {{ row[col.key] | timeAgo }}
                       }
                       @case ('boolean') {
-                        <span class="inline-flex items-center gap-1 text-xs font-medium"
-                          [class]="row[col.key] ? 'text-success-600' : 'text-gray-400'">
+                        <span class="inline-flex items-center gap-1 text-xs font-semibold"
+                          [class]="row[col.key] ? 'text-[#087b3c]' : 'text-[#98a2b3]'">
                           {{ row[col.key] ? '✓ Sí' : '✗ No' }}
                         </span>
                       }
@@ -110,8 +110,8 @@ export interface TableColumn {
 
     <!-- Pagination -->
     @if (totalCount > pageSize) {
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3.5 border-t border-gray-200 bg-white">
-        <p class="text-sm text-gray-500">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3.5 border-t border-[#e7eaf1] bg-white">
+        <p class="text-sm text-[#667085]">
           Mostrando {{ rangeStart }}-{{ rangeEnd }} de {{ totalCount }} resultados
         </p>
         <div class="flex items-center gap-1">

@@ -64,7 +64,8 @@
 
   /* ── Buttons ── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2.5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+    min-height: 44px;
     box-shadow: var(--admin-shadow-sm);
   }
   .btn-primary:hover {
@@ -73,7 +74,8 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border bg-white px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+    min-height: 44px;
     border-color: var(--admin-card-border);
     box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
   }
@@ -132,7 +134,7 @@
     box-shadow: var(--admin-shadow-sm);
   }
   .admin-table-card {
-    @apply bg-white border rounded-2xl;
+    @apply bg-white border rounded-3xl;
     border-color: var(--admin-card-border);
     box-shadow: var(--admin-shadow-soft);
     overflow-x: auto;
@@ -160,13 +162,15 @@
     border-radius: var(--admin-radius-md);
   }
   .admin-chip {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border bg-white text-gray-600 transition-colors;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border bg-white text-gray-600 transition-colors;
     border-color: var(--admin-line);
     border-radius: 9999px;
+    min-height: 34px;
   }
   .admin-chip--active {
     @apply text-white border-transparent;
-    background: var(--admin-primary);
+    background: #111827;
+    box-shadow: 0 8px 18px rgba(17, 24, 39, .16);
   }
   .admin-btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed;

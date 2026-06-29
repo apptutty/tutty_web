@@ -4,7 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CouriersService } from './couriers.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
-import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { AuthService } from '../../core/auth/auth.service';
 import {
@@ -17,14 +16,8 @@ type DetailTab = 'overview' | 'documents' | 'vehicle' | 'location' | 'wallet' | 
 @Component({
   selector: 'app-courier-detail-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, StatusBadgeComponent],
   template: `
-    <app-page-header
-      [title]="courier()?.full_name ?? 'Repartidor'"
-      subtitle="Detalle del repartidor">
-      <button class="btn-secondary" (click)="router.navigate(['/couriers'])">← Volver</button>
-    </app-page-header>
-
     @if (loading()) {
       <div class="flex items-center justify-center py-24">
         <svg class="animate-spin h-8 w-8 text-brand-500" fill="none" viewBox="0 0 24 24">
@@ -38,62 +31,91 @@ type DetailTab = 'overview' | 'documents' | 'vehicle' | 'location' | 'wallet' | 
         <p>Repartidor no encontrado</p>
       </div>
     } @else {
-      <!-- Header summary -->
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div class="card p-5 flex items-center gap-4 sm:col-span-2">
-          @if (courier()!.photo_url || courier()!.avatar_url) {
-            <img [src]="courier()!.photo_url ?? courier()!.avatar_url" class="w-16 h-16 rounded-full object-cover ring-2 ring-brand-200" alt="" />
-          } @else {
-            <div class="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center text-2xl font-bold text-brand-600">
-              {{ courier()!.full_name?.charAt(0) ?? '?' }}
-            </div>
-          }
-          <div class="min-w-0">
-            <p class="font-semibold text-gray-900 truncate">{{ courier()!.full_name }}</p>
-            <p class="text-sm text-gray-500">{{ courier()!.email }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">{{ courier()!.phone }}</p>
-            <div class="mt-1">
-              <app-status-badge [status]="courier()!.approval_status ?? 'pendiente'" type="approval" />
+      <section class="rounded-[28px] border border-[#e7eaf1] bg-[radial-gradient(circle_at_92%_12%,rgba(235,27,141,.11),transparent_24%),linear-gradient(180deg,#fff,#fbfcff)] shadow-[0_8px_24px_rgba(18,24,40,.07)] px-6 py-5 mb-5">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div class="flex items-center gap-4 min-w-0">
+            @if (courier()!.photo_url || courier()!.avatar_url) {
+              <img [src]="courier()!.photo_url ?? courier()!.avatar_url" class="w-16 h-16 rounded-2xl object-cover border border-[#f5d0e7]" alt="" />
+            } @else {
+              <div class="w-16 h-16 rounded-2xl bg-[#ffe7f4] flex items-center justify-center text-2xl font-black text-[#c71473]">{{ courier()!.full_name?.charAt(0) ?? '?' }}</div>
+            }
+            <div class="min-w-0">
+              <h1 class="text-[40px] leading-[1.04] tracking-[-0.04em] font-bold text-[#111827] truncate">{{ courier()!.full_name }}</h1>
+              <p class="mt-1 text-sm text-[#667085]">Detalle del repartidor · {{ courier()!.email }} · {{ courier()!.phone }}</p>
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <app-status-badge [status]="courier()!.approval_status ?? 'pendiente'" type="approval" />
+                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold" [class]="courier()!.is_available ? 'bg-[#eafbf1] text-[#087b3c]' : 'bg-[#f2f4f7] text-[#475467]'">{{ courier()!.is_available ? 'Disponible' : 'No disponible' }}</span>
+                @if (!courier()!.last_location_at) {
+                  <span class="inline-flex items-center rounded-full bg-[#fff6e6] px-2.5 py-1 text-xs font-bold text-[#b54708]">Sin GPS</span>
+                }
+              </div>
             </div>
           </div>
-        </div>
-        <div class="card p-5">
-          <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Rating / Entregas</p>
-          <p class="text-2xl font-bold text-gray-800">⭐ {{ courier()!.avg_rating.toFixed(1) }}</p>
-          <p class="text-sm text-gray-500 mt-1">{{ courier()!.total_deliveries }} entregas</p>
-        </div>
-        <div class="card p-5">
-          <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Ganancias totales</p>
-          <p class="text-2xl font-bold text-gray-800">RD$ {{ courier()!.total_earnings.toFixed(0) }}</p>
-          <div class="mt-1">
-            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
-              [class]="courier()!.is_available ? 'bg-success-50 text-success-700' : 'bg-gray-100 text-gray-500'">
-              {{ courier()!.is_available ? '● Disponible' : '○ No disponible' }}
-            </span>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 lg:flex lg:items-start lg:flex-wrap lg:justify-end">
+            <button class="h-11 px-4 rounded-2xl border border-[#d0d5dd] bg-white text-sm font-bold text-[#344054] hover:bg-[#f9fafb]" (click)="router.navigate(['/couriers'])" aria-label="Volver al listado de repartidores">← Volver</button>
+            <button class="h-11 px-4 rounded-2xl border border-[#d0d5dd] bg-white text-sm font-bold text-[#344054] hover:bg-[#f9fafb]" (click)="goToEditFromList()">Editar</button>
+            @if (courier()!.approval_status === 'pendiente') {
+              <button class="h-11 px-4 rounded-2xl border border-[#fecaca] bg-[#fee2e2] text-sm font-bold text-[#b42318] hover:bg-[#fecaca]" (click)="showRejectModal.set(true)">Rechazar</button>
+            }
           </div>
         </div>
-      </div>
+      </section>
+
+      <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#fff6e6] text-[#b54708] grid place-items-center text-lg">⭐</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Rating / entregas</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ courier()!.avg_rating.toFixed(1) }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ courier()!.total_deliveries }} entregas</p>
+          </div>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#ffe7f4] text-[#c71473] grid place-items-center text-lg">💰</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Ganancias totales</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ money(courier()!.total_earnings) }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ courier()!.is_available ? 'Disponible' : 'No disponible' }}</p>
+          </div>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#fff6e6] text-[#b54708] grid place-items-center text-lg">📍</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Ubicación</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ courier()!.last_location_at ? 'Activa' : 'Sin GPS' }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ courier()!.last_location_at ? (courier()!.last_location_at | date:'dd/MM/yy HH:mm') : 'requiere actualización' }}</p>
+          </div>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#eef4ff] text-[#2451c7] grid place-items-center text-lg">🏍️</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Vehículo</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ shortVehicle(courier()!.vehicle_type) }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ courier()!.vehicle_plate ?? 'Sin placa' }}</p>
+          </div>
+        </article>
+      </section>
 
       <!-- Approval Actions -->
       @if (courier()!.approval_status === 'pendiente') {
-        <div class="card p-4 mb-6 bg-warning-50 border-warning-200 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div class="rounded-3xl border border-[#ffd8a8] bg-[#fff6e6] p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div class="flex-1">
-            <p class="font-medium text-warning-800">Repartidor pendiente de aprobación</p>
-            <p class="text-sm text-warning-600">Revisa sus documentos antes de aprobar.</p>
+            <p class="font-semibold text-[#b54708]">Repartidor pendiente de aprobación</p>
+            <p class="text-sm text-[#b54708]">Revisa sus documentos antes de aprobar.</p>
           </div>
           <div class="flex gap-2">
-            <button class="px-4 py-2 text-sm rounded-lg bg-success-600 text-white hover:bg-success-700 transition-colors font-medium" (click)="confirmApprove()">✓ Aprobar</button>
-            <button class="px-4 py-2 text-sm rounded-lg bg-error-600 text-white hover:bg-error-700 transition-colors font-medium" (click)="showRejectModal.set(true)">✗ Rechazar</button>
+            <button class="px-4 py-2 text-sm rounded-xl bg-success-600 text-white hover:bg-success-700 transition-colors font-medium" (click)="confirmApprove()">✓ Aprobar</button>
+            <button class="px-4 py-2 text-sm rounded-xl bg-error-600 text-white hover:bg-error-700 transition-colors font-medium" (click)="showRejectModal.set(true)">✗ Rechazar</button>
           </div>
         </div>
       }
 
       <!-- Tabs -->
-      <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 overflow-x-auto">
+      <div class="flex gap-1 rounded-2xl border border-[#e7eaf1] bg-white p-1.5 mb-6 overflow-x-auto">
         @for (tab of tabs; track tab.key) {
           <button
-            class="px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
-            [class]="activeTab() === tab.key ? 'bg-white text-gray-800 shadow-theme-xs' : 'text-gray-500 hover:text-gray-700'"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
+            [class]="activeTab() === tab.key ? 'bg-[#111827] text-white shadow-[0_8px_16px_rgba(17,24,39,.25)]' : 'text-[#667085] hover:text-[#344054]'"
             (click)="setTab(tab.key)">{{ tab.label }}</button>
         }
       </div>
@@ -101,39 +123,37 @@ type DetailTab = 'overview' | 'documents' | 'vehicle' | 'location' | 'wallet' | 
       <!-- TAB: Overview -->
       @if (activeTab() === 'overview') {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="card p-5 space-y-4">
-            <h3 class="font-semibold text-gray-800">Identidad</h3>
-            <dl class="space-y-2 text-sm">
-              <div class="flex justify-between"><dt class="text-gray-500">Nombre completo</dt><dd class="font-medium text-gray-800">{{ courier()!.full_name }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Cédula</dt><dd class="font-medium text-gray-800">{{ courier()!.cedula ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Género</dt><dd class="font-medium text-gray-800">{{ courier()!.gender ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Email</dt><dd class="font-medium text-gray-800">{{ courier()!.email }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Teléfono</dt><dd class="font-medium text-gray-800">{{ courier()!.phone }}</dd></div>
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-5">
+            <h3 class="font-bold text-[#111827] text-[28px] mb-4">Identidad</h3>
+            <dl class="divide-y divide-[#eef1f6] text-sm">
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Nombre completo</dt><dd class="font-bold text-[#101828]">{{ courier()!.full_name }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Cédula</dt><dd class="font-bold text-[#101828]">{{ courier()!.cedula ?? '—' }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Email</dt><dd class="font-bold text-[#101828]">{{ courier()!.email }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Teléfono</dt><dd class="font-bold text-[#101828]">{{ courier()!.phone }}</dd></div>
             </dl>
           </div>
-          <div class="card p-5 space-y-4">
-            <h3 class="font-semibold text-gray-800">Contacto de emergencia</h3>
-            <dl class="space-y-2 text-sm">
-              <div class="flex justify-between"><dt class="text-gray-500">Nombre</dt><dd class="font-medium text-gray-800">{{ courier()!.emergency_contact_name ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Teléfono</dt><dd class="font-medium text-gray-800">{{ courier()!.emergency_contact_phone ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Relación</dt><dd class="font-medium text-gray-800">{{ courier()!.emergency_contact_rel ?? '—' }}</dd></div>
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-5">
+            <h3 class="font-bold text-[#111827] text-[28px] mb-4">Contacto de emergencia</h3>
+            <dl class="divide-y divide-[#eef1f6] text-sm">
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Nombre</dt><dd class="font-bold text-[#101828]">{{ courier()!.emergency_contact_name ?? '—' }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Teléfono</dt><dd class="font-bold text-[#101828]">{{ courier()!.emergency_contact_phone ?? '—' }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Relación</dt><dd class="font-bold text-[#101828]">{{ courier()!.emergency_contact_rel ?? '—' }}</dd></div>
             </dl>
           </div>
-          <div class="card p-5 space-y-4">
-            <h3 class="font-semibold text-gray-800">Dirección</h3>
-            <dl class="space-y-2 text-sm">
-              <div class="flex justify-between"><dt class="text-gray-500">Dirección</dt><dd class="font-medium text-gray-800">{{ courier()!.home_address ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Sector</dt><dd class="font-medium text-gray-800">{{ courier()!.home_sector ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Ciudad</dt><dd class="font-medium text-gray-800">{{ courier()!.home_city ?? '—' }}</dd></div>
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-5">
+            <h3 class="font-bold text-[#111827] text-[28px] mb-4">Dirección</h3>
+            <dl class="divide-y divide-[#eef1f6] text-sm">
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Dirección</dt><dd class="font-bold text-[#101828]">{{ courier()!.home_address ?? '—' }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Sector</dt><dd class="font-bold text-[#101828]">{{ courier()!.home_sector ?? '—' }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Ciudad</dt><dd class="font-bold text-[#101828]">{{ courier()!.home_city ?? '—' }}</dd></div>
             </dl>
           </div>
-          <div class="card p-5 space-y-4">
-            <h3 class="font-semibold text-gray-800">RRHH</h3>
-            <dl class="space-y-2 text-sm">
-              <div class="flex justify-between"><dt class="text-gray-500">Fecha ingreso</dt><dd class="font-medium text-gray-800">{{ courier()!.hire_date ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Fecha baja</dt><dd class="font-medium text-gray-800">{{ courier()!.termination_date ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Razón baja</dt><dd class="font-medium text-gray-800">{{ courier()!.termination_reason ?? '—' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Selfie verificada</dt><dd class="font-medium text-gray-800">{{ courier()!.daily_selfie_verified ? 'Sí' : 'No' }}</dd></div>
+          <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-5">
+            <h3 class="font-bold text-[#111827] text-[28px] mb-4">RRHH</h3>
+            <dl class="divide-y divide-[#eef1f6] text-sm">
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Fecha ingreso</dt><dd class="font-bold text-[#101828]">{{ courier()!.hire_date ?? '—' }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Fecha baja</dt><dd class="font-bold text-[#101828]">{{ courier()!.termination_date ?? '—' }}</dd></div>
+              <div class="py-2.5 flex items-center justify-between gap-3"><dt class="text-[#667085]">Sesiones</dt><dd class="font-bold text-[#101828]">{{ sessions().length }} activas</dd></div>
             </dl>
           </div>
         </div>
@@ -828,6 +848,21 @@ export class CourierDetailPageComponent implements OnInit {
       moto: '🏍️ Moto', bicicleta: '🚲 Bicicleta', carro: '🚗 Carro', a_pie: '🚶 A pie',
     };
     return type ? (map[type] ?? type) : '—';
+  }
+
+  shortVehicle(type?: string | null): string {
+    const map: Record<string, string> = {
+      moto: 'Moto', bicicleta: 'Bicicleta', carro: 'Carro', a_pie: 'A pie',
+    };
+    return type ? (map[type] ?? type) : '—';
+  }
+
+  money(value: number): string {
+    return new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', maximumFractionDigits: 0 }).format(value);
+  }
+
+  goToEditFromList(): void {
+    this.router.navigate(['/couriers'], { queryParams: { edit: this.courierId } });
   }
 
   sanctionSeverityClass(severity?: string | null): string {

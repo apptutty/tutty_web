@@ -29,20 +29,10 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
     standalone: true,
     imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe, TuttyMapComponent, AdminEmptyStateComponent],
     template: `
-    <!-- Back nav -->
-    <div class="mb-4">
-      <a routerLink="/stores" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-        Volver a comercios
-      </a>
-    </div>
-
     @if (loading()) {
-      <div class="space-y-4">
+      <div class="space-y-4 animate-pulse">
         @for (i of [1,2,3]; track i) {
-          <div class="h-24 bg-gray-100 rounded-xl animate-pulse"></div>
+          <div class="h-24 bg-gray-100 rounded-3xl"></div>
         }
       </div>
     } @else if (!store()) {
@@ -55,13 +45,13 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
       </div>
     } @else {
       <!-- Header card -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm overflow-hidden mb-4">
+      <div class="rounded-[28px] border border-[#e7eaf1] bg-[radial-gradient(circle_at_92%_12%,rgba(235,27,141,.12),transparent_24%),linear-gradient(180deg,#fff,#fbfcff)] shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden mb-4">
         @if (store()!.banner_url) {
           <img [src]="store()!.banner_url" class="w-full h-32 object-cover" />
         } @else {
-          <div class="w-full h-20 bg-gradient-to-r from-brand-500/20 to-brand-purple/20"></div>
+          <div class="w-full h-20 bg-gradient-to-r from-[#ffd6ec] to-[#e7ebff]"></div>
         }
-        <div class="px-6 pb-4 pt-0">
+        <div class="px-6 pb-6 pt-0">
           <div class="flex items-end gap-4 -mt-8 mb-3">
             <div class="w-16 h-16 rounded-xl border-2 border-white shadow bg-white flex items-center justify-center text-2xl overflow-hidden flex-shrink-0">
               @if (store()!.logo_url) {
@@ -72,44 +62,89 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <h1 class="text-xl font-bold text-gray-900">{{ store()!.name }}</h1>
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                <h1 class="text-[32px] leading-[1.06] tracking-[-0.03em] font-bold text-[#111827]">{{ store()!.name }}</h1>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
                   {{ icon(store()!.commerce_type) }} {{ label(store()!.commerce_type) }}
                 </span>
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold capitalize"
                   [class]="approvalColor(store()!.approval_status)">
                   {{ store()!.approval_status }}
                 </span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="store()!.is_open ? 'bg-success-100 text-success-700' : 'bg-gray-100 text-gray-600'">
+                  {{ store()!.is_open ? 'Abierto' : 'Cerrado' }}
+                </span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="store()!.is_active ? 'bg-success-100 text-success-700' : 'bg-error-100 text-error-700'">
+                  {{ store()!.is_active ? 'Activo' : 'Inactivo' }}
+                </span>
               </div>
-              <p class="text-sm text-gray-400 mt-0.5">{{ store()!.address }}</p>
+              <p class="text-sm text-[#667085] mt-0.5">{{ store()!.address }}</p>
             </div>
             <!-- Quick action buttons -->
             <div class="flex gap-2 flex-shrink-0">
+              <a routerLink="/stores" class="h-10 px-4 inline-flex items-center rounded-xl border border-[#d0d5dd] bg-white text-sm font-semibold text-[#344054] hover:bg-[#f9fafb]">← Volver</a>
+              <button class="h-10 px-4 rounded-xl border border-[#d0d5dd] bg-white text-sm font-semibold text-[#344054] hover:bg-[#f9fafb]" (click)="openEditForm()">Editar</button>
+              <button class="h-10 px-4 rounded-xl border border-[#d0d5dd] bg-white text-sm font-semibold text-[#344054] hover:bg-[#f9fafb]" (click)="router.navigate(['/stores', store()!.id, 'catalog'])">Ver catálogo</button>
+              <button class="h-10 px-4 rounded-xl border border-[#d0d5dd] bg-white text-sm font-semibold text-[#344054] hover:bg-[#f9fafb]" (click)="editingCommission.set(true)">Configurar tier</button>
               @if (store()!.approval_status === 'aprobado') {
-                <button class="btn-secondary text-sm" (click)="promptApproval('suspendido')">Suspender</button>
+                <button class="h-10 px-4 rounded-xl border border-[#fecaca] bg-[#fff1f1] text-sm font-semibold text-[#b42318] hover:bg-[#fee2e2]" (click)="promptApproval('suspendido')">Suspender</button>
               }
               @if (store()!.approval_status === 'pendiente') {
-                <button class="btn-primary text-sm" (click)="promptApproval('aprobado')">✓ Aprobar</button>
-                <button class="px-3 py-1.5 rounded-lg border border-error-300 text-error-600 hover:bg-error-50 text-sm transition-colors"
+                <button class="h-10 px-4 rounded-xl bg-[#087b3c] text-white text-sm font-semibold hover:bg-[#066a33]" (click)="promptApproval('aprobado')">✓ Aprobar</button>
+                <button class="h-10 px-4 rounded-xl border border-error-300 text-error-600 hover:bg-error-50 text-sm font-semibold transition-colors"
                   (click)="promptApproval('rechazado')">✕ Rechazar</button>
               }
               @if (store()!.approval_status === 'rechazado' || store()!.approval_status === 'suspendido') {
-                <button class="btn-primary text-sm" (click)="promptApproval('aprobado')">Reactivar</button>
+                <button class="h-10 px-4 rounded-xl bg-[#087b3c] text-white text-sm font-semibold hover:bg-[#066a33]" (click)="promptApproval('aprobado')">Reactivar</button>
               }
             </div>
           </div>
         </div>
       </div>
 
+      <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)] flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#f4ecff] text-[#6d28d9] grid place-items-center text-lg">⭐</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Rating</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ store()!.avg_rating | number:'1.1-1' }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ store()!.total_reviews }} reseñas</p>
+          </div>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)] flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#eafbf1] text-[#087b3c] grid place-items-center text-lg">🛎️</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Estado operativo</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ store()!.is_open ? 'Abierto' : 'Cerrado' }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ store()!.is_active ? 'Comercio activo' : 'Comercio inactivo' }}</p>
+          </div>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)] flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#ffe7f4] text-[#c71473] grid place-items-center text-lg">%</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Tier / comisión</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ tierLabel(store()!.commission_tier) }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ (store()!.commission_rate * 100) | number:'1.0-1' }}%</p>
+          </div>
+        </article>
+        <article class="rounded-3xl border border-[#e7eaf1] bg-white p-4 shadow-[0_8px_24px_rgba(18,24,40,.07)] flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#eef4ff] text-[#2451c7] grid place-items-center text-lg">📍</div>
+          <div>
+            <p class="text-xs font-extrabold text-[#7b8496]">Ubicación</p>
+            <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ store()!.city }}</p>
+            <p class="text-xs text-[#98a2b3]">{{ store()!.sector ?? 'Sin sector' }}</p>
+          </div>
+        </article>
+      </section>
+
       <!-- Tabs -->
-      <div class="flex gap-0 border-b border-gray-200 mb-4 overflow-x-auto">
+      <div class="flex gap-1 rounded-2xl border border-[#e7eaf1] bg-white p-1.5 mb-6 overflow-x-auto">
         @for (tab of tabs; track tab.id) {
           <button
             (click)="activeTab.set(tab.id)"
-            class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
+            class="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors"
             [class]="activeTab() === tab.id
-              ? 'border-brand-500 text-brand-500'
-              : 'border-transparent text-gray-500 hover:text-gray-700'"
+              ? 'bg-[#111827] text-white shadow-[0_8px_16px_rgba(17,24,39,.25)]'
+              : 'text-[#667085] hover:text-[#344054]'"
           >{{ tab.label }}</button>
         }
       </div>
@@ -118,7 +153,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
       @if (activeTab() === 'info') {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <!-- Left: fields -->
-          <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+          <div class="lg:col-span-2 bg-white rounded-3xl border border-[#e7eaf1] p-6 shadow-[0_8px_24px_rgba(18,24,40,.07)] space-y-5">
             <div class="flex items-center justify-between">
               <h3 class="font-semibold text-gray-800">Información del comercio</h3>
               <button class="btn-secondary text-sm" (click)="openEditForm()">✏️ Editar</button>
@@ -169,7 +204,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
           </div>
           <!-- Right: commission card -->
           <div class="space-y-4">
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="bg-white rounded-3xl border border-[#e7eaf1] p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-gray-800">Comisión</h3>
                 <button class="btn-secondary text-xs" (click)="editingCommission.set(true)">Editar</button>
@@ -219,7 +254,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
               }
             </div>
             <!-- Approval status card -->
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="bg-white rounded-3xl border border-[#e7eaf1] p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
               <h3 class="font-semibold text-gray-800 mb-3">Estado de aprobación</h3>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
@@ -372,7 +407,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 
       <!-- Tab: Zonas -->
       @if (activeTab() === 'zones') {
-        <div class="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-500">
+        <div class="bg-white rounded-3xl border border-[#e7eaf1] p-6 text-center text-gray-500 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
           <p class="text-2xl mb-2">📍</p>
           <p class="text-sm mb-3">Gestión de zonas de delivery</p>
           <button class="btn-primary text-sm"
@@ -384,11 +419,11 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 
       <!-- Tab: Pedidos -->
       @if (activeTab() === 'orders') {
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-3xl border border-[#e7eaf1] shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden">
           <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-800">Recent Orders (last 30)</h3>
+            <h3 class="text-sm font-semibold text-gray-800">Pedidos recientes (últimos 30)</h3>
             <a [routerLink]="['/orders']" [queryParams]="{commerce_id: store()!.id}"
-              class="text-xs text-brand-500 hover:text-brand-700 font-medium">View all in orders →</a>
+              class="text-xs text-brand-500 hover:text-brand-700 font-medium">Ver todos en pedidos →</a>
           </div>
           @if (storeOrdersLoading()) {
             <div class="p-6 space-y-3">
@@ -410,10 +445,10 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
-                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Customer</th>
-                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Cliente</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
                     <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Total</th>
-                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>
                     <th class="px-4 py-2.5"></th>
                   </tr>
                 </thead>
@@ -433,7 +468,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                       <td class="px-4 py-2.5 font-medium text-gray-800">RD$ {{ o.total | number:'1.0-0' }}</td>
                       <td class="px-4 py-2.5 text-gray-400 text-xs">{{ o.created_at | date:'MMM d, y h:mm a' }}</td>
                       <td class="px-4 py-2.5">
-                        <a [routerLink]="['/orders', o.id]" class="text-xs text-brand-500 hover:text-brand-700">View</a>
+                        <a [routerLink]="['/orders', o.id]" class="text-xs text-brand-500 hover:text-brand-700">Ver</a>
                       </td>
                     </tr>
                   }
@@ -457,23 +492,23 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
           <!-- KPIs -->
           @if (financeKpi()) {
             <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-2xl border border-[#e7eaf1] p-4 text-center shadow-[0_6px_16px_rgba(18,24,40,.05)]">
                 <p class="text-2xl font-bold text-gray-800">{{ financeKpi()!.totalOrders }}</p>
                 <p class="text-xs text-gray-500 mt-1">Pedidos entregados</p>
               </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-2xl border border-[#e7eaf1] p-4 text-center shadow-[0_6px_16px_rgba(18,24,40,.05)]">
                 <p class="text-xl font-bold text-gray-800">RD$ {{ financeKpi()!.grossSales | number:'1.0-0' }}</p>
                 <p class="text-xs text-gray-500 mt-1">Ventas brutas</p>
               </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-2xl border border-[#e7eaf1] p-4 text-center shadow-[0_6px_16px_rgba(18,24,40,.05)]">
                 <p class="text-xl font-bold text-brand-500">RD$ {{ financeKpi()!.commission | number:'1.0-0' }}</p>
                 <p class="text-xs text-gray-500 mt-1">Comisión generada</p>
               </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-2xl border border-[#e7eaf1] p-4 text-center shadow-[0_6px_16px_rgba(18,24,40,.05)]">
                 <p class="text-xl font-bold text-gray-800">RD$ {{ financeKpi()!.deliveryFees | number:'1.0-0' }}</p>
-                <p class="text-xs text-gray-500 mt-1">Delivery fees</p>
+                <p class="text-xs text-gray-500 mt-1">Tarifas de delivery</p>
               </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-2xl border border-[#e7eaf1] p-4 text-center shadow-[0_6px_16px_rgba(18,24,40,.05)]">
                 <p class="text-xl font-bold text-success-600">RD$ {{ financeKpi()!.netPayout | number:'1.0-0' }}</p>
                 <p class="text-xs text-gray-500 mt-1">Neto al comercio</p>
               </div>
@@ -481,7 +516,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
           }
           <!-- Liquidation table -->
           @if (orderSummaries().length > 0) {
-            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="bg-white rounded-3xl border border-[#e7eaf1] overflow-hidden shadow-[0_8px_24px_rgba(18,24,40,.07)]">
               <div class="px-4 py-3 border-b border-gray-100">
                 <h3 class="font-semibold text-gray-800 text-sm">Liquidación de pedidos</h3>
               </div>
@@ -516,7 +551,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 
       <!-- Tab: Admins -->
       @if (activeTab() === 'admins') {
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <div class="bg-white rounded-3xl border border-[#e7eaf1] p-6 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
           <h3 class="font-semibold text-gray-800 mb-4">Administradores del comercio</h3>
           @if (store()!.admin_name) {
             <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -540,7 +575,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 
       <!-- Tab: Historial -->
       @if (activeTab() === 'history') {
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-3xl border border-[#e7eaf1] overflow-hidden shadow-[0_8px_24px_rgba(18,24,40,.07)]">
           <div class="px-4 py-3 border-b border-gray-100">
             <h3 class="font-semibold text-gray-800 text-sm">Historial de aprobación</h3>
           </div>
@@ -915,5 +950,15 @@ export class StoreDetailPageComponent implements OnInit {
 
     icon(type: CommerceType): string { return COMMERCE_ICONS[type] ?? '🏪'; }
     label(type: CommerceType): string { return COMMERCE_LABELS[type] ?? type; }
+    tierLabel(tier: CommissionTier | null | undefined): string {
+        const map: Record<CommissionTier, string> = {
+            onboarding: 'Onb.',
+            estandar: 'Est.',
+            medio: 'Med.',
+            alto: 'Alto',
+            premium: 'Prem.',
+        };
+        return tier ? (map[tier] ?? tier) : '—';
+    }
     approvalColor(status: ApprovalStatus): string { return APPROVAL_COLORS[status] ?? 'bg-gray-100 text-gray-600'; }
 }

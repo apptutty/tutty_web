@@ -25,6 +25,24 @@ type PctFilter = 0 | 10 | 20 | 30;
   </a>
 </app-page-header>
 
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterDirection === 'all' && filterPct === 0 && !filterStore" (click)="clearQuickFilters()">
+    Pendientes {{ allItems().length }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterDirection === 'up'" (click)="setDirectionQuick('up')">
+    Subidas {{ upCount() }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterDirection === 'down'" (click)="setDirectionQuick('down')">
+    Bajadas {{ downCount() }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterPct === 20" (click)="setPctQuick(20)">
+    +20% {{ over20Count() }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterPct === 30" (click)="setPctQuick(30)">
+    +30% {{ over30Count() }}
+  </button>
+</div>
+
 <!-- ─── KPIs ─────────────────────────────────────────────────────────────── -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
   <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
@@ -80,7 +98,7 @@ type PctFilter = 0 | 10 | 20 | 30;
 <!-- ─── Filters ────────────────────────────────────────────────────────── -->
 <div class="flex flex-wrap items-center gap-3 mb-4">
   <!-- Store filter -->
-  <select class="input-field text-sm w-48" [(ngModel)]="filterStore" (ngModelChange)="applyFilters()">
+  <select class="input-field text-sm w-48" [(ngModel)]="filterStore" (ngModelChange)="applyFilters()" aria-label="Filtrar propuestas por comercio">
     <option value="">Todos los comercios</option>
     @for (store of uniqueStores(); track store.id) {
       <option [value]="store.id">{{ store.name }}</option>
@@ -88,7 +106,7 @@ type PctFilter = 0 | 10 | 20 | 30;
   </select>
 
   <!-- % Change filter -->
-  <select class="input-field text-sm w-40" [(ngModel)]="filterPct" (ngModelChange)="applyFilters()">
+  <select class="input-field text-sm w-40" [(ngModel)]="filterPct" (ngModelChange)="applyFilters()" aria-label="Filtrar propuestas por variación porcentual">
     <option [ngValue]="0">Cualquier % cambio</option>
     <option [ngValue]="10">> 10%</option>
     <option [ngValue]="20">> 20%</option>
@@ -344,6 +362,22 @@ export class PriceApprovalDashboardComponent implements OnInit {
         this.filteredItems().filter(i => this.isSuspicious(i)).length
     );
 
+    readonly upCount = computed(() =>
+        this.allItems().filter(i => i.price_change_pct > 0).length
+    );
+
+    readonly downCount = computed(() =>
+        this.allItems().filter(i => i.price_change_pct < 0).length
+    );
+
+    readonly over20Count = computed(() =>
+        this.allItems().filter(i => i.price_change_pct > 20).length
+    );
+
+    readonly over30Count = computed(() =>
+        this.allItems().filter(i => i.price_change_pct > 30).length
+    );
+
     rejectReason = '';
 
     ngOnInit(): void {
@@ -378,6 +412,23 @@ export class PriceApprovalDashboardComponent implements OnInit {
         if (this.filterDirection === 'down') items = items.filter(i => i.price_change_pct < 0);
         this.filteredItems.set(items);
         this.selectedIds.set(new Set());
+    }
+
+    clearQuickFilters(): void {
+        this.filterStore = '';
+        this.filterPct = 0;
+        this.filterDirection = 'all';
+        this.applyFilters();
+    }
+
+    setDirectionQuick(direction: DirectionFilter): void {
+        this.filterDirection = this.filterDirection === direction ? 'all' : direction;
+        this.applyFilters();
+    }
+
+    setPctQuick(pct: PctFilter): void {
+        this.filterPct = this.filterPct === pct ? 0 : pct;
+        this.applyFilters();
     }
 
     isSuspicious(item: PendingPriceItem): boolean {

@@ -25,7 +25,7 @@ Chart.register(...registerables);
         <!-- Quick presets -->
         <div class="flex flex-wrap gap-2 mb-4">
           @for (preset of presets; track preset.label) {
-            <button class="px-3 py-1.5 text-sm rounded-full border border-gray-300 hover:border-brand-500 hover:text-brand-500 transition-colors" (click)="applyPreset(preset)">
+            <button class="px-3 py-1.5 text-sm rounded-full border border-gray-300 hover:border-brand-500 hover:text-brand-500 transition-colors" (click)="applyPreset(preset)" [attr.aria-label]="'Aplicar rango de ' + preset.label">
               {{ preset.label }}
             </button>
           }
@@ -34,12 +34,12 @@ Chart.register(...registerables);
         <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
           <div class="flex-1 w-full">
             <label class="label">Desde</label>
-            <input type="date" class="input-field w-full" [(ngModel)]="fromDate" />
+            <input type="date" class="input-field w-full" [(ngModel)]="fromDate" aria-label="Fecha inicial de reportes" />
           </div>
           <span class="hidden sm:block text-gray-300 mb-2.5">→</span>
           <div class="flex-1 w-full">
             <label class="label">Hasta</label>
-            <input type="date" class="input-field w-full" [(ngModel)]="toDate" />
+            <input type="date" class="input-field w-full" [(ngModel)]="toDate" aria-label="Fecha final de reportes" />
           </div>
           <button class="btn-primary w-full sm:w-auto" (click)="loadAll()" [disabled]="loading()">
             {{ loading() ? 'Cargando...' : 'Aplicar' }}
@@ -53,6 +53,14 @@ Chart.register(...registerables);
         <app-stat-card title="Pedidos Entregados" [value]="totalOrders()" icon="📦" color="blue" />
         <app-stat-card title="Ticket Promedio" [value]="avgTicket() | currencyDop" icon="🧾" color="purple" />
         <app-stat-card title="Tasa de Cancelación" [value]="cancellationRate()" icon="❌" color="red" />
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-6">
+        <button type="button" class="admin-chip admin-chip--active">Días {{ salesByDay().length }}</button>
+        <button type="button" class="admin-chip">Restaurantes {{ restaurantSales().length }}</button>
+        <button type="button" class="admin-chip">Productos {{ topProducts().length }}</button>
+        <button type="button" class="admin-chip">Repartidores {{ courierPerformance().length }}</button>
+        <button type="button" class="admin-chip">Promos {{ promoRows().length }}</button>
       </div>
 
       <!-- Sales Chart -->
@@ -180,7 +188,9 @@ Chart.register(...registerables);
           @for (t of extraTabs; track t.id) {
             <button (click)="activeExtraTab.set(t.id)"
               class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
-              [class]="activeExtraTab() === t.id ? 'border-brand-500 text-brand-500' : 'border-transparent text-gray-500 hover:text-gray-700'">
+              [class]="activeExtraTab() === t.id ? 'border-brand-500 text-brand-500' : 'border-transparent text-gray-500 hover:text-gray-700'"
+              [attr.aria-current]="activeExtraTab() === t.id ? 'page' : null"
+              [attr.aria-label]="'Ver sección ' + t.label.toLowerCase()">
               {{ t.label }}
             </button>
           }

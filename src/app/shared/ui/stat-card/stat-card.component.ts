@@ -9,11 +9,11 @@ export type StatCardTrend = 'up' | 'down' | 'neutral';
     standalone: true,
     imports: [CommonModule],
     template: `
-    <div class="bg-white rounded-xl border border-gray-200 shadow-theme-sm p-5">
+    <article class="bg-white rounded-[22px] border border-[#e7eaf1] shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 sm:p-5">
       <div class="flex items-start justify-between gap-3">
         <div class="flex-1 min-w-0">
-          <p class="text-sm text-gray-500 font-medium truncate">{{ title }}</p>
-          <p class="text-2xl font-bold text-gray-800 mt-1.5 tracking-tight">{{ value }}</p>
+          <p class="text-xs text-[#7b8496] font-extrabold truncate">{{ title }}</p>
+          <p class="text-[22px] leading-none font-black text-[#111827] mt-1.5 tracking-[-0.04em]">{{ value }}</p>
           @if (subtitle) {
             <p class="text-xs mt-1.5 flex items-center gap-1" [class]="trendClass">
               @if (trend !== 'neutral') {
@@ -30,10 +30,7 @@ export type StatCardTrend = 'up' | 'down' | 'neutral';
             </p>
           }
         </div>
-        <div
-          class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-xl text-xl"
-          [class]="iconBg"
-        >{{ icon }}</div>
+        <div class="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-2xl text-lg" [class]="iconBg">{{ icon }}</div>
       </div>
 
       @if (pulse) {
@@ -45,7 +42,7 @@ export type StatCardTrend = 'up' | 'down' | 'neutral';
           <span class="text-xs text-success-600 font-medium">En vivo</span>
         </div>
       }
-    </div>
+    </article>
   `,
 })
 export class StatCardComponent {
@@ -59,12 +56,12 @@ export class StatCardComponent {
 
     get iconBg(): string {
         const map: Record<StatCardColor, string> = {
-            green: 'bg-success-50 text-success-700',
-            blue: 'bg-brand-50 text-brand-600',
-            yellow: 'bg-warning-50 text-warning-700',
-            red: 'bg-error-50 text-error-700',
-            purple: 'bg-purple-50 text-purple-700',
-            orange: 'bg-orange-50 text-orange-700',
+            green: 'bg-[#eafbf1] text-[#087b3c]',
+            blue: 'bg-[#eef4ff] text-[#2451c7]',
+            yellow: 'bg-[#fff7dc] text-[#b54708]',
+            red: 'bg-[#fee2e2] text-[#b42318]',
+            purple: 'bg-[#f4ecff] text-[#6d28d9]',
+            orange: 'bg-[#fff6e6] text-[#e46300]',
         };
         return map[this.color];
     }

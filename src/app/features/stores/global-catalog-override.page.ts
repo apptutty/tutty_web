@@ -34,48 +34,50 @@ interface OverridePending {
     </div>
 
     @if (loading()) {
-      <div class="space-y-3">
+      <div class="space-y-3 animate-pulse">
         @for (i of [1,2,3,4]; track i) {
-          <div class="h-14 bg-gray-100 rounded-xl animate-pulse"></div>
+          <div class="h-14 bg-gray-100 rounded-2xl"></div>
         }
       </div>
     } @else {
       <!-- Store header -->
-      <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex items-center gap-3">
+      <div class="rounded-3xl border border-[#e7eaf1] bg-[radial-gradient(circle_at_92%_12%,rgba(235,27,141,.10),transparent_24%),linear-gradient(180deg,#fff,#fbfcff)] p-4 mb-4 flex items-center gap-3 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
         <div class="text-2xl">{{ store() ? icon(store()!.commerce_type) : '🏪' }}</div>
         <div>
-          <h1 class="font-bold text-gray-900">{{ store()?.name }}</h1>
-          <p class="text-xs text-gray-400">{{ store() ? label(store()!.commerce_type) : '' }} · Gestión de catálogo</p>
+          <h1 class="font-bold text-[#111827] text-xl">{{ store()?.name }}</h1>
+          <p class="text-xs text-[#667085]">{{ store() ? label(store()!.commerce_type) : '' }} · Gestión premium de catálogo</p>
         </div>
       </div>
 
       <!-- Filters -->
-      <div class="flex flex-wrap gap-3 mb-4">
+      <div class="rounded-3xl border border-[#e7eaf1] bg-white p-4 mb-4 shadow-[0_8px_24px_rgba(18,24,40,.07)]">
+      <div class="flex flex-wrap gap-3">
         <div class="relative flex-1 min-w-[200px] max-w-xs">
           <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
-          <input type="search" class="input-field pl-9" placeholder="Buscar producto..."
+          <input type="search" class="input-field pl-9 !rounded-2xl !h-12" placeholder="Buscar por nombre, SKU o tags..."
             [(ngModel)]="searchText" />
         </div>
-        <select class="input-field w-44" [(ngModel)]="availabilityFilter">
+        <select class="input-field w-44 !rounded-2xl !h-12" [(ngModel)]="availabilityFilter">
           <option value="">Todos</option>
           <option value="available">Solo disponibles</option>
           <option value="unavailable">No disponibles</option>
         </select>
-        <select class="input-field w-48" [(ngModel)]="tagFilter">
+        <select class="input-field w-48 !rounded-2xl !h-12" [(ngModel)]="tagFilter">
           <option value="">Todos los tags</option>
           <option value="verificado">✓ Verificado</option>
           <option value="destacado_plataforma">⭐ Destacado</option>
           <option value="bajo_revision">⚠ Bajo revisión</option>
         </select>
       </div>
+      </div>
 
       <!-- Table -->
-      <div class="admin-table-card">
+      <div class="rounded-3xl border border-[#e7eaf1] bg-white overflow-hidden shadow-[0_8px_24px_rgba(18,24,40,.07)]">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead class="bg-gray-50">
+          <table class="min-w-[980px] w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-[#f8fafc]">
               <tr>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Producto</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Precio</th>

@@ -64,6 +64,8 @@ export interface LatLng {
       >
         @if (!isBrowser) {
           <span>Map (SSR)</span>
+        } @else if (mapError) {
+          <span>{{ mapError }}</span>
         } @else {
           <span class="flex items-center gap-2">
             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -93,6 +95,7 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     readonly isBrowser = isPlatformBrowser(this.platformId);
 
     apiLoaded = false;
+    mapError: string | null = null;
     center: google.maps.LatLngLiteral = { lat: 18.4718, lng: -69.9513 }; // Santo Domingo default
     markerPosition: google.maps.LatLngLiteral | null = null;
 
@@ -141,9 +144,17 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     }
 
     private loadApi(): void {
+        const apiKey = (environment.googleMapsApiKey ?? '').trim();
+        if (!apiKey || apiKey.includes('YOUR_GOOGLE_MAPS_API_KEY')) {
+            this.mapError = 'Google Maps no está configurado en este entorno.';
+            this.apiLoaded = false;
+            return;
+        }
+
         if ((window as any).google?.maps) {
             this.markerOptions.animation = (window as any).google.maps.Animation?.DROP;
             this.apiLoaded = true;
+            this.mapError = null;
             return;
         }
         const existing = document.getElementById('gmaps-script');
@@ -156,12 +167,17 @@ export class TuttyMapComponent implements OnInit, OnChanges {
         }
         const script = document.createElement('script');
         script.id = 'gmaps-script';
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
         script.onload = () => {
             this.markerOptions.animation = (window as any).google?.maps?.Animation?.DROP;
             this.apiLoaded = true;
+            this.mapError = null;
+        };
+        script.onerror = () => {
+            this.apiLoaded = false;
+            this.mapError = 'No se pudo cargar Google Maps.';
         };
         document.head.appendChild(script);
     }

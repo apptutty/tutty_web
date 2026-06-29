@@ -74,6 +74,24 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
   </a>
 </app-page-header>
 
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <button type="button" class="admin-chip" [class.admin-chip--active]="!hasActiveFilters() && !searchQuery.trim()">
+    Índice {{ totalCount() || 0 }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterLowStock" (click)="toggleLowStockQuick()">
+    Bajo stock {{ lowStockResultCount() }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterPendingPrice" (click)="togglePendingPriceQuick()">
+    Precio pendiente {{ pendingPriceResultCount() }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterModStatus === 'bajo_revision'" (click)="setModerationQuick('bajo_revision')">
+    En revisión {{ reviewResultCount() }}
+  </button>
+  <button type="button" class="admin-chip" [class.admin-chip--active]="filterModStatus === 'retirado'" (click)="setModerationQuick('retirado')">
+    Retirados {{ removedResultCount() }}
+  </button>
+</div>
+
 <!-- ─── Search bar ──────────────────────────────────────────────────────────── -->
 <div class="relative mb-4">
   <svg class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -88,6 +106,7 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
     [ngModel]="searchQuery"
     (ngModelChange)="onQueryChange($event)"
     [disabled]="loading()"
+    aria-label="Buscar productos del catálogo global"
   />
   @if (loading()) {
     <div class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
@@ -101,7 +120,7 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
     <!-- Commerce type -->
     <div>
       <label class="block text-xs text-gray-500 mb-1">Tipo de comercio</label>
-      <select class="input-field text-sm w-44" [(ngModel)]="filterType" (ngModelChange)="triggerSearch()">
+      <select class="input-field text-sm w-44" [(ngModel)]="filterType" (ngModelChange)="triggerSearch()" aria-label="Filtrar por tipo de comercio">
         @for (ct of commerceTypes; track ct.value) {
           <option [value]="ct.value">{{ ct.label }}</option>
         }
@@ -126,7 +145,7 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
     <!-- Moderation status -->
     <div>
       <label class="block text-xs text-gray-500 mb-1">Moderación</label>
-      <select class="input-field text-sm w-44" [(ngModel)]="filterModStatus" (ngModelChange)="triggerSearch()">
+      <select class="input-field text-sm w-44" [(ngModel)]="filterModStatus" (ngModelChange)="triggerSearch()" aria-label="Filtrar por estado de moderación">
         @for (opt of modOptions; track opt.value) {
           <option [value]="opt.value">{{ opt.label }}</option>
         }
@@ -136,11 +155,11 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
     <!-- Toggles -->
     <div class="flex flex-col gap-2">
       <label class="flex items-center gap-2 cursor-pointer text-sm select-none">
-        <input type="checkbox" class="rounded" [(ngModel)]="filterLowStock" (ngModelChange)="triggerSearch()" />
+        <input type="checkbox" class="rounded" [(ngModel)]="filterLowStock" (ngModelChange)="triggerSearch()" aria-label="Mostrar solo productos con bajo stock" />
         <span class="text-warning-700 font-medium">Solo bajo stock</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer text-sm select-none">
-        <input type="checkbox" class="rounded" [(ngModel)]="filterPendingPrice" (ngModelChange)="triggerSearch()" />
+        <input type="checkbox" class="rounded" [(ngModel)]="filterPendingPrice" (ngModelChange)="triggerSearch()" aria-label="Mostrar solo productos con precio pendiente" />
         <span class="text-warning-700 font-medium">Solo precio pendiente</span>
       </label>
     </div>
@@ -427,6 +446,22 @@ export class CatalogGlobalSearchPageComponent implements OnInit, OnDestroy {
         return a.priceGreaterThanVenue + a.missingPhoto + a.missingDescription + a.missingCategory;
     });
 
+    readonly lowStockResultCount = computed(() =>
+        this.results().filter(item => item.stock_status === 'bajo_stock').length
+    );
+
+    readonly pendingPriceResultCount = computed(() =>
+        this.results().filter(item => item.price_pending != null).length
+    );
+
+    readonly reviewResultCount = computed(() =>
+        this.results().filter(item => item.moderation_status === 'bajo_revision').length
+    );
+
+    readonly removedResultCount = computed(() =>
+        this.results().filter(item => item.moderation_status === 'retirado').length
+    );
+
     readonly hasActiveFilters = computed(() =>
         !!this.filterType || this.filterMinPrice !== null || this.filterMaxPrice !== null ||
         this.filterModStatus !== 'all' || this.filterLowStock || this.filterPendingPrice ||
@@ -458,6 +493,21 @@ export class CatalogGlobalSearchPageComponent implements OnInit, OnDestroy {
         this.filterLowStock = false;
         this.filterPendingPrice = false;
         this.filterDietaryTags = [];
+        this.triggerSearch();
+    }
+
+    toggleLowStockQuick(): void {
+        this.filterLowStock = !this.filterLowStock;
+        this.triggerSearch();
+    }
+
+    togglePendingPriceQuick(): void {
+        this.filterPendingPrice = !this.filterPendingPrice;
+        this.triggerSearch();
+    }
+
+    setModerationQuick(status: ModerationStatus): void {
+        this.filterModStatus = this.filterModStatus === status ? 'all' : status;
         this.triggerSearch();
     }
 

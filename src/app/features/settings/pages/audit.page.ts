@@ -18,24 +18,31 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
           <p class="text-sm text-gray-500 mt-1">Consulta trazabilidad de acciones administrativas a nivel plataforma.</p>
         </div>
         <div class="admin-form-card__body">
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <button type="button" class="admin-chip" (click)="clearDateRange()">Todo</button>
+        <button type="button" class="admin-chip" (click)="applyPreset(0)">Hoy</button>
+        <button type="button" class="admin-chip" (click)="applyPreset(7)">7 días</button>
+        <button type="button" class="admin-chip" (click)="applyPreset(30)">30 días</button>
+        <span class="admin-chip admin-chip--active">Registros {{ logs().length }}</span>
+      </div>
       <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3 mb-4">
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Admin</label>
           <input type="text" class="input-field w-44 text-sm" [(ngModel)]="filter.admin"
-            placeholder="Filtrar por admin" />
+            placeholder="Filtrar por admin" aria-label="Filtrar auditoría por admin" />
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
-          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateFrom" />
+          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateFrom" aria-label="Fecha inicial de auditoría" />
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
-          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateTo" />
+          <input type="date" class="input-field w-40 text-sm" [(ngModel)]="filter.dateTo" aria-label="Fecha final de auditoría" />
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Acción</label>
           <input type="text" class="input-field w-44 text-sm" [(ngModel)]="filter.action"
-            placeholder="Filtrar por acción" />
+            placeholder="Filtrar por acción" aria-label="Filtrar auditoría por acción" />
         </div>
         <div class="flex gap-2 sm:self-end">
           <button class="btn-primary text-sm" (click)="load()">Buscar</button>
@@ -134,5 +141,20 @@ export class AuditPageComponent implements OnInit {
     const a = document.createElement('a');
     a.href = url; a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
+  }
+
+  clearDateRange(): void {
+    this.filter.dateFrom = '';
+    this.filter.dateTo = '';
+    this.load();
+  }
+
+  applyPreset(days: number): void {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    this.filter.dateTo = to.toISOString().slice(0, 10);
+    this.filter.dateFrom = from.toISOString().slice(0, 10);
+    this.load();
   }
 }

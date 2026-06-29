@@ -4,8 +4,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { Router, RouterLink } from '@angular/router';
 import { ExcursionsService } from './excursions.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
-import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { DataTableComponent, TableColumn } from '../../shared/ui/data-table/data-table.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 import { ExcursionOperator, Excursion, ExcursionDate, BookingStatus } from '../../core/supabase/database.types';
 
 type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
@@ -13,113 +13,406 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
 @Component({
   selector: 'app-excursions-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DataTableComponent, RouterLink, AdminEmptyStateComponent],
   template: `
-    <app-page-header title="Excursiones" subtitle="Gestión de operadores, excursiones y reservas">
-      @if (activeTab() === 'operadores') {
-        <button class="btn-primary" (click)="openOperatorModal()">+ Operador</button>
-      }
-      @if (activeTab() === 'excursiones') {
-        <button class="btn-primary" (click)="router.navigate(['/excursions/excursion/new'])">+ Excursión</button>
-      }
-    </app-page-header>
-
-    <!-- Tabs -->
-    <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4 w-fit">
-      @for (tab of tabs; track tab.key) {
-        <button
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          [class]="activeTab() === tab.key ? 'bg-white text-gray-800 shadow-theme-xs' : 'text-gray-500 hover:text-gray-700'"
-          (click)="activeTab.set(tab.key); loadTabData()"
-        >{{ tab.label }}</button>
-      }
-    </div>
-
-    <!-- Operators tab -->
-    @if (activeTab() === 'operadores') {
-      <div class="mb-4">
-        <input type="search" class="input-field max-w-xs" placeholder="Buscar operador..." [(ngModel)]="operatorSearch" />
+    <section class="rounded-[28px] border border-[#e7eaf1] bg-[radial-gradient(circle_at_94%_12%,rgba(235,27,141,.12),transparent_25%),linear-gradient(180deg,#fff,#fbfcff)] shadow-[0_8px_24px_rgba(18,24,40,.07)] px-6 py-5 mb-5">
+      <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div>
+          <p class="inline-flex items-center rounded-full bg-[#ffe7f4] px-3 py-1 text-[11px] font-extrabold tracking-wide text-[#c71473]">Operations · Excursions Network</p>
+          <h1 class="mt-2 text-[30px] leading-[1.08] tracking-[-0.04em] font-bold text-[#111827]">Excursiones</h1>
+          <p class="mt-2 max-w-4xl text-[15px] leading-6 text-[#667085]">
+            Gestiona operadores, excursiones, reservas y categorías turísticas desde un centro operativo premium para experiencias en la plataforma.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 xl:flex xl:flex-wrap xl:justify-end">
+          <button class="h-11 inline-flex items-center justify-center rounded-2xl border border-[#e7eaf1] bg-white px-4 text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="exportOperatorsCsv()">Exportar CSV</button>
+          <button class="h-11 inline-flex items-center justify-center rounded-2xl border border-[#ffd8a8] bg-[#fff6e6] px-4 text-sm font-bold text-[#b54708] hover:bg-[#ffefcf]" (click)="setOperatorStatusFilter('pendiente')">Revisar pendientes</button>
+          @if (activeTab() === 'operadores') {
+            <button class="h-11 inline-flex items-center justify-center rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-white px-4 text-sm font-black" (click)="openOperatorModal()">+ Operador</button>
+          } @else if (activeTab() === 'excursiones') {
+            <button class="h-11 inline-flex items-center justify-center rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-white px-4 text-sm font-black" (click)="router.navigate(['/excursions/excursion/new'])">+ Excursión</button>
+          }
+        </div>
       </div>
-      <div class="admin-table-card">
-        <app-data-table
-          [columns]="operatorColumns"
-          [data]="filteredOperators()"
-          [loading]="loading()"
-          [totalCount]="filteredOperators().length"
-          [pageSize]="filteredOperators().length"
-          (rowClick)="router.navigate(['/excursions/operators', $event.id])"
-        />
-      </div>
-    }
+    </section>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#eef4ff] text-[#2451c7] grid place-items-center text-lg">🧭</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Operadores</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ operators().length }}</p>
+          <p class="text-xs text-[#98a2b3]">aprobados en plataforma</p>
+        </div>
+      </article>
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#eafbf1] text-[#087b3c] grid place-items-center text-lg">⭐</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Rating promedio</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ avgOperatorRating() }}</p>
+          <p class="text-xs text-[#98a2b3]">basado en reseñas</p>
+        </div>
+      </article>
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#fff6e6] text-[#e46300] grid place-items-center text-lg">📝</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Reseñas</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ totalOperatorReviews() }}</p>
+          <p class="text-xs text-[#98a2b3]">en operadores activos</p>
+        </div>
+      </article>
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#ffe7f4] text-[#c71473] grid place-items-center text-lg">✅</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Activos</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ activeOperatorsCount() }}</p>
+          <p class="text-xs text-[#98a2b3]">disponibles para reservas</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)] gap-4 items-start">
+      <aside class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden">
+        <div class="px-5 py-4 border-b border-[#eef1f6]">
+          <h2 class="text-[16px] leading-tight tracking-[-0.02em] font-black text-[#111827]">Centro de excursiones</h2>
+          <p class="mt-2 text-sm leading-5 text-[#667085]">Filtra operadores, reservas y categorías por estado operativo.</p>
+        </div>
+        <div class="p-3">
+          <button type="button" class="w-full h-11 rounded-2xl px-3 mb-1 flex items-center justify-between text-left text-sm font-extrabold transition-colors"
+                  [class]="activeTab() === 'operadores' ? 'bg-[#111827] text-white shadow-[0_8px_18px_rgba(17,24,39,.16)]' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                  (click)="setTab('operadores')">
+            <span class="inline-flex items-center gap-2">🧭 Operadores</span><span [class]="activeTab() === 'operadores' ? 'text-white/80' : 'text-[#98a2b3]'">{{ operators().length }}</span>
+          </button>
+          <button type="button" class="w-full h-11 rounded-2xl px-3 mb-1 flex items-center justify-between text-left text-sm font-extrabold transition-colors"
+                  [class]="activeTab() === 'excursiones' ? 'bg-[#111827] text-white shadow-[0_8px_18px_rgba(17,24,39,.16)]' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                  (click)="setTab('excursiones')">
+            <span class="inline-flex items-center gap-2">🌴 Excursiones</span><span [class]="activeTab() === 'excursiones' ? 'text-white/80' : 'text-[#98a2b3]'">{{ excursions().length }}</span>
+          </button>
+          <button type="button" class="w-full h-11 rounded-2xl px-3 mb-1 flex items-center justify-between text-left text-sm font-extrabold transition-colors"
+                  [class]="activeTab() === 'reservas' ? 'bg-[#111827] text-white shadow-[0_8px_18px_rgba(17,24,39,.16)]' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                  (click)="setTab('reservas')">
+            <span class="inline-flex items-center gap-2">📅 Reservas</span><span [class]="activeTab() === 'reservas' ? 'text-white/80' : 'text-[#98a2b3]'">{{ bookings().length }}</span>
+          </button>
+          <button type="button" class="w-full h-11 rounded-2xl px-3 mb-2 flex items-center justify-between text-left text-sm font-extrabold transition-colors"
+                  [class]="activeTab() === 'categorias' ? 'bg-[#111827] text-white shadow-[0_8px_18px_rgba(17,24,39,.16)]' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                  (click)="setTab('categorias')">
+            <span class="inline-flex items-center gap-2">🏷️ Categorías</span><span [class]="activeTab() === 'categorias' ? 'text-white/80' : 'text-[#98a2b3]'">{{ excursionCategories().length }}</span>
+          </button>
+
+          <p class="mt-3 mb-2 px-2 text-[11px] tracking-[0.12em] uppercase text-[#98a2b3] font-black">Por estado</p>
+          <button type="button" class="w-full h-10 rounded-xl px-3 mb-1 flex items-center justify-between text-left text-sm font-bold transition-colors"
+                  [class]="operatorStatusFilter === 'aprobado' ? 'bg-[#111827] text-white' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                  (click)="setOperatorStatusFilter('aprobado')">✅ Aprobados <span [class]="operatorStatusFilter === 'aprobado' ? 'text-white/80' : 'text-[#98a2b3]'">{{ approvedOperatorsCount() }}</span></button>
+          <button type="button" class="w-full h-10 rounded-xl px-3 mb-1 flex items-center justify-between text-left text-sm font-bold transition-colors"
+                  [class]="operatorStatusFilter === 'pendiente' ? 'bg-[#111827] text-white' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                  (click)="setOperatorStatusFilter('pendiente')">🟡 Pendientes <span [class]="operatorStatusFilter === 'pendiente' ? 'text-white/80' : 'text-[#98a2b3]'">{{ pendingOperatorsCount() }}</span></button>
+          <button type="button" class="w-full h-10 rounded-xl px-3 mb-2 flex items-center justify-between text-left text-sm font-bold transition-colors"
+                  [class]="operatorStatusFilter === 'suspendido' ? 'bg-[#111827] text-white' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                  (click)="setOperatorStatusFilter('suspendido')">⛔ Suspendidos <span [class]="operatorStatusFilter === 'suspendido' ? 'text-white/80' : 'text-[#98a2b3]'">{{ suspendedOperatorsCount() }}</span></button>
+
+          <p class="mt-3 mb-2 px-2 text-[11px] tracking-[0.12em] uppercase text-[#98a2b3] font-black">Categorías</p>
+          @for (cat of sideCategoryItems; track cat.key) {
+            <button type="button" class="w-full h-10 rounded-xl px-3 mb-1 flex items-center justify-between text-left text-sm font-bold transition-colors"
+                    [class]="operatorCategoryFilter === cat.key ? 'bg-[#111827] text-white' : 'text-[#475467] hover:bg-[#f8fafc]'"
+                    (click)="setOperatorCategoryFilter(cat.key)">
+              <span>{{ cat.icon }} {{ cat.label }}</span>
+              <span [class]="operatorCategoryFilter === cat.key ? 'text-white/80' : 'text-[#98a2b3]'">{{ categoryCount(cat.key) }}</span>
+            </button>
+          }
+        </div>
+      </aside>
+
+      <div class="space-y-4 min-w-0">
+        <div class="rounded-2xl border border-[#e7eaf1] bg-[#fbfcff] p-1.5 inline-flex flex-wrap gap-1 max-w-full overflow-x-auto">
+          @for (tab of tabs; track tab.key) {
+            <button class="h-10 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap"
+                    [class]="activeTab() === tab.key ? 'bg-[#111827] text-white shadow-[0_8px_18px_rgba(17,24,39,.16)]' : 'text-[#667085] hover:bg-white/70'"
+                    [attr.aria-current]="activeTab() === tab.key ? 'page' : null"
+                    (click)="setTab(tab.key)">
+              {{ tab.label }}
+            </button>
+          }
+        </div>
+
+        @if (activeTab() === 'operadores') {
+          @let operatorRows = filteredOperators();
+          <section class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4">
+            <div class="grid grid-cols-1 xl:grid-cols-[minmax(260px,1fr)_220px_220px_220px_auto] gap-2 mb-3">
+              <label class="h-12 rounded-2xl border border-[#e7eaf1] bg-[#fbfcff] px-3 inline-flex items-center gap-2 min-w-0">
+                <span class="text-[#667085]">⌕</span>
+                <input type="search" class="bg-transparent border-0 outline-0 w-full min-w-0 text-sm"
+                       placeholder="Buscar operador, categoría o destino..."
+                       [(ngModel)]="operatorSearch"
+                       aria-label="Buscar operador, categoría o destino" />
+              </label>
+              <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="operatorCategorySelect" (ngModelChange)="setOperatorCategoryFromSelect()" aria-label="Todas las categorías">
+                <option value="all">Todas las categorías</option>
+                <option value="aventura">Aventura</option>
+                <option value="playa">Playa</option>
+                <option value="cultural">Cultural</option>
+                <option value="montana">Montaña</option>
+                <option value="none">Sin categoría</option>
+              </select>
+              <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="operatorStatusSelect" (ngModelChange)="setOperatorStatusFromSelect()" aria-label="Todos los estados">
+                <option value="all">Todos los estados</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="suspendido">Suspendido</option>
+              </select>
+              <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="operatorSort" aria-label="Más reseñas">
+                <option value="reviews_desc">Más reseñas</option>
+                <option value="rating_desc">Mejor rating</option>
+                <option value="name_asc">Nombre A-Z</option>
+              </select>
+              <button class="h-12 px-4 rounded-2xl border border-[#e7eaf1] text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="exportOperatorsCsv()">Exportar</button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                      [class]="operatorQuickFilter === 'all' ? 'bg-[#111827] border-[#111827] text-white' : 'border-[#e7eaf1] text-[#475467]'"
+                      (click)="setOperatorQuickFilter('all')">Todos {{ operators().length }}</button>
+              <button class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                      [class]="operatorQuickFilter === 'approved' ? 'bg-[#eafbf1] border-[#b7efcc] text-[#087b3c]' : 'border-[#e7eaf1] text-[#475467]'"
+                      (click)="setOperatorQuickFilter('approved')">Aprobados {{ approvedOperatorsCount() }}</button>
+              <button class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                      [class]="operatorQuickFilter === 'active' ? 'bg-[#eafbf1] border-[#b7efcc] text-[#087b3c]' : 'border-[#e7eaf1] text-[#475467]'"
+                      (click)="setOperatorQuickFilter('active')">Activos {{ activeOperatorsCount() }}</button>
+              <button class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                      [class]="operatorQuickFilter === 'pending' ? 'bg-[#fff6e6] border-[#ffd8a8] text-[#b54708]' : 'border-[#e7eaf1] text-[#475467]'"
+                      (click)="setOperatorQuickFilter('pending')">Pendientes {{ pendingOperatorsCount() }}</button>
+              <button class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                      [class]="operatorQuickFilter === 'rating48' ? 'bg-[#111827] border-[#111827] text-white' : 'border-[#e7eaf1] text-[#475467]'"
+                      (click)="setOperatorQuickFilter('rating48')">Rating 4.8+</button>
+            </div>
+          </section>
+
+          <section class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden">
+            <div class="px-5 py-4 border-b border-[#eef1f6] flex items-center justify-between gap-2">
+              <div>
+                <h3 class="text-base font-black text-[#111827]">Operadores de excursiones</h3>
+                <p class="text-sm font-semibold text-[#98a2b3]">{{ operatorRows.length }} operadores encontrados</p>
+              </div>
+              <button class="h-11 rounded-2xl border border-[#e7eaf1] bg-white px-4 text-sm font-bold text-[#344054]">Vista tabla</button>
+            </div>
+
+            @if (loading()) {
+              <div class="p-4 space-y-2 animate-pulse">
+                @for (_ of [1,2,3,4,5,6]; track $index) {
+                  <div class="h-12 rounded-xl bg-gray-100"></div>
+                }
+              </div>
+            } @else if (loadError()) {
+              <div class="p-6">
+                <div class="rounded-2xl border border-[#fee2e2] bg-[#fff7f7] p-4 text-center">
+                  <p class="text-sm font-black text-[#b42318]">No se pudieron cargar las excursiones</p>
+                  <p class="text-xs text-[#98a2b3] mt-1">Intenta refrescar la página o vuelve a intentarlo más tarde.</p>
+                  <button class="h-9 mt-3 px-4 rounded-xl border border-[#e7eaf1] bg-white text-sm font-bold text-[#344054]" (click)="loadTabData()">Reintentar</button>
+                </div>
+              </div>
+            } @else if (operatorRows.length === 0) {
+              <div class="p-6">
+                <app-admin-empty-state
+                  icon="search"
+                  [title]="operators().length === 0 ? 'No hay operadores registrados' : 'No hay operadores para estos filtros'"
+                  [description]="operators().length === 0 ? 'Los operadores de excursiones aparecerán aquí cuando sean creados o aprobados.' : 'Prueba cambiando la búsqueda, categoría, estado o filtros activos.'"
+                  variant="soft" />
+              </div>
+            } @else {
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-[#fbfcff] border-b border-[#e7eaf1]">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-black text-[#667085] uppercase">Operador</th>
+                      <th class="px-4 py-3 text-left text-xs font-black text-[#667085] uppercase">Categoría</th>
+                      <th class="px-4 py-3 text-left text-xs font-black text-[#667085] uppercase">Rating</th>
+                      <th class="px-4 py-3 text-left text-xs font-black text-[#667085] uppercase">Reseñas</th>
+                      <th class="px-4 py-3 text-left text-xs font-black text-[#667085] uppercase">Estado</th>
+                      <th class="px-4 py-3 text-left text-xs font-black text-[#667085] uppercase">Activo</th>
+                      <th class="px-4 py-3 text-right text-xs font-black text-[#667085] uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[#eef1f6]">
+                    @for (op of operatorRows; track op.id) {
+                      <tr class="hover:bg-[#fbfcff] transition-colors">
+                        <td class="px-4 py-3">
+                          <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 rounded-2xl bg-[#f4f6f9] border border-[#eef1f6] overflow-hidden grid place-items-center text-lg flex-shrink-0">
+                              @if ($any(op).logo_url) {
+                                <img [src]="$any(op).logo_url" class="w-full h-full object-cover" alt="" />
+                              } @else { 🧭 }
+                            </div>
+                            <div class="min-w-0">
+                              <p class="font-black text-[#111827] truncate">{{ op.name }}</p>
+                              <p class="text-xs text-[#98a2b3] truncate">{{ operatorSubtitle(op) }}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-black"
+                                [class]="categoryBadgeClass(op.category)">
+                            {{ displayCategory(op.category) }}
+                          </span>
+                        </td>
+                        <td class="px-4 py-3 font-black text-[#111827]">⭐ {{ operatorRating(op) }}</td>
+                        <td class="px-4 py-3 font-black text-[#111827]">{{ operatorReviews(op) }}</td>
+                        <td class="px-4 py-3">
+                          <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-black"
+                                [class]="statusBadgeClass(operatorApprovalStatus(op))">
+                            {{ displayStatus(operatorApprovalStatus(op)) }}
+                          </span>
+                        </td>
+                        <td class="px-4 py-3">
+                          <button class="relative w-11 h-6 rounded-full transition-colors"
+                                  [class]="op.is_active ? 'bg-success-400' : 'bg-gray-300'"
+                                  (click)="toggleOperatorActive(op)"
+                                  role="switch"
+                                  [attr.aria-checked]="op.is_active"
+                                  [attr.aria-label]="op.is_active ? 'Desactivar operador ' + op.name : 'Activar operador ' + op.name">
+                            <span class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                                  [style.left]="op.is_active ? '21px' : '2px'"></span>
+                          </button>
+                        </td>
+                        <td class="px-4 py-3">
+                          <div class="flex items-center justify-end gap-1">
+                            <button class="w-9 h-9 rounded-xl border border-[#e7eaf1] text-[#667085] hover:bg-[#f8fafc]" [attr.aria-label]="'Editar operador ' + op.name" (click)="openOperatorModal(op)">✎</button>
+                            <button class="w-9 h-9 rounded-xl border border-[#e7eaf1] text-[#667085] hover:bg-[#f8fafc]" [attr.aria-label]="'Ver operador ' + op.name" (click)="router.navigate(['/excursions/operators', op.id])">⌕</button>
+                            <button class="w-9 h-9 rounded-xl border border-[#e7eaf1] text-[#667085] hover:bg-[#f8fafc]" [attr.aria-label]="'Más acciones de ' + op.name">…</button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        }
 
     <!-- Excursions tab -->
     @if (activeTab() === 'excursiones') {
-      <div class="flex flex-wrap gap-3 mb-4">
-        <input type="search" class="input-field max-w-xs" placeholder="Buscar excursión..." [(ngModel)]="excursionSearch" />
-        <select class="input-field w-44" [(ngModel)]="difficultyFilter">
-          <option value="">Todas las dificultades</option>
-          <option value="facil">Fácil</option>
-          <option value="moderado">Moderado</option>
-          <option value="dificil">Difícil</option>
-        </select>
+      @let excursionRows = filteredExcursions();
+      <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4">
+        <div class="flex flex-wrap gap-3 mb-4">
+          <input type="search" class="input-field max-w-xs" placeholder="Buscar excursión..." [(ngModel)]="excursionSearch" aria-label="Buscar excursiones por nombre u operador" />
+          <select class="input-field w-44" [(ngModel)]="difficultyFilter" aria-label="Filtrar excursiones por dificultad">
+            <option value="">Todas las dificultades</option>
+            <option value="facil">Fácil</option>
+            <option value="moderado">Moderado</option>
+            <option value="dificil">Difícil</option>
+          </select>
+        </div>
+
+        @if (loadError()) {
+          <div class="rounded-2xl border border-[#fee2e2] bg-[#fff7f7] p-4 text-center">
+            <p class="text-sm font-black text-[#b42318]">No se pudieron cargar las excursiones</p>
+            <p class="text-xs text-[#98a2b3] mt-1">Intenta refrescar la página o vuelve a intentarlo más tarde.</p>
+            <button class="h-9 mt-3 px-4 rounded-xl border border-[#e7eaf1] bg-white text-sm font-bold text-[#344054]" (click)="loadTabData()">Reintentar</button>
+          </div>
+        } @else if (!loading() && excursionRows.length === 0) {
+          <app-admin-empty-state
+            icon="search"
+            title="No hay excursiones para mostrar"
+            description="Crea o revisa excursiones para que aparezcan en esta sección."
+            variant="soft" />
+        } @else {
+          <div class="admin-table-card">
+            <app-data-table
+              [columns]="excursionColumns"
+              [data]="excursionRows"
+              [loading]="loading()"
+              [totalCount]="excursionRows.length"
+              [pageSize]="excursionRows.length || 10"
+              (rowClick)="router.navigate(['/excursions/excursion', $event.id])"
+            />
+          </div>
+          <p class="text-xs text-gray-400 mt-1">Haz clic en una excursión para editarla. Para gestionar fechas, usa el botón de fechas en la tabla.</p>
+        }
       </div>
-      <div class="admin-table-card">
-        <app-data-table
-          [columns]="excursionColumns"
-          [data]="filteredExcursions()"
-          [loading]="loading()"
-          [totalCount]="filteredExcursions().length"
-          [pageSize]="filteredExcursions().length"
-          (rowClick)="router.navigate(['/excursions/excursion', $event.id])"
-        />
-      </div>
-      <p class="text-xs text-gray-400 mt-1">Haz clic en una excursión para editarla. Para gestionar fechas, usa el botón de fechas en la tabla.</p>
     }
 
     <!-- Bookings tab -->
     @if (activeTab() === 'reservas') {
-      <div class="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
-        <select class="input-field sm:w-48" [(ngModel)]="bookingStatusFilter" (ngModelChange)="loadBookings()">
-          <option value="">Todos los estados</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="confirmada">Confirmada</option>
-          <option value="cancelada">Cancelada</option>
-          <option value="completada">Completada</option>
-        </select>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
-          <input type="date" class="input-field sm:w-44" [(ngModel)]="bookingDateFrom" />
+      @let bookingRows = filteredBookings();
+      <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4">
+        <div class="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
+          <select class="input-field sm:w-48" [(ngModel)]="bookingStatusFilter" (ngModelChange)="loadBookings()" aria-label="Filtrar reservas por estado">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="cancelada">Cancelada</option>
+            <option value="completada">Completada</option>
+          </select>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+            <input type="date" class="input-field sm:w-44" [(ngModel)]="bookingDateFrom" aria-label="Fecha inicial de reservas" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+            <input type="date" class="input-field sm:w-44" [(ngModel)]="bookingDateTo" aria-label="Fecha final de reservas" />
+          </div>
+          @if (bookingDateFrom || bookingDateTo) {
+            <button class="btn-secondary text-sm self-end" (click)="bookingDateFrom = ''; bookingDateTo = ''">✕ Fechas</button>
+          }
         </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
-          <input type="date" class="input-field sm:w-44" [(ngModel)]="bookingDateTo" />
-        </div>
-        @if (bookingDateFrom || bookingDateTo) {
-          <button class="btn-secondary text-sm self-end" (click)="bookingDateFrom = ''; bookingDateTo = ''">✕ Fechas</button>
+
+        @if (loadError()) {
+          <div class="rounded-2xl border border-[#fee2e2] bg-[#fff7f7] p-4 text-center">
+            <p class="text-sm font-black text-[#b42318]">No se pudieron cargar las excursiones</p>
+            <p class="text-xs text-[#98a2b3] mt-1">Intenta refrescar la página o vuelve a intentarlo más tarde.</p>
+            <button class="h-9 mt-3 px-4 rounded-xl border border-[#e7eaf1] bg-white text-sm font-bold text-[#344054]" (click)="loadTabData()">Reintentar</button>
+          </div>
+        } @else if (!loading() && bookingRows.length === 0) {
+          <app-admin-empty-state
+            icon="search"
+            title="No hay reservas registradas"
+            description="Las reservas de experiencias aparecerán aquí."
+            variant="soft" />
+        } @else {
+          <div class="admin-table-card">
+            <app-data-table
+              [columns]="bookingColumns"
+              [data]="bookingRows"
+              [loading]="loading()"
+              [totalCount]="bookingRows.length"
+              [pageSize]="bookingRows.length || 10"
+              (rowClick)="openBookingDetail($event)"
+            />
+          </div>
         }
-      </div>
-      <div class="admin-table-card">
-        <app-data-table
-          [columns]="bookingColumns"
-          [data]="filteredBookings()"
-          [loading]="loading()"
-          [totalCount]="filteredBookings().length"
-          [pageSize]="filteredBookings().length"
-          (rowClick)="openBookingDetail($event)"
-        />
       </div>
     }
 
     <!-- Categories tab -->
     @if (activeTab() === 'categorias') {
-      <div class="flex justify-end mb-4">
-        <a routerLink="/excursions/categories" class="btn-primary text-sm">Gestionar categorías →</a>
-      </div>
-      <div class="card p-8 text-center text-gray-400">
-        <p class="text-3xl mb-2">🏷️</p>
-        <p class="text-sm">Administra las categorías de excursiones en la página dedicada.</p>
+      <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4">
+        <div class="flex justify-end mb-4">
+          <a routerLink="/excursions/categories" class="h-10 inline-flex items-center rounded-xl bg-[#eb1b8d] px-4 text-sm font-bold text-white">Gestionar categorías →</a>
+        </div>
+        @if (loadError()) {
+          <div class="rounded-2xl border border-[#fee2e2] bg-[#fff7f7] p-4 text-center">
+            <p class="text-sm font-black text-[#b42318]">No se pudieron cargar las excursiones</p>
+            <p class="text-xs text-[#98a2b3] mt-1">Intenta refrescar la página o vuelve a intentarlo más tarde.</p>
+            <button class="h-9 mt-3 px-4 rounded-xl border border-[#e7eaf1] bg-white text-sm font-bold text-[#344054]" (click)="loadTabData()">Reintentar</button>
+          </div>
+        } @else if (excursionCategories().length === 0) {
+          <app-admin-empty-state
+            icon="default"
+            title="No hay categorías de excursiones"
+            description="Crea categorías para organizar las experiencias turísticas."
+            variant="soft" />
+        } @else {
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            @for (cat of excursionCategories(); track cat.id) {
+              <div class="rounded-2xl border border-[#eef1f6] px-3 py-2">
+                <p class="text-sm font-bold text-[#111827]">{{ cat.name }}</p>
+                <p class="text-xs text-[#98a2b3]">Orden {{ cat.display_order ?? 0 }}</p>
+              </div>
+            }
+          </div>
+        }
       </div>
     }
+      </div>
+    </section>
 
     <!-- Operator Modal -->
     @if (showOperatorModal()) {
@@ -423,7 +716,9 @@ export class ExcursionsPageComponent implements OnInit {
   readonly operators = signal<ExcursionOperator[]>([]);
   readonly excursions = signal<any[]>([]);
   readonly bookings = signal<any[]>([]);
+  readonly excursionCategories = signal<any[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly showOperatorModal = signal(false);
   readonly editingOperator = signal<ExcursionOperator | null>(null);
   readonly selectedBooking = signal<any | null>(null);
@@ -444,16 +739,59 @@ export class ExcursionsPageComponent implements OnInit {
 
   bookingStatusFilter: BookingStatus | '' = '';
   operatorSearch = '';
+  operatorStatusFilter: 'all' | 'aprobado' | 'pendiente' | 'suspendido' = 'all';
+  operatorCategoryFilter: 'all' | 'aventura' | 'playa' | 'cultural' | 'montana' | 'none' = 'all';
+  operatorQuickFilter: 'all' | 'approved' | 'active' | 'pending' | 'rating48' = 'all';
+  operatorSort: 'reviews_desc' | 'rating_desc' | 'name_asc' = 'reviews_desc';
+  operatorStatusSelect: 'all' | 'aprobado' | 'pendiente' | 'suspendido' = 'all';
+  operatorCategorySelect: 'all' | 'aventura' | 'playa' | 'cultural' | 'montana' | 'none' = 'all';
   excursionSearch = '';
   difficultyFilter = '';
   bookingDateFrom = '';
   bookingDateTo = '';
+  readonly sideCategoryItems = [
+    { key: 'aventura' as const, label: 'Aventura', icon: '⛰️' },
+    { key: 'playa' as const, label: 'Playa', icon: '🏖️' },
+    { key: 'cultural' as const, label: 'Cultural', icon: '🏛️' },
+    { key: 'montana' as const, label: 'Montaña', icon: '🌲' },
+  ];
 
   readonly filteredOperators = () => {
-    let result = this.operators();
+    let result = [...this.operators()];
     if (this.operatorSearch.trim()) {
       const q = this.operatorSearch.toLowerCase();
-      result = result.filter(op => op.name?.toLowerCase().includes(q) || op.category?.toLowerCase().includes(q));
+      result = result.filter(op =>
+        op.name?.toLowerCase().includes(q) ||
+        op.category?.toLowerCase().includes(q) ||
+        this.operatorSubtitle(op).toLowerCase().includes(q)
+      );
+    }
+    if (this.operatorStatusFilter !== 'all') {
+      result = result.filter(op => {
+        const status = String((op as any).approval_status ?? '').toLowerCase();
+        if (this.operatorStatusFilter === 'suspendido') return status === 'suspendido' || status === 'rechazado';
+        return status === this.operatorStatusFilter;
+      });
+    }
+    if (this.operatorCategoryFilter !== 'all') {
+      result = result.filter(op => this.normalizeCategory(op.category) === this.operatorCategoryFilter);
+    }
+    if (this.operatorQuickFilter === 'approved') {
+      result = result.filter(op => String((op as any).approval_status ?? '').toLowerCase() === 'aprobado');
+    } else if (this.operatorQuickFilter === 'active') {
+      result = result.filter(op => !!op.is_active);
+    } else if (this.operatorQuickFilter === 'pending') {
+      result = result.filter(op => String((op as any).approval_status ?? '').toLowerCase() === 'pendiente');
+    } else if (this.operatorQuickFilter === 'rating48') {
+      result = result.filter(op => Number(op.avg_rating ?? 0) >= 4.8);
+    }
+
+    if (this.operatorSort === 'rating_desc') {
+      result.sort((a, b) => Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0));
+    } else if (this.operatorSort === 'name_asc') {
+      result.sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? '')));
+    } else {
+      result.sort((a, b) => Number(b.total_reviews ?? 0) - Number(a.total_reviews ?? 0));
     }
     return result;
   };
@@ -529,20 +867,30 @@ export class ExcursionsPageComponent implements OnInit {
     has_insurance: [false],
   });
 
-  ngOnInit(): void { this.loadTabData(); }
+  ngOnInit(): void {
+    this.loadTabData();
+    this.loadCategoriesData();
+  }
 
   loadTabData(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     if (this.activeTab() === 'operadores') this.loadOperators();
     else if (this.activeTab() === 'excursiones') this.loadExcursions();
     else if (this.activeTab() === 'reservas') this.loadBookings();
-    else this.loading.set(false);
+    else this.loadCategoriesData();
   }
 
   loadOperators(): void {
-    this.service.getOperators().subscribe(data => {
-      this.operators.set(data);
-      this.loading.set(false);
+    this.service.getOperators().subscribe({
+      next: data => {
+        this.operators.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set(true);
+      },
     });
   }
 
@@ -550,18 +898,43 @@ export class ExcursionsPageComponent implements OnInit {
     if (this.operators().length === 0) {
       this.service.getOperators().subscribe(ops => this.operators.set(ops));
     }
-    this.service.getExcursions().subscribe(data => {
-      this.excursions.set(data);
-      this.loading.set(false);
+    this.service.getExcursions().subscribe({
+      next: data => {
+        this.excursions.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set(true);
+      },
     });
   }
 
   loadBookings(): void {
     this.service.getBookings(this.bookingStatusFilter ? { status: this.bookingStatusFilter as BookingStatus } : {})
-      .subscribe(data => {
-        this.bookings.set(data);
-        this.loading.set(false);
+      .subscribe({
+        next: data => {
+          this.bookings.set(data);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
       });
+  }
+
+  loadCategoriesData(): void {
+    this.service.getCategories().subscribe({
+      next: data => {
+        this.excursionCategories.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set(true);
+      },
+    });
   }
 
   openOperatorModal(op?: ExcursionOperator): void {
@@ -623,6 +996,173 @@ export class ExcursionsPageComponent implements OnInit {
     finally { this.saveLoading.set(false); }
   }
 
+  setTab(tab: ActiveTab): void {
+    this.activeTab.set(tab);
+    this.loadTabData();
+  }
+
+  avgOperatorRating(): string {
+    const list = this.operators();
+    if (!list.length) return '0.0';
+    const sum = list.reduce((acc, op) => acc + Number(op.avg_rating ?? 0), 0);
+    return (sum / list.length).toFixed(1);
+  }
+
+  totalOperatorReviews(): string {
+    const total = this.operators().reduce((acc, op) => acc + Number(op.total_reviews ?? 0), 0);
+    return total.toLocaleString('es-DO');
+  }
+
+  activeOperatorsCount(): number {
+    return this.operators().filter(op => op.is_active).length;
+  }
+
+  approvedOperatorsCount(): number {
+    return this.operators().filter(op => String((op as any).approval_status ?? '').toLowerCase() === 'aprobado').length;
+  }
+
+  pendingOperatorsCount(): number {
+    return this.operators().filter(op => String((op as any).approval_status ?? '').toLowerCase() === 'pendiente').length;
+  }
+
+  suspendedOperatorsCount(): number {
+    return this.operators().filter(op => {
+      const status = String((op as any).approval_status ?? '').toLowerCase();
+      return status === 'suspendido' || status === 'rechazado';
+    }).length;
+  }
+
+  setOperatorStatusFilter(status: 'all' | 'aprobado' | 'pendiente' | 'suspendido'): void {
+    this.setTab('operadores');
+    this.operatorStatusFilter = status;
+    this.operatorStatusSelect = status;
+    this.operatorQuickFilter = 'all';
+  }
+
+  setOperatorCategoryFilter(category: 'all' | 'aventura' | 'playa' | 'cultural' | 'montana' | 'none'): void {
+    this.setTab('operadores');
+    this.operatorCategoryFilter = category;
+    this.operatorCategorySelect = category;
+  }
+
+  setOperatorStatusFromSelect(): void {
+    this.operatorStatusFilter = this.operatorStatusSelect;
+    this.operatorQuickFilter = 'all';
+  }
+
+  setOperatorCategoryFromSelect(): void {
+    this.operatorCategoryFilter = this.operatorCategorySelect;
+  }
+
+  setOperatorQuickFilter(filter: 'all' | 'approved' | 'active' | 'pending' | 'rating48'): void {
+    this.operatorQuickFilter = filter;
+  }
+
+  categoryCount(category: 'aventura' | 'playa' | 'cultural' | 'montana' | 'none'): number {
+    return this.operators().filter(op => this.normalizeCategory(op.category) === category).length;
+  }
+
+  normalizeCategory(category: string | null | undefined): 'aventura' | 'playa' | 'cultural' | 'montana' | 'none' {
+    const c = String(category ?? '').toLowerCase();
+    if (c.includes('aventura')) return 'aventura';
+    if (c.includes('playa')) return 'playa';
+    if (c.includes('cultural') || c.includes('cultura')) return 'cultural';
+    if (c.includes('montaña') || c.includes('montana')) return 'montana';
+    return 'none';
+  }
+
+  displayCategory(category: string | null | undefined): string {
+    const mapped = this.normalizeCategory(category);
+    if (mapped === 'aventura') return 'aventura';
+    if (mapped === 'playa') return 'playa';
+    if (mapped === 'cultural') return 'cultural';
+    if (mapped === 'montana') return 'montaña';
+    return 'Sin categoría';
+  }
+
+  categoryBadgeClass(category: string | null | undefined): string {
+    const mapped = this.normalizeCategory(category);
+    if (mapped === 'aventura') return 'bg-[#eef4ff] text-[#2451c7]';
+    if (mapped === 'playa') return 'bg-[#eef4ff] text-[#2451c7]';
+    if (mapped === 'cultural') return 'bg-[#f4ecff] text-[#6d28d9]';
+    if (mapped === 'montana') return 'bg-[#eef4ff] text-[#2451c7]';
+    return 'bg-[#f4f6f9] text-[#667085]';
+  }
+
+  displayStatus(status: string | null | undefined): string {
+    const s = String(status ?? '').toLowerCase();
+    if (s === 'aprobado') return 'Aprobado';
+    if (s === 'pendiente') return 'Pendiente';
+    if (s === 'rechazado') return 'Rechazado';
+    if (s === 'suspendido') return 'Suspendido';
+    return 'Pendiente';
+  }
+
+  statusBadgeClass(status: string | null | undefined): string {
+    const s = String(status ?? '').toLowerCase();
+    if (s === 'aprobado') return 'bg-[#eafbf1] text-[#087b3c]';
+    if (s === 'pendiente') return 'bg-[#fff7dc] text-[#b54708]';
+    return 'bg-[#fee2e2] text-[#b42318]';
+  }
+
+  operatorApprovalStatus(op: ExcursionOperator): string {
+    return String((op as any).approval_status ?? '');
+  }
+
+  operatorRating(op: ExcursionOperator): string {
+    return Number(op.avg_rating ?? 0).toFixed(1);
+  }
+
+  operatorReviews(op: ExcursionOperator): number {
+    return Number(op.total_reviews ?? 0);
+  }
+
+  operatorSubtitle(op: ExcursionOperator): string {
+    const category = this.displayCategory(op.category).toLowerCase();
+    if (category === 'sin categoría') return 'Operador general';
+    if (category === 'playa') return 'Playas y tours marítimos';
+    if (category === 'cultural') return 'Experiencias culturales';
+    if (category === 'montaña') return 'Rutas de montaña';
+    return `Operador de ${category}`;
+  }
+
+  async toggleOperatorActive(op: ExcursionOperator): Promise<void> {
+    try {
+      await this.service.saveOperator({ id: op.id, is_active: !op.is_active } as any);
+      this.operators.update(prev => prev.map(item => item.id === op.id ? { ...item, is_active: !item.is_active } : item));
+      this.toastService.success('Estado de operador actualizado');
+    } catch {
+      this.toastService.error('Error al actualizar operador');
+    }
+  }
+
+  exportOperatorsCsv(): void {
+    const rows = this.filteredOperators();
+    if (!rows.length) {
+      this.toastService.error('No hay operadores para exportar');
+      return;
+    }
+    const headers = ['nombre', 'categoria', 'rating', 'reseñas', 'estado', 'activo'];
+    const lines = rows.map(op => [
+      op.name ?? '',
+      op.category ?? '',
+      op.avg_rating ?? 0,
+      op.total_reviews ?? 0,
+      (op as any).approval_status ?? '',
+      op.is_active ? 'si' : 'no',
+    ]);
+    const csv = [headers, ...lines]
+      .map(cols => cols.map(col => `"${String(col).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `operadores-excursiones-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   openBookingDetail(booking: any): void {
     this.router.navigate(['/excursions/bookings', booking.id]);
   }
@@ -655,6 +1195,10 @@ export class ExcursionsPageComponent implements OnInit {
   }
 
   removeDate(d: string): void { this.newDates = this.newDates.filter(x => x !== d); }
+
+  bookingCountByStatus(status: BookingStatus): number {
+    return this.bookings().filter(b => b.status === status).length;
+  }
 
   async addExcursionDates(): Promise<void> {
     if (!this.newDates.length || !this.selectedExcursion()) return;

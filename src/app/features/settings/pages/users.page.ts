@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, AdminUser } from '../settings.service';
@@ -14,6 +14,33 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">Usuarios Administradores</h3>
         <button class="btn-primary text-sm" (click)="openForm()">+ Nuevo Usuario</button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <button type="button" class="admin-chip" [class.admin-chip--active]="statusFilter === ''" (click)="statusFilter = ''">
+          Todos {{ users().length }}
+        </button>
+        <button type="button" class="admin-chip" [class.admin-chip--active]="statusFilter === 'active'" (click)="statusFilter = 'active'">
+          Activos {{ activeCount() }}
+        </button>
+        <button type="button" class="admin-chip" [class.admin-chip--active]="statusFilter === 'inactive'" (click)="statusFilter = 'inactive'">
+          Inactivos {{ inactiveCount() }}
+        </button>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 mb-4">
+        <input
+          type="search"
+          class="input-field flex-1"
+          [(ngModel)]="searchText"
+          placeholder="Buscar por nombre o email..."
+          aria-label="Buscar usuarios administradores por nombre o email"
+        />
+        <select class="input-field sm:w-48" [(ngModel)]="statusFilter" aria-label="Filtrar usuarios por estado">
+          <option value="">Todos los estados</option>
+          <option value="active">Activos</option>
+          <option value="inactive">Inactivos</option>
+        </select>
       </div>
 
       @if (loading()) {
@@ -35,7 +62,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              @if (users().length === 0) {
+              @if (filteredUsers().length === 0) {
                 <tr>
                   <td colspan="5" class="px-6 py-6">
                     <app-admin-empty-state
@@ -46,7 +73,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
                   </td>
                 </tr>
               } @else {
-                @for (u of users(); track u.id) {
+                @for (u of filteredUsers(); track u.id) {
                   <tr>
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ u.full_name }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ u.email }}</td>
@@ -62,7 +89,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
                       </span>
                     </td>
                     <td class="px-6 py-4">
-                      <button class="text-sm text-brand-500 hover:text-brand-700" (click)="toggle(u)">
+                      <button class="text-sm text-brand-500 hover:text-brand-700" (click)="toggle(u)" [attr.aria-label]="u.is_active ? 'Desactivar usuario ' + u.full_name : 'Activar usuario ' + u.full_name">
                         {{ u.is_active ? 'Desactivar' : 'Activar' }}
                       </button>
                     </td>
@@ -134,6 +161,8 @@ export class UsersPageComponent implements OnInit {
   readonly showModal = signal(false);
   readonly createError = signal('');
   readonly skeleton3 = [1, 2, 3];
+  searchText = '';
+  statusFilter: '' | 'active' | 'inactive' = '';
   form = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
 
   readonly roleLabels: Record<string, string> = {
@@ -142,6 +171,19 @@ export class UsersPageComponent implements OnInit {
     excursion_operator: 'Admin Operadora',
     store_admin: 'Admin Tienda',
   };
+
+  readonly activeCount = computed(() => this.users().filter(u => u.is_active).length);
+  readonly inactiveCount = computed(() => this.users().filter(u => !u.is_active).length);
+  readonly filteredUsers = computed(() => {
+    let rows = this.users();
+    if (this.searchText.trim()) {
+      const q = this.searchText.toLowerCase();
+      rows = rows.filter(u => u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
+    }
+    if (this.statusFilter === 'active') rows = rows.filter(u => u.is_active);
+    if (this.statusFilter === 'inactive') rows = rows.filter(u => !u.is_active);
+    return rows;
+  });
 
   ngOnInit() { this.load(); }
 

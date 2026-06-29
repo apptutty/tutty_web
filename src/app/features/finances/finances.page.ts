@@ -58,9 +58,23 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
             [class]="activeTab() === tab.id
               ? 'border-brand-500 text-brand-500'
               : 'border-transparent text-gray-500 hover:text-gray-700'"
+            [attr.aria-current]="activeTab() === tab.id ? 'page' : null"
+            [attr.aria-label]="'Ver módulo de ' + tab.label.toLowerCase()"
           >{{ tab.label }}</button>
         }
       </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 mb-5">
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'summary'" (click)="activeTab.set('summary')">
+        Resumen
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'payouts'" (click)="activeTab.set('payouts')">
+        Liquidaciones {{ payoutSummaries().length }}
+      </button>
+      <button type="button" class="admin-chip">Ventas {{ totalGross() | number:'1.0-0' }}</button>
+      <button type="button" class="admin-chip">Comisión {{ totalCommission() | number:'1.0-0' }}</button>
+      <button type="button" class="admin-chip">Neto {{ totalNet() | number:'1.0-0' }}</button>
     </div>
 
     <!-- ═══════════════════════════════════════════════════ TAB: RESUMEN -->
@@ -75,13 +89,14 @@ function payoutPeriodRange(preset: 'week' | 'month'): { from: string; to: string
                 [class]="summaryPeriod() === p.value
                   ? 'bg-brand-500 text-white shadow-sm'
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+                [attr.aria-label]="'Aplicar período de ' + p.label.toLowerCase()"
               >{{ p.label }}</button>
             }
           </div>
           <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:ml-auto">
-            <input type="date" class="input-field w-full sm:w-36 text-sm" [(ngModel)]="summaryFrom" />
+            <input type="date" class="input-field w-full sm:w-36 text-sm" [(ngModel)]="summaryFrom" aria-label="Fecha inicial de resumen financiero" />
             <span class="text-gray-400 hidden sm:block">—</span>
-            <input type="date" class="input-field w-full sm:w-36 text-sm" [(ngModel)]="summaryTo" />
+            <input type="date" class="input-field w-full sm:w-36 text-sm" [(ngModel)]="summaryTo" aria-label="Fecha final de resumen financiero" />
             <button class="btn-primary text-sm w-full sm:w-auto" (click)="loadSummaryKpi()">Ver</button>
           </div>
         </div>

@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { StoresService, StoreFilters } from './stores.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/modal/confirm.service';
-import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { Restaurant, CommerceType, CommissionTier, ApprovalStatus } from '../../core/supabase/database.types';
 import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 
@@ -52,85 +51,174 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
 @Component({
     selector: 'app-stores-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, AdminEmptyStateComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, AdminEmptyStateComponent],
     template: `
-    <app-page-header title="Comercios" subtitle="Gestión de todos los tipos de comercio">
-      <button class="btn-primary" (click)="openForm()">+ Nuevo comercio</button>
-    </app-page-header>
-
-    <div class="flex flex-wrap items-center gap-2 mb-4">
-      <button type="button" class="admin-chip" [class.admin-chip--active]="activeType() === ''" (click)="setCommerceType('')">
-        Todos {{ stores().length }}
-      </button>
-      <button type="button" class="admin-chip" [class.admin-chip--active]="approvalFilter === 'pendiente'" (click)="setApprovalFilter('pendiente')">
-        Pendientes {{ approvalCount('pendiente') }}
-      </button>
-      <button type="button" class="admin-chip" [class.admin-chip--active]="approvalFilter === 'aprobado'" (click)="setApprovalFilter('aprobado')">
-        Aprobados {{ approvalCount('aprobado') }}
-      </button>
-      <button type="button" class="admin-chip" [class.admin-chip--active]="openFilter === 'open'" (click)="setOpenFilter('open')">
-        Abiertos {{ openCount(true) }}
-      </button>
-      <button type="button" class="admin-chip" [class.admin-chip--active]="openFilter === 'closed'" (click)="setOpenFilter('closed')">
-        Cerrados {{ openCount(false) }}
-      </button>
-    </div>
-
-    <!-- Commerce type tabs (horizontal scroll on mobile) -->
-    <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4">
-      <div class="flex gap-1 min-w-max">
-        @for (tab of commerceTabs; track tab.value) {
-          <button
-            (click)="setCommerceType(tab.value)"
-            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0"
-            [class]="activeType() === tab.value
-              ? 'bg-brand-500 text-white shadow-sm'
-              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
-            [attr.aria-current]="activeType() === tab.value ? 'page' : null"
-            [attr.aria-label]="'Filtrar comercios por ' + tab.label.toLowerCase()"
-          >{{ tab.label }}</button>
-        }
+    <section class="rounded-[28px] border border-[#e7eaf1] bg-[radial-gradient(circle_at_94%_12%,rgba(235,27,141,.12),transparent_25%),linear-gradient(180deg,#fff,#fbfcff)] shadow-[0_8px_24px_rgba(18,24,40,.07)] px-6 py-5 mb-5">
+      <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div>
+          <p class="inline-flex items-center rounded-full bg-[#ffe7f4] px-3 py-1 text-[11px] font-extrabold tracking-wide text-[#c71473]">Operations · Commerce Network</p>
+          <h1 class="mt-2 text-[30px] leading-[1.08] tracking-[-0.04em] font-bold text-[#111827]">Gestión de Comercios</h1>
+          <p class="mt-2 max-w-4xl text-[15px] leading-6 text-[#667085]">Administra comercios, categorías, aprobación, actividad, comisión, rating y estado operativo desde un centro premium de control comercial.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 xl:flex xl:flex-wrap xl:justify-end">
+          <button class="h-11 inline-flex items-center justify-center rounded-2xl border border-[#e7eaf1] bg-white px-4 text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="exportCsv()">Exportar CSV</button>
+          <button class="h-11 inline-flex items-center justify-center rounded-2xl border border-[#ffd8a8] bg-[#fff6e6] px-4 text-sm font-bold text-[#b54708] hover:bg-[#ffefcf]" (click)="setApprovalFilter('pendiente')">Aprobaciones pendientes</button>
+          <button class="h-11 inline-flex items-center justify-center rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-white px-4 text-sm font-black" (click)="openForm()">+ Nuevo comercio</button>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Secondary filters -->
-    <div class="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
-      <div class="relative flex-1 min-w-0">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-        <input
-          type="search"
-          class="input-field pl-9 w-full"
-          placeholder="Buscar por nombre o slug..."
-          [(ngModel)]="searchText"
-          (ngModelChange)="onSearch()"
-          aria-label="Buscar comercios por nombre o slug"
-        />
-      </div>
-      <div class="flex gap-2 flex-wrap sm:flex-nowrap">
-        <select class="input-field flex-1 sm:w-44" [(ngModel)]="approvalFilter" (ngModelChange)="loadStores()" aria-label="Filtrar comercios por estado de aprobación">
-          <option value="">Todas las aprobaciones</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="aprobado">Aprobado</option>
-          <option value="rechazado">Rechazado</option>
-          <option value="suspendido">Suspendido</option>
-        </select>
-        <select class="input-field flex-1 sm:w-36" [(ngModel)]="openFilter" (ngModelChange)="loadStores()" aria-label="Filtrar comercios por apertura">
-          <option value="">Todos</option>
-          <option value="open">Abiertos</option>
-          <option value="closed">Cerrados</option>
-        </select>
-      </div>
-      @if (approvalFilter || openFilter) {
-        <button class="btn-secondary text-sm w-full sm:w-auto" (click)="clearFilters()">✕ Limpiar</button>
-      }
-    </div>
+    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#eef4ff] text-[#2451c7] grid place-items-center text-lg">🏪</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Comercios</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ stores().length }}</p>
+          <p class="text-xs text-[#98a2b3]">registrados</p>
+        </div>
+      </article>
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#eafbf1] text-[#087b3c] grid place-items-center text-lg">🟢</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Abiertos</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ openCount(true) }}</p>
+          <p class="text-xs text-[#98a2b3]">operando ahora</p>
+        </div>
+      </article>
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#fff6e6] text-[#e46300] grid place-items-center text-lg">⏳</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Por aprobar</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ approvalCount('pendiente') }}</p>
+          <p class="text-xs text-[#98a2b3]">pendientes</p>
+        </div>
+      </article>
+      <article class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-[#f4ecff] text-[#6d28d9] grid place-items-center text-lg">⭐</div>
+        <div>
+          <p class="text-xs font-extrabold text-[#7b8496]">Rating promedio</p>
+          <p class="text-[22px] leading-none tracking-[-0.04em] font-black text-[#111827]">{{ averageRating() }}</p>
+          <p class="text-xs text-[#98a2b3]">comercios activos</p>
+        </div>
+      </article>
+    </section>
 
-    <!-- Table -->
-    <div class="admin-table-card">
+    <section class="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)] gap-4 mb-4">
+      <aside class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden self-start">
+        <div class="px-5 py-5 border-b border-[#eef1f6]">
+          <h3 class="text-[32px] leading-none mb-2 text-[#111827]">Red comercial</h3>
+          <p class="text-sm text-[#667085]">Filtra por categoría, estado operativo, aprobación y tier.</p>
+        </div>
+        <div class="p-3 space-y-5">
+          <div class="space-y-1.5">
+            @for (tab of commerceTabs; track tab.value) {
+              <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors"
+                [class]="activeType() === tab.value ? 'bg-[#111827] text-white shadow-[0_8px_16px_rgba(17,24,39,.25)]' : 'text-[#344054] hover:bg-[#f8fafc]'"
+                (click)="setCommerceType(tab.value)">
+                <span>{{ tab.label }}</span>
+                <span class="text-xs opacity-80">{{ categoryCount(tab.value) }}</span>
+              </button>
+            }
+          </div>
+          <div class="space-y-1.5">
+            <p class="px-2 text-xs font-black uppercase tracking-[0.08em] text-[#98a2b3]">Estado</p>
+            <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors" [class]="openFilter === 'open' ? 'bg-[#eafbf1] text-[#087b3c]' : 'text-[#475467] hover:bg-[#f8fafc]'" (click)="setOpenFilter('open')">
+              <span>Abiertos</span><span class="text-xs">{{ openCount(true) }}</span>
+            </button>
+            <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors" [class]="openFilter === 'closed' ? 'bg-[#f4f6f9] text-[#344054]' : 'text-[#475467] hover:bg-[#f8fafc]'" (click)="setOpenFilter('closed')">
+              <span>Cerrados</span><span class="text-xs">{{ openCount(false) }}</span>
+            </button>
+            <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors" [class]="activeStateFilter === 'active' ? 'bg-[#eafbf1] text-[#087b3c]' : 'text-[#475467] hover:bg-[#f8fafc]'" (click)="setActiveStateFilter('active')">
+              <span>Activos</span><span class="text-xs">{{ activeCount(true) }}</span>
+            </button>
+            <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors" [class]="activeStateFilter === 'inactive' ? 'bg-[#fee2e2] text-[#b42318]' : 'text-[#475467] hover:bg-[#f8fafc]'" (click)="setActiveStateFilter('inactive')">
+              <span>Inactivos</span><span class="text-xs">{{ activeCount(false) }}</span>
+            </button>
+          </div>
+          <div class="space-y-1.5">
+            <p class="px-2 text-xs font-black uppercase tracking-[0.08em] text-[#98a2b3]">Aprobación</p>
+            <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors" [class]="approvalFilter === 'aprobado' ? 'bg-[#eafbf1] text-[#087b3c]' : 'text-[#475467] hover:bg-[#f8fafc]'" (click)="setApprovalFilter('aprobado')">
+              <span>Aprobados</span><span class="text-xs">{{ approvalCount('aprobado') }}</span>
+            </button>
+            <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors" [class]="approvalFilter === 'pendiente' ? 'bg-[#fff6e6] text-[#b54708]' : 'text-[#475467] hover:bg-[#f8fafc]'" (click)="setApprovalFilter('pendiente')">
+              <span>Pendientes</span><span class="text-xs">{{ approvalCount('pendiente') }}</span>
+            </button>
+            <button type="button" class="w-full flex items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition-colors" [class]="approvalFilter === 'rechazado' ? 'bg-[#fee2e2] text-[#b42318]' : 'text-[#475467] hover:bg-[#f8fafc]'" (click)="setApprovalFilter('rechazado')">
+              <span>Rechazados</span><span class="text-xs">{{ approvalCount('rechazado') }}</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="min-w-0 space-y-4">
+        <section class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4">
+          <div class="overflow-x-auto max-w-full mb-3">
+            <div class="inline-flex gap-1 rounded-2xl border border-[#e7eaf1] bg-[#fbfcff] p-1.5 min-w-max">
+              @for (tab of commerceTabs; track tab.value) {
+                <button
+                  (click)="setCommerceType(tab.value)"
+                  class="h-10 px-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap"
+                  [class]="activeType() === tab.value ? 'bg-[#111827] text-white shadow-[0_8px_18px_rgba(17,24,39,.16)]' : 'text-[#667085] hover:bg-white'"
+                  [attr.aria-current]="activeType() === tab.value ? 'page' : null"
+                  [attr.aria-label]="'Filtrar comercios por ' + tab.label.toLowerCase()"
+                >{{ tab.label }}</button>
+              }
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-[minmax(300px,1fr)_220px_220px_220px_auto] gap-2 mb-3">
+            <label class="h-12 rounded-2xl border border-[#e7eaf1] bg-[#fbfcff] px-3 inline-flex items-center gap-2 min-w-0">
+              <span class="text-[#667085]">⌕</span>
+              <input type="search" class="bg-transparent border-0 outline-0 w-full min-w-0 text-sm" placeholder="Buscar por nombre, slug, admin o categoría..." [(ngModel)]="searchText" (ngModelChange)="onSearch()" aria-label="Buscar por nombre, slug, admin o categoría" />
+            </label>
+            <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="approvalFilter" (ngModelChange)="loadStores()" aria-label="Filtrar por aprobación">
+              <option value="">Todas las aprobaciones</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
+              <option value="suspendido">Suspendido</option>
+            </select>
+            <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="openFilter" (ngModelChange)="loadStores()" aria-label="Filtrar por estado operativo">
+              <option value="">Todos los estados</option>
+              <option value="open">Abiertos</option>
+              <option value="closed">Cerrados</option>
+            </select>
+            <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="tierFilter" aria-label="Filtrar por tier">
+              <option value="">Todos los tiers</option>
+              <option value="onboarding">Onboarding</option>
+              <option value="estandar">Estándar</option>
+              <option value="medio">Medio</option>
+              <option value="alto">Alto</option>
+              <option value="premium">Premium</option>
+            </select>
+            <button class="h-12 px-4 rounded-2xl border border-[#e7eaf1] text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="clearFilters()">Limpiar</button>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="isAllFiltersActive() ? 'bg-[#111827] border-[#111827] text-white' : 'border-[#e7eaf1] text-[#475467]'" (click)="resetAllFilters()">Todos {{ stores().length }}</button>
+            <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="openFilter === 'open' ? 'bg-[#eafbf1] border-[#b7efcc] text-[#087b3c]' : 'border-[#e7eaf1] text-[#475467]'" (click)="setOpenFilter('open')">Abiertos {{ openCount(true) }}</button>
+            <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="activeStateFilter === 'active' ? 'bg-[#eafbf1] border-[#b7efcc] text-[#087b3c]' : 'border-[#e7eaf1] text-[#475467]'" (click)="setActiveStateFilter('active')">Activos {{ activeCount(true) }}</button>
+            <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="approvalFilter === 'pendiente' ? 'bg-[#fff6e6] border-[#ffd8a8] text-[#b54708]' : 'border-[#e7eaf1] text-[#475467]'" (click)="setApprovalFilter('pendiente')">Pendientes {{ approvalCount('pendiente') }}</button>
+            <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="rating45Only ? 'bg-[#eef4ff] border-[#d7e3ff] text-[#2451c7]' : 'border-[#e7eaf1] text-[#475467]'" (click)="toggleRating45()">Rating 4.5+</button>
+          </div>
+        </section>
+
+        <div class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden">
+      <div class="px-5 py-4 border-b border-[#eef1f6]">
+        <h3 class="text-base font-black text-[#111827]">Comercios</h3>
+        <p class="text-sm font-semibold text-[#98a2b3]">{{ visibleStores().length }} comercios encontrados</p>
+      </div>
+      @if (loadError()) {
+        <div class="p-6">
+          <div class="rounded-2xl border border-[#fee2e2] bg-[#fff7f7] p-4 text-center">
+            <p class="text-sm font-black text-[#b42318]">No se pudieron cargar los comercios</p>
+            <p class="text-xs text-[#98a2b3] mt-1">Intenta refrescar la página o vuelve a intentarlo más tarde.</p>
+            <button class="h-9 mt-3 px-4 rounded-xl border border-[#e7eaf1] bg-white text-sm font-bold text-[#344054]" (click)="loadStores()">Reintentar</button>
+          </div>
+        </div>
+      } @else {
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <table class="min-w-[1020px] w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Comercio</th>
@@ -152,17 +240,17 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                   }
                 </tr>
               }
-            } @else if (stores().length === 0) {
+            } @else if (visibleStores().length === 0) {
               <tr>
                 <td colspan="8" class="px-4 py-12 text-center text-gray-400">
                   <app-admin-empty-state
                     icon="map"
-                    title="Sin comercios"
-                    description="No hay comercios para los filtros actuales." />
+                    [title]="stores().length === 0 ? 'No hay comercios registrados' : 'No hay comercios para estos filtros'"
+                    [description]="stores().length === 0 ? 'Los comercios aparecerán aquí cuando sean creados o aprobados.' : 'Prueba ajustando la búsqueda, categoría, aprobación o estado.'" />
                 </td>
               </tr>
             } @else {
-              @for (s of stores(); track s.id) {
+              @for (s of visibleStores(); track s.id) {
                 <tr class="hover:bg-gray-50 transition-colors">
                   <!-- Comercio: logo + name + type badge -->
                   <td class="px-4 py-3">
@@ -175,7 +263,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                         </div>
                       }
                       <div class="min-w-0">
-                        <p class="font-medium text-gray-800 truncate">{{ s.name }}</p>
+                        <p class="font-semibold text-[#101828] truncate">{{ s.name }}</p>
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500">
                           {{ label(s.commerce_type) }}
                         </span>
@@ -185,7 +273,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                   <!-- Admin -->
                   <td class="px-4 py-3">
                     <p class="text-gray-700">{{ s.admin_name ?? '—' }}</p>
-                    <p class="text-xs text-gray-400">{{ s.admin_email ?? '' }}</p>
+                    <p class="text-xs text-gray-400">{{ s.admin_email ?? '—' }}</p>
                   </td>
                   <!-- Toggle is_open -->
                   <td class="px-4 py-3 text-center">
@@ -260,7 +348,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                           </button>
                           <button (click)="router.navigate(['/stores', s.id, 'catalog']); closeMenu()"
                             class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left">
-                            📦 Catálogo
+                            📦 Ver catálogo
                           </button>
                           <button (click)="router.navigate(['/restaurants', s.id, 'zones']); closeMenu()"
                             class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left">
@@ -282,12 +370,15 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
         </table>
       </div>
       <!-- Footer count -->
-      @if (!loading() && stores().length > 0) {
+      @if (!loading() && visibleStores().length > 0) {
         <div class="px-4 py-2 border-t border-gray-100 text-xs text-gray-400">
-          {{ stores().length }} comercio{{ stores().length !== 1 ? 's' : '' }}
+          {{ visibleStores().length }} comercio{{ visibleStores().length !== 1 ? 's' : '' }}
         </div>
       }
-    </div>
+      }
+        </div>
+      </div>
+    </section>
 
     <!-- Form Modal -->
     @if (showForm()) {
@@ -403,6 +494,7 @@ export class StoresPageComponent implements OnInit, OnDestroy {
 
     readonly stores = signal<Restaurant[]>([]);
     readonly loading = signal(true);
+    readonly loadError = signal(false);
     readonly showForm = signal(false);
     readonly editingStore = signal<Restaurant | null>(null);
     readonly saveLoading = signal(false);
@@ -411,6 +503,9 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     searchText = '';
     approvalFilter: ApprovalStatus | '' = '';
     openFilter: 'open' | 'closed' | '' = '';
+    tierFilter: CommissionTier | '' = '';
+    activeStateFilter: 'active' | 'inactive' | '' = '';
+    rating45Only = false;
     openMenuId: string | null = null;
     private searchTimeout: any;
 
@@ -423,6 +518,25 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     }
 
     readonly commerceTabs = COMMERCE_TABS;
+    readonly visibleStores = computed(() => {
+        let list = this.stores();
+
+        if (this.tierFilter) {
+            list = list.filter((s) => s.commission_tier === this.tierFilter);
+        }
+
+        if (this.activeStateFilter === 'active') {
+            list = list.filter((s) => !!s.is_active);
+        } else if (this.activeStateFilter === 'inactive') {
+            list = list.filter((s) => !s.is_active);
+        }
+
+        if (this.rating45Only) {
+            list = list.filter((s) => Number(s.avg_rating ?? 0) >= 4.5);
+        }
+
+        return list;
+    });
 
     readonly storeForm = this.fb.group({
         name: ['', Validators.required],
@@ -444,6 +558,7 @@ export class StoresPageComponent implements OnInit, OnDestroy {
 
     loadStores(): void {
         this.loading.set(true);
+        this.loadError.set(false);
         const filters: StoreFilters = {
             commerce_type: this.activeType(),
             approval_status: this.approvalFilter,
@@ -452,7 +567,7 @@ export class StoresPageComponent implements OnInit, OnDestroy {
         };
         this.service.getStores(filters).subscribe({
             next: (data) => { this.stores.set(data); this.loading.set(false); },
-            error: () => { this.toast.error('Error al cargar comercios'); this.loading.set(false); },
+            error: () => { this.toast.error('Error al cargar comercios'); this.loading.set(false); this.loadError.set(true); },
         });
     }
 
@@ -469,7 +584,15 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     clearFilters(): void {
         this.approvalFilter = '';
         this.openFilter = '';
+        this.tierFilter = '';
+        this.activeStateFilter = '';
+        this.rating45Only = false;
         this.loadStores();
+    }
+
+    resetAllFilters(): void {
+        this.activeType.set('');
+        this.clearFilters();
     }
 
     setApprovalFilter(value: ApprovalStatus | ''): void {
@@ -482,12 +605,67 @@ export class StoresPageComponent implements OnInit, OnDestroy {
         this.loadStores();
     }
 
+    setActiveStateFilter(value: 'active' | 'inactive' | ''): void {
+        this.activeStateFilter = value;
+    }
+
     approvalCount(status: ApprovalStatus): number {
         return this.stores().filter(s => s.approval_status === status).length;
     }
 
     openCount(isOpen: boolean): number {
         return this.stores().filter(s => !!s.is_open === isOpen).length;
+    }
+
+    activeCount(isActive: boolean): number {
+        return this.stores().filter(s => !!s.is_active === isActive).length;
+    }
+
+    categoryCount(type: CommerceType | ''): number {
+        if (!type) return this.stores().length;
+        return this.stores().filter((s) => s.commerce_type === type).length;
+    }
+
+    averageRating(): string {
+        const list = this.stores();
+        if (!list.length) return '0.0';
+        const sum = list.reduce((acc, store) => acc + Number(store.avg_rating ?? 0), 0);
+        return (sum / list.length).toFixed(1);
+    }
+
+    toggleRating45(): void {
+        this.rating45Only = !this.rating45Only;
+    }
+
+    isAllFiltersActive(): boolean {
+        return !this.activeType() && !this.approvalFilter && !this.openFilter && !this.tierFilter && !this.activeStateFilter && !this.rating45Only;
+    }
+
+    exportCsv(): void {
+        const rows = this.visibleStores();
+        const header = ['comercio', 'categoria', 'admin', 'admin_email', 'abierto', 'activo', 'aprobacion', 'rating', 'tier'];
+        const csv = [
+            header.join(','),
+            ...rows.map((s) => [
+                this.escapeCsv(s.name),
+                this.escapeCsv(this.label(s.commerce_type)),
+                this.escapeCsv(s.admin_name ?? ''),
+                this.escapeCsv(s.admin_email ?? ''),
+                s.is_open ? 'si' : 'no',
+                s.is_active ? 'si' : 'no',
+                this.escapeCsv(s.approval_status ?? ''),
+                Number(s.avg_rating ?? 0).toFixed(1),
+                this.escapeCsv(this.tierLabel(s.commission_tier)),
+            ].join(',')),
+        ].join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'comercios.csv';
+        anchor.click();
+        URL.revokeObjectURL(url);
     }
 
     openForm(store?: Restaurant): void {
@@ -571,5 +749,9 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     tierLabel(tier: CommissionTier | null | undefined): string {
         const map: Record<CommissionTier, string> = { onboarding: 'Onb.', estandar: 'Est.', medio: 'Med.', alto: 'Alto', premium: 'Prem.' };
         return tier ? (map[tier] ?? tier) : '—';
+    }
+
+    private escapeCsv(value: string): string {
+        return `"${value.replaceAll('"', '""')}"`;
     }
 }

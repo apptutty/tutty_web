@@ -19,14 +19,33 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
     </app-page-header>
 
     <!-- Tabs -->
-    <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4 w-fit">
-      @for (tab of tabs; track tab.key) {
-        <button
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          [class]="activeTab() === tab.key ? 'bg-white text-gray-800 shadow-theme-xs' : 'text-gray-500 hover:text-gray-700'"
-          (click)="activeTab.set(tab.key); loadPromotions()"
-        >{{ tab.label }}</button>
-      }
+    <div class="overflow-x-auto scrollbar-hide -mx-0 mb-4">
+      <div class="flex gap-1 bg-gray-100 p-1 rounded-xl w-max min-w-full sm:w-fit">
+        @for (tab of tabs; track tab.key) {
+          <button
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0"
+            [class]="activeTab() === tab.key ? 'bg-white text-gray-800 shadow-theme-xs' : 'text-gray-500 hover:text-gray-700'"
+            (click)="activeTab.set(tab.key); loadPromotions()"
+            [attr.aria-current]="activeTab() === tab.key ? 'page' : null"
+            [attr.aria-label]="'Ver promociones ' + tab.label.toLowerCase()"
+          >{{ tab.label }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'todas'" (click)="activeTab.set('todas'); loadPromotions()">
+        Todas {{ promotions().length }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'activas'" (click)="activeTab.set('activas'); loadPromotions()">
+        Activas {{ promoCountByTab('activas') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'programadas'" (click)="activeTab.set('programadas'); loadPromotions()">
+        Programadas {{ promoCountByTab('programadas') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'expiradas'" (click)="activeTab.set('expiradas'); loadPromotions()">
+        Expiradas {{ promoCountByTab('expiradas') }}
+      </button>
     </div>
 
     <!-- Search & Type filter -->
@@ -36,8 +55,9 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
         class="input-field max-w-xs"
         placeholder="Buscar por código o nombre..."
         [(ngModel)]="searchText"
+        aria-label="Buscar promociones por código o nombre"
       />
-      <select class="input-field w-48" [(ngModel)]="typeFilter">
+      <select class="input-field w-48" [(ngModel)]="typeFilter" aria-label="Filtrar promociones por tipo">
         <option value="">Todos los tipos</option>
         <option value="percentage">Porcentaje (%)</option>
         <option value="fixed_amount">Monto fijo (RD$)</option>
@@ -435,5 +455,13 @@ export class PromotionsPageComponent implements OnInit {
       this.promoUses.set(uses);
       this.statsLoading.set(false);
     });
+  }
+
+  promoCountByTab(tab: PromoTab): number {
+    const now = new Date().toISOString().split('T')[0];
+    if (tab === 'activas') return this.promotions().filter(p => p.is_active).length;
+    if (tab === 'programadas') return this.promotions().filter(p => !!p.valid_from && p.valid_from > now).length;
+    if (tab === 'expiradas') return this.promotions().filter(p => !!p.valid_until && p.valid_until < now).length;
+    return this.promotions().length;
   }
 }

@@ -52,376 +52,357 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
 <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
   <a routerLink="/catalog" class="hover:text-primary-600 transition-colors">Catálogos</a>
   <span>›</span>
-  <span class="font-medium text-gray-800">{{ storeInfo()?.name ?? storeId }}</span>
+  <span class="font-semibold text-gray-800">{{ storeInfo()?.name ?? storeId }}</span>
 </div>
 
-<!-- ─── Store info card ──────────────────────────────────────────────────── -->
+<!-- ─── Premium commerce header ───────────────────────────────────────────── -->
 @if (storeInfo(); as store) {
-  <div class="bg-white border border-gray-200 rounded-xl p-4 mb-5 flex flex-wrap items-center gap-4">
-    <div class="flex items-center gap-3 flex-1 min-w-0">
-      <div class="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center text-2xl">
-        @if (store.logo_url) {
-          <img [src]="store.logo_url" class="w-full h-full object-cover" alt="" />
-        } @else { 🏪 }
-      </div>
-      <div class="min-w-0">
-        <p class="text-base font-bold text-gray-800">{{ store.name }}</p>
-        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span class="text-xs px-1.5 py-0.5 bg-gray-100 rounded-full text-gray-600">{{ store.commerce_type }}</span>
-          <span class="text-xs font-medium" [class]="store.is_open ? 'text-success-600' : 'text-gray-400'">
-            {{ store.is_open ? '● Abierto' : '○ Cerrado' }}
-          </span>
-          @if (!store.is_active) {
-            <span class="text-xs px-1.5 py-0.5 bg-error-100 text-error-700 rounded-full font-medium">Inactivo</span>
-          }
+  <section class="rounded-[28px] border border-[#e7eaf1] bg-[radial-gradient(circle_at_96%_18%,rgba(235,27,141,.1),transparent_28%),linear-gradient(180deg,#fff,#fbfcff)] p-5 shadow-[0_8px_24px_rgba(18,24,40,.07)] mb-5">
+    <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+      <div class="flex items-start gap-3 min-w-0">
+        <div class="w-14 h-14 rounded-2xl overflow-hidden bg-[#f4f6f9] grid place-items-center text-2xl flex-shrink-0">
+          @if (store.logo_url) {
+            <img [src]="store.logo_url" class="w-full h-full object-cover" alt="" />
+          } @else { 🏪 }
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-[28px] leading-[1.05] tracking-[-0.03em] font-black text-[#111827] truncate">{{ store.name }}</h1>
+          <div class="mt-2 flex flex-wrap gap-1.5">
+            <span class="inline-flex items-center rounded-full bg-[#f4f6f9] px-2.5 py-1 text-[11px] font-black text-[#667085]">{{ store.commerce_type }}</span>
+            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-black"
+                  [class]="store.is_open ? 'bg-[#eafbf1] text-[#087b3c]' : 'bg-[#f4f6f9] text-[#667085]'">
+              {{ store.is_open ? 'Abierto' : 'Cerrado' }}
+            </span>
+            @if (!store.is_active) {
+              <span class="inline-flex items-center rounded-full bg-[#fee2e2] px-2.5 py-1 text-[11px] font-black text-[#b42318]">Suspendido</span>
+            }
+          </div>
         </div>
       </div>
+
+      <div class="flex flex-wrap gap-2">
+        <a [routerLink]="['/catalog', storeId, 'products', 'new']"
+           class="h-11 inline-flex items-center justify-center gap-1 rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-white text-sm font-black px-4 transition-colors">
+          + Nuevo producto
+        </a>
+        <button class="h-11 inline-flex items-center justify-center gap-1 rounded-2xl border border-[#e7eaf1] bg-white px-4 text-sm font-bold text-[#344054] hover:bg-[#f8fafc]"
+                (click)="triggerImport()">
+          📥 Importar CSV
+        </button>
+        <button class="h-11 inline-flex items-center justify-center gap-1 rounded-2xl border border-[#e7eaf1] bg-white px-4 text-sm font-bold text-[#344054] hover:bg-[#f8fafc]"
+                (click)="exportCsv()">
+          📤 Exportar CSV
+        </button>
+      </div>
     </div>
-    <!-- Stats -->
-    <div class="flex items-center gap-4 text-xs text-gray-500 flex-shrink-0">
-      <div class="text-center"><p class="text-lg font-bold text-gray-800">{{ store.total_products }}</p><p>Productos</p></div>
-      <div class="text-center"><p class="text-lg font-bold text-gray-800">{{ store.categories_count }}</p><p>Categorías</p></div>
-      @if (store.pending_price_approval > 0) {
-        <div class="text-center">
-          <p class="text-lg font-bold text-warning-600">{{ store.pending_price_approval }}</p>
-          <p class="text-warning-600">Precios pend.</p>
-        </div>
-      }
-      @if (store.out_of_stock > 0) {
-        <div class="text-center">
-          <p class="text-lg font-bold text-error-600">{{ store.out_of_stock }}</p>
-          <p class="text-error-600">Agotados</p>
-        </div>
-      }
+
+    <div class="mt-4 grid grid-cols-2 xl:grid-cols-4 gap-3">
+      <div class="rounded-2xl border border-[#eef1f6] bg-white px-3 py-2">
+        <p class="text-xs font-bold text-[#98a2b3]">Productos</p>
+        <p class="text-lg font-black text-[#111827]">{{ store.total_products }}</p>
+      </div>
+      <div class="rounded-2xl border border-[#eef1f6] bg-white px-3 py-2">
+        <p class="text-xs font-bold text-[#98a2b3]">Categorías</p>
+        <p class="text-lg font-black text-[#111827]">{{ store.categories_count }}</p>
+      </div>
+      <div class="rounded-2xl border border-[#eef1f6] bg-white px-3 py-2">
+        <p class="text-xs font-bold text-[#98a2b3]">Precios pendientes</p>
+        <p class="text-lg font-black text-[#b54708]">{{ store.pending_price_approval }}</p>
+      </div>
+      <div class="rounded-2xl border border-[#eef1f6] bg-white px-3 py-2">
+        <p class="text-xs font-bold text-[#98a2b3]">Actualizado</p>
+        <p class="text-lg font-black text-[#111827]">{{ store.last_catalog_update | timeAgo }}</p>
+      </div>
     </div>
-    <!-- Actions -->
-    <div class="flex flex-wrap gap-2 flex-shrink-0">
-      <a [routerLink]="['/catalog', storeId, 'products', 'new']"
-         class="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-lg transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Nuevo producto
-      </a>
-      <button
-        class="flex items-center gap-1 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-xs font-medium rounded-lg transition-colors"
-        (click)="triggerImport()"
-      >📥 Importar CSV</button>
-      <button
-        class="flex items-center gap-1 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-xs font-medium rounded-lg transition-colors"
-        (click)="exportCsv()"
-      >📤 Exportar CSV</button>
-      <input #csvInput type="file" accept=".csv" class="hidden" (change)="onCsvFile($event)" />
-    </div>
-  </div>
+  </section>
 }
 
-<!-- ─── Tabs ───────────────────────────────────────────────────────────────── -->
-<div class="border-b border-gray-200 mb-5">
-  <nav class="flex gap-1">
-    @for (tab of tabs; track tab.value) {
-      <button
-        class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-        [class]="activeTab() === tab.value
-          ? 'border-primary-600 text-primary-700'
-          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-        (click)="activeTab.set(tab.value)"
-      >
-        {{ tab.label }}
-        @if (tab.value === 'products' && pendingCount() > 0) {
-          <span class="ml-1 px-1.5 py-0.5 bg-warning-500 text-white text-[10px] rounded-full font-bold">{{ pendingCount() }}</span>
-        }
-      </button>
-    }
-  </nav>
+<!-- ─── Segmented tabs ─────────────────────────────────────────────────────── -->
+<div class="rounded-2xl border border-[#e7eaf1] bg-[#fbfcff] p-1.5 mb-5 inline-flex flex-wrap gap-1">
+  @for (tab of tabs; track tab.value) {
+    <button class="h-10 px-4 rounded-xl text-sm font-bold transition-all"
+            [attr.aria-current]="activeTab() === tab.value ? 'page' : null"
+            [class]="activeTab() === tab.value ? 'bg-white text-[#111827] shadow-[0_8px_18px_rgba(17,24,39,.1)]' : 'text-[#667085] hover:bg-white/70'"
+            (click)="activeTab.set(tab.value)">
+      {{ tab.label }}
+      @if (tab.value === 'products' && pendingCount() > 0) {
+        <span class="ml-1 rounded-full bg-[#fff6e6] px-1.5 py-0.5 text-[10px] font-black text-[#b54708]">{{ pendingCount() }}</span>
+      }
+    </button>
+  }
 </div>
 
 <!-- ════════════ TAB: PRODUCTOS ════════════════════════════════════════════════ -->
 @if (activeTab() === 'products') {
-
-  <!-- Toolbar -->
-  <div class="flex flex-wrap items-center gap-2 mb-4">
-    <div class="relative flex-1 min-w-[180px] max-w-sm">
-      <svg class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-           fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
-      </svg>
-      <input type="search" class="input-field pl-8 text-sm" placeholder="Buscar producto…"
-             [(ngModel)]="productSearch" (ngModelChange)="onProductSearch()" />
-    </div>
-
-    <select class="input-field text-sm w-40" [(ngModel)]="filterCategory" (ngModelChange)="reloadProducts()">
-      <option value="">Todas las categorías</option>
-      @for (cat of categories(); track cat.id) {
-        <option [value]="cat.id">{{ cat.name }}</option>
-      }
-    </select>
-
-    <select class="input-field text-sm w-36" [(ngModel)]="filterModeration" (ngModelChange)="reloadProducts(true)">
-      <option value="all">Toda moderación</option>
-      <option value="aprobado">✅ Aprobado</option>
-      <option value="bajo_revision">⚠️ Bajo revisión</option>
-      <option value="retirado">🔴 Retirado</option>
-    </select>
-
-    <select class="input-field text-sm w-36" [(ngModel)]="filterAvailability" (ngModelChange)="reloadProducts(true)">
-      <option [ngValue]="null">Disponibilidad</option>
-      <option [ngValue]="true">✅ Disponibles</option>
-      <option [ngValue]="false">❌ No disponibles</option>
-    </select>
-
-    <select class="input-field text-sm w-32" [(ngModel)]="filterStockStatus" (ngModelChange)="reloadProducts(true)">
-      <option value="all">Todo stock</option>
-      <option value="disponible">Con stock</option>
-      <option value="bajo_stock">⚠️ Bajo stock</option>
-      <option value="agotado">🔴 Agotado</option>
-      <option value="no_controlado">— No controlado</option>
-    </select>
-
-    <div class="flex items-center gap-1">
-      <input type="number" class="input-field text-sm w-24" [(ngModel)]="filterMinPrice"
-             (change)="reloadProducts(true)" placeholder="RD$ mín" min="0" />
-      <span class="text-gray-300 text-xs">—</span>
-      <input type="number" class="input-field text-sm w-24" [(ngModel)]="filterMaxPrice"
-             (change)="reloadProducts(true)" placeholder="RD$ máx" min="0" />
-    </div>
-
-    <label class="flex items-center gap-1.5 text-xs text-warning-700 font-medium cursor-pointer">
-      <input type="checkbox" class="rounded" [(ngModel)]="filterPending" (ngModelChange)="reloadProducts(true)" />
-      Solo precios pendientes
-    </label>
-
-    @if (selectedIds().size > 0) {
-      <div class="flex items-center gap-1.5 ml-auto">
-        <span class="text-xs text-gray-500">{{ selectedIds().size }} seleccionados</span>
-        <button class="btn-secondary text-xs py-1" (click)="bulkAvailability(true)">✅ Activar</button>
-        <button class="btn-secondary text-xs py-1" (click)="bulkAvailability(false)">❌ Desactivar</button>
-        <button class="btn-secondary text-xs py-1 text-warning-700" (click)="bulkModerateSel('retirado')">🚫 Retirar</button>
-      </div>
-    }
-
-    <div class="ml-auto text-xs text-gray-400">{{ totalCount() }} productos</div>
-  </div>
-
-  <!-- Product table -->
-  @if (productsLoading()) {
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden animate-pulse">
-      @for (_ of [1,2,3,4,5]; track $index) {
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-          <div class="w-4 h-4 bg-gray-100 rounded"></div>
-          <div class="w-10 h-10 bg-gray-100 rounded-lg flex-shrink-0"></div>
-          <div class="flex-1 space-y-1.5">
-            <div class="h-3.5 bg-gray-100 rounded w-2/5"></div>
-            <div class="h-3 bg-gray-100 rounded w-1/4"></div>
+  <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_280px] gap-4">
+    <div class="space-y-4 min-w-0">
+      <section class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4">
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-2 mb-2">
+          <div class="xl:col-span-2 relative">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
+            </svg>
+            <input type="search" class="input-field pl-9 text-sm !h-12 !rounded-2xl" placeholder="Buscar producto por nombre, categoría o precio..."
+                   [(ngModel)]="productSearch" (ngModelChange)="onProductSearch()" aria-label="Buscar producto por nombre, categoría o precio" />
           </div>
-          <div class="w-20 h-4 bg-gray-100 rounded"></div>
-          <div class="w-20 h-4 bg-gray-100 rounded"></div>
-          <div class="w-24 h-4 bg-gray-100 rounded"></div>
+          <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="filterCategory" (ngModelChange)="reloadProducts(true)" aria-label="Filtrar por categoría">
+            <option value="">Todas las categorías</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+          <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="filterModeration" (ngModelChange)="reloadProducts(true)" aria-label="Filtrar por moderación">
+            <option value="all">Toda moderación</option>
+            <option value="aprobado">Aprobado</option>
+            <option value="bajo_revision">Pendiente</option>
+            <option value="retirado">Rechazado</option>
+          </select>
         </div>
-      }
-    </div>
-  } @else {
-    <div class="admin-table-card">
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="w-10 px-4 py-2.5">
-                <input type="checkbox" class="rounded" aria-label="Seleccionar todos los productos visibles" (change)="toggleSelectAll($event)" />
-              </th>
-              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Producto</th>
-              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Categoría</th>
-              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Precio</th>
-              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Pendiente</th>
-              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Moderación</th>
-              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Stock</th>
-              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Disp.</th>
-              <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            @for (p of products(); track p.id) {
-              <tr
-                class="hover:bg-gray-50 transition-colors"
-                [class]="p.price_pending != null ? 'bg-warning-50/40' : ''"
-              >
-                <td class="px-4 py-3 text-center">
-                  <input type="checkbox" class="rounded"
-                         [attr.aria-label]="'Seleccionar producto ' + p.name"
-                         [checked]="selectedIds().has(p.id)"
-                         (change)="toggleSelect(p.id, $event)" />
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                      @if (p.photo_url) {
-                        <img [src]="p.photo_url" class="w-full h-full object-cover" alt="" />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 mb-3">
+          <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="filterAvailability" (ngModelChange)="reloadProducts(true)" aria-label="Filtrar por disponibilidad">
+            <option [ngValue]="null">Disponibilidad</option>
+            <option [ngValue]="true">Disponibles</option>
+            <option [ngValue]="false">No disponibles</option>
+          </select>
+          <select class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="filterStockStatus" (ngModelChange)="reloadProducts(true)" aria-label="Filtrar por stock">
+            <option value="all">Todo stock</option>
+            <option value="disponible">Con stock</option>
+            <option value="bajo_stock">Bajo stock</option>
+            <option value="agotado">Agotado</option>
+            <option value="no_controlado">No controlado</option>
+          </select>
+          <input type="number" class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="filterMinPrice" (change)="reloadProducts(true)" placeholder="RD$ min" min="0" aria-label="Precio mínimo" />
+          <input type="number" class="input-field text-sm !h-12 !rounded-2xl" [(ngModel)]="filterMaxPrice" (change)="reloadProducts(true)" placeholder="RD$ max" min="0" aria-label="Precio máximo" />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                  [class]="!hasProductFilters() ? 'bg-[#111827] border-[#111827] text-white' : 'border-[#e7eaf1] text-[#475467]'"
+                  (click)="resetAllProductFilters()">Todos {{ totalCount() }}</button>
+          <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                  [class]="filterPending ? 'bg-[#fff6e6] border-[#ffd8a8] text-[#b54708]' : 'border-[#e7eaf1] text-[#475467]'"
+                  (click)="togglePendingQuick()">Solo precios pendientes {{ pendingCount() }}</button>
+          <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors"
+                  [class]="filterStockStatus === 'agotado' ? 'bg-[#fee2e2] border-[#fecaca] text-[#b42318]' : 'border-[#e7eaf1] text-[#475467]'"
+                  (click)="setStockQuick('agotado')">Agotados {{ outOfStockCount() }}</button>
+          <div class="ml-auto flex items-center gap-2">
+            <p class="text-xs font-semibold text-[#98a2b3]">{{ totalCount() }} productos</p>
+            @if (hasProductFilters()) {
+              <button type="button" class="h-8 rounded-xl border border-[#e7eaf1] px-3 text-xs font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="resetAllProductFilters()">Limpiar filtros</button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden">
+        <div class="px-5 py-4 border-b border-[#eef1f6] flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-base font-black text-[#111827]">Productos del catálogo</h3>
+            <p class="text-sm text-[#98a2b3] font-semibold">{{ totalCount() }} productos encontrados</p>
+          </div>
+          @if (selectedIds().size > 0) {
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs text-[#667085] font-semibold">{{ selectedIds().size }} seleccionados</span>
+              <button class="h-8 px-2 rounded-lg border border-[#dbe2ed] text-xs font-bold" (click)="bulkAvailability(true)">Activar</button>
+              <button class="h-8 px-2 rounded-lg border border-[#dbe2ed] text-xs font-bold" (click)="bulkAvailability(false)">Desactivar</button>
+              <button class="h-8 px-2 rounded-lg border border-[#ffd8a8] bg-[#fff6e6] text-[#b54708] text-xs font-bold" (click)="bulkModerateSel('retirado')">Retirar</button>
+            </div>
+          }
+        </div>
+
+        @if (productsLoading()) {
+          <div class="p-4 space-y-2 animate-pulse">
+            @for (_ of [1,2,3,4,5]; track $index) {
+              <div class="h-11 rounded-xl bg-gray-100"></div>
+            }
+          </div>
+        } @else if (productsLoadError()) {
+          <div class="p-6">
+            <app-admin-empty-state
+              icon="default"
+              title="No se pudo cargar el catálogo"
+              description="Intenta refrescar la página o vuelve a intentarlo más tarde."
+              variant="soft" />
+            <div class="flex justify-center mt-3">
+              <button class="h-10 px-4 rounded-xl border border-[#e7eaf1] text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="reloadProducts()">Reintentar</button>
+            </div>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-[#fbfcff] border-b border-[#e7eaf1]">
+                <tr>
+                  <th class="w-10 px-4 py-2.5">
+                    <input type="checkbox" class="rounded" aria-label="Seleccionar todos los productos visibles" (change)="toggleSelectAll($event)" />
+                  </th>
+                  <th class="px-4 py-2.5 text-left text-xs font-black text-[#667085] uppercase">Producto</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-black text-[#667085] uppercase">Categoría</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-black text-[#667085] uppercase">Precio</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-black text-[#667085] uppercase">Precio pendiente</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-black text-[#667085] uppercase">Moderación</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-black text-[#667085] uppercase">Stock</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-black text-[#667085] uppercase">Disponible</th>
+                  <th class="px-4 py-2.5 text-right text-xs font-black text-[#667085] uppercase">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#eef1f6]">
+                @for (p of products(); track p.id) {
+                  <tr class="hover:bg-[#fbfcff] transition-colors" [class]="p.price_pending != null ? 'bg-[#fffaf2]' : ''">
+                    <td class="px-4 py-3 text-center">
+                      <input type="checkbox" class="rounded"
+                             [attr.aria-label]="'Seleccionar producto ' + p.name"
+                             [checked]="selectedIds().has(p.id)"
+                             (change)="toggleSelect(p.id, $event)" />
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                          @if (p.photo_url) {
+                            <img [src]="p.photo_url" class="w-full h-full object-cover" alt="" />
+                          } @else {
+                            <div class="w-full h-full flex items-center justify-center text-gray-300 text-xs">📷</div>
+                          }
+                        </div>
+                        <div class="min-w-0">
+                          <p class="font-semibold text-[#111827] truncate max-w-[220px]">{{ p.name }}</p>
+                          @if (p.sku) { <p class="text-[10px] text-[#98a2b3]">SKU: {{ p.sku }}</p> }
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 text-xs text-[#667085]">{{ p.category_name }}</td>
+                    <td class="px-4 py-3">
+                      <p class="font-black text-[#111827]">RD\${{ p.price | number:'1.0-0' }}</p>
+                    </td>
+                    <td class="px-4 py-3">
+                      @if (p.price_pending != null) {
+                        <div class="inline-flex items-center gap-1 rounded-full bg-[#fff6e6] px-2 py-1 text-[11px] font-black text-[#b54708]">
+                          RD\${{ p.price_pending | number:'1.0-0' }}
+                          <span>{{ p.price_change_pct! > 0 ? '+' : '' }}{{ p.price_change_pct }}%</span>
+                        </div>
                       } @else {
-                        <div class="w-full h-full flex items-center justify-center text-gray-300 text-xs">📷</div>
+                        <span class="text-[#c3c8d2] text-xs">—</span>
                       }
-                    </div>
-                    <div class="min-w-0">
-                      <p class="font-medium text-gray-800 truncate max-w-[200px]">{{ p.name }}</p>
-                      @if (p.sku) { <p class="text-[10px] text-gray-400">SKU: {{ p.sku }}</p> }
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-3 text-xs text-gray-500">{{ p.category_name }}</td>
-                <td class="px-4 py-3">
-                  <p class="font-semibold text-gray-800">RD\${{ p.price | number:'1.0-0' }}</p>
-                  @if (p.discount_price) {
-                    <p class="text-[10px] text-success-600">Desc: RD\${{ p.discount_price | number:'1.0-0' }}</p>
-                  }
-                  @if (p.in_venue_price) {
-                    <p class="text-[10px] text-gray-400">Sala: RD\${{ p.in_venue_price | number:'1.0-0' }}</p>
-                  }
-                </td>
-                <td class="px-4 py-3">
-                  @if (p.price_pending != null) {
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs font-bold text-warning-700">RD\${{ p.price_pending | number:'1.0-0' }}</span>
-                      <span class="text-[10px] px-1 py-0.5 rounded bg-warning-100 text-warning-700 font-bold w-fit">
-                        {{ p.price_change_pct! > 0 ? '+' : '' }}{{ p.price_change_pct }}%
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-black"
+                            [class]="p.moderation_status === 'aprobado'
+                              ? 'bg-[#eafbf1] text-[#087b3c]'
+                              : (p.moderation_status === 'bajo_revision' ? 'bg-[#fff6e6] text-[#b54708]' : 'bg-[#fee2e2] text-[#b42318]')">
+                        {{ p.moderation_status === 'aprobado' ? 'Aprobado' : (p.moderation_status === 'bajo_revision' ? 'Pendiente' : 'Rechazado') }}
                       </span>
-                    </div>
-                  } @else {
-                    <span class="text-gray-300 text-xs">—</span>
-                  }
-                </td>
-                <td class="px-4 py-3">
-                  <span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="modColor(p.moderation_status)">
-                    {{ modLabel(p.moderation_status) }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-sm">
-                  {{ stockIcon(p) }}
-                  @if (p.track_stock) { <span class="text-[10px] text-gray-400 ml-0.5">{{ p.stock_count ?? 0 }}</span> }
-                </td>
-                <td class="px-4 py-3">
-                  <button
-                    class="relative w-8 h-4 rounded-full transition-colors flex-shrink-0"
-                    [class]="p.is_available ? 'bg-success-400' : 'bg-gray-200'"
-                    (click)="quickToggleAvailability(p)"
-                    role="switch"
-                    [attr.aria-checked]="p.is_available"
-                    [attr.aria-label]="p.is_available ? 'Desactivar disponibilidad de ' + p.name : 'Activar disponibilidad de ' + p.name"
-                  >
-                    <span class="absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform"
-                          [style.left]="p.is_available ? '17px' : '2px'"></span>
-                  </button>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center justify-end gap-1">
-                    <a [routerLink]="['/catalog', storeId, 'products', p.id]"
-                       class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors" title="Editar"
-                       [attr.aria-label]="'Editar producto ' + p.name">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </a>
-                    <button
-                      class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-500 transition-colors"
-                      title="Duplicar"
-                      [attr.aria-label]="'Duplicar producto ' + p.name"
-                      (click)="duplicateProduct(p)"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                    @if (p.price_pending != null) {
-                      <button
-                        class="p-1.5 rounded-lg hover:bg-warning-50 text-warning-500 transition-colors"
-                        title="Revisar precio"
-                        [attr.aria-label]="'Revisar precio de ' + p.name"
-                        (click)="openPriceReview(p)"
-                      >💰</button>
-                    }
-                    <button
-                      class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                      title="Moderar"
-                      [attr.aria-label]="'Moderar producto ' + p.name"
-                      (click)="openModerate(p)"
-                    >🔍</button>
-                    <button
-                      class="p-1.5 rounded-lg hover:bg-error-50 text-gray-300 hover:text-error-500 transition-colors"
-                      title="Eliminar"
-                      [attr.aria-label]="'Eliminar producto ' + p.name"
-                      (click)="deleteProduct(p)"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            }
-            @if (products().length === 0) {
-              <tr>
-                <td colspan="9" class="px-4 py-6">
-                  <app-admin-empty-state
-                    icon="search"
-                    title="Sin productos para estos filtros"
-                    description="Ajusta la búsqueda o cambia los filtros aplicados."
-                    variant="soft" />
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      @if (totalCount() > pageSize) {
-        <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-          <p class="text-xs text-gray-500">{{ totalCount() }} resultados</p>
-          <div class="flex items-center gap-2">
-            <button class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40"
-                    [disabled]="currentPage() === 1" (click)="goPage(currentPage() - 1)">← Ant</button>
-            <span class="text-xs text-gray-500">{{ currentPage() }} / {{ totalPages() }}</span>
-            <button class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40"
-                    [disabled]="currentPage() === totalPages()" (click)="goPage(currentPage() + 1)">Sig →</button>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-[#111827]">
+                      {{ stockIcon(p) }}
+                      @if (p.track_stock) { <span class="text-[10px] text-[#98a2b3] ml-0.5">{{ p.stock_count ?? 0 }}</span> }
+                    </td>
+                    <td class="px-4 py-3">
+                      <button class="relative w-9 h-5 rounded-full transition-colors"
+                              [class]="p.is_available ? 'bg-success-400' : 'bg-gray-300'"
+                              (click)="quickToggleAvailability(p)"
+                              role="switch"
+                              [attr.aria-checked]="p.is_available"
+                              [attr.aria-label]="p.is_available ? 'Desactivar disponibilidad de ' + p.name : 'Activar disponibilidad de ' + p.name">
+                        <span class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+                              [style.left]="p.is_available ? '17px' : '2px'"></span>
+                      </button>
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="inline-flex items-center justify-end gap-1 rounded-xl border border-[#e7eaf1] bg-white px-1 py-1">
+                        <a [routerLink]="['/catalog', storeId, 'products', p.id]" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" [attr.aria-label]="'Editar producto ' + p.name">✏️</a>
+                        <button class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" [attr.aria-label]="'Duplicar producto ' + p.name" (click)="duplicateProduct(p)">⧉</button>
+                        @if (p.price_pending != null) {
+                          <button class="p-1.5 rounded-lg hover:bg-warning-50 text-warning-600" [attr.aria-label]="'Revisar precio de ' + p.name" (click)="openPriceReview(p)">💰</button>
+                        }
+                        <button class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" [attr.aria-label]="'Moderar producto ' + p.name" (click)="openModerate(p)">🔍</button>
+                        <button class="p-1.5 rounded-lg hover:bg-error-50 text-gray-400 hover:text-error-600" [attr.aria-label]="'Eliminar producto ' + p.name" (click)="deleteProduct(p)">🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+                @if (products().length === 0) {
+                  <tr>
+                    <td colspan="9" class="px-4 py-7">
+                      <app-admin-empty-state
+                        icon="search"
+                        [title]="productSearch.trim() || filterCategory || filterModeration !== 'all' || filterAvailability !== null || filterStockStatus !== 'all' || filterPending ? 'No hay productos para estos filtros' : 'Este comercio no tiene productos'"
+                        [description]="productSearch.trim() || filterCategory || filterModeration !== 'all' || filterAvailability !== null || filterStockStatus !== 'all' || filterPending ? 'Prueba ajustando la búsqueda, categoría, moderación o disponibilidad.' : 'Los productos publicados aparecerán aquí.'"
+                        variant="soft" />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
-        </div>
-      }
+
+          @if (totalCount() > pageSize) {
+            <div class="flex items-center justify-between px-4 py-3 border-t border-[#eef1f6]">
+              <p class="text-xs text-[#98a2b3] font-semibold">{{ totalCount() }} resultados</p>
+              <div class="flex items-center gap-2">
+                <button class="h-8 px-2 rounded-lg border border-[#e7eaf1] text-xs font-bold disabled:opacity-40" [disabled]="currentPage() === 1" (click)="goPage(currentPage() - 1)">← Ant</button>
+                <span class="text-xs text-[#667085]">{{ currentPage() }} / {{ totalPages() }}</span>
+                <button class="h-8 px-2 rounded-lg border border-[#e7eaf1] text-xs font-bold disabled:opacity-40" [disabled]="currentPage() === totalPages()" (click)="goPage(currentPage() + 1)">Sig →</button>
+              </div>
+            </div>
+          }
+        }
+      </section>
     </div>
-  }
+
+    <aside class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-4 h-fit">
+      <h3 class="text-sm font-black text-[#111827] mb-3">Resumen del catálogo</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex items-center justify-between"><span class="text-[#667085]">Productos</span><strong class="text-[#111827]">{{ totalCount() }}</strong></div>
+        <div class="flex items-center justify-between"><span class="text-[#667085]">Categorías</span><strong class="text-[#111827]">{{ categories().length }}</strong></div>
+        <div class="flex items-center justify-between"><span class="text-[#667085]">Precios pendientes</span><strong class="text-[#b54708]">{{ pendingCount() }}</strong></div>
+        <div class="flex items-center justify-between"><span class="text-[#667085]">Agotados</span><strong class="text-[#b42318]">{{ outOfStockCount() }}</strong></div>
+        <div class="pt-2 border-t border-[#eef1f6]">
+          <p class="text-xs text-[#98a2b3]">Última actualización</p>
+          <p class="text-sm font-bold text-[#111827]">{{ storeInfo()?.last_catalog_update ? (storeInfo()!.last_catalog_update | timeAgo) : '—' }}</p>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-1 gap-2">
+        <button class="h-10 rounded-xl border border-[#e7eaf1] text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="triggerImport()">Importar CSV</button>
+        <button class="h-10 rounded-xl border border-[#e7eaf1] text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="exportCsv()">Exportar CSV</button>
+      </div>
+    </aside>
+  </div>
 }
 
 <!-- ════════════ TAB: CATEGORÍAS ═══════════════════════════════════════════════ -->
 @if (activeTab() === 'categories') {
-  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-      <p class="text-sm font-semibold text-gray-700">Categorías del catálogo</p>
+  <div class="bg-white border border-[#e7eaf1] rounded-3xl shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#eef1f6]">
+      <p class="text-sm font-black text-[#111827]">Categorías del catálogo</p>
       <button
-        class="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+        class="h-10 flex items-center gap-1 px-4 text-xs font-bold bg-[#eb1b8d] hover:bg-[#c71473] text-white rounded-xl transition-colors"
         (click)="addingCategory.set(!addingCategory())"
       >+ Nueva categoría</button>
     </div>
 
     @if (addingCategory()) {
-      <div class="flex items-center gap-2 px-4 py-3 bg-primary-50 border-b border-primary-100">
-        <input type="text" class="input-field text-sm flex-1" placeholder="Nombre de la categoría"
+      <div class="flex items-center gap-2 px-5 py-3 bg-[#fbfcff] border-b border-[#eef1f6]">
+        <input type="text" class="input-field text-sm flex-1 !h-11 !rounded-2xl" placeholder="Nombre de la categoría"
                [(ngModel)]="newCategoryName" (keydown.enter)="createCategory()" />
-        <button class="btn-primary text-xs py-1.5" (click)="createCategory()" [disabled]="!newCategoryName.trim()">Crear</button>
-        <button class="btn-secondary text-xs py-1.5" (click)="addingCategory.set(false)">Cancelar</button>
+        <button class="h-10 px-4 rounded-xl bg-[#eb1b8d] hover:bg-[#c71473] text-white text-xs font-bold" (click)="createCategory()" [disabled]="!newCategoryName.trim()">Crear</button>
+        <button class="h-10 px-4 rounded-xl border border-[#e7eaf1] text-xs font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="addingCategory.set(false)">Cancelar</button>
       </div>
     }
 
-    <div class="divide-y divide-gray-100">
+    <div class="divide-y divide-[#eef1f6]">
       @for (cat of categories(); track cat.id; let i = $index) {
-        <div class="flex items-center gap-3 px-4 py-3">
-          <span class="text-gray-300 text-xs select-none cursor-grab">⠿</span>
+        <div class="flex items-center gap-3 px-5 py-3 hover:bg-[#fbfcff] transition-colors">
+          <span class="text-[#c3c8d2] text-xs select-none cursor-grab">⠿</span>
           <div class="flex-1 min-w-0">
             @if (editingCatId() === cat.id) {
-              <input type="text" class="input-field text-sm py-1" [(ngModel)]="editingCatName"
+              <input type="text" class="input-field text-sm py-1 !rounded-xl" [(ngModel)]="editingCatName"
                      (keydown.enter)="saveCategoryEdit(cat)" (keydown.escape)="editingCatId.set(null)" />
             } @else {
-              <p class="text-sm font-medium text-gray-700">{{ cat.name }}</p>
+              <p class="text-sm font-semibold text-[#111827]">{{ cat.name }}</p>
             }
           </div>
-          <span class="text-xs text-gray-400 w-20 text-right">orden {{ cat.display_order }}</span>
+          <span class="text-xs text-[#98a2b3] w-20 text-right">orden {{ cat.display_order }}</span>
           <label class="relative flex-shrink-0">
             <input type="checkbox" class="sr-only" [checked]="cat.is_active"
                    (change)="toggleCatActive(cat, $event)" />
@@ -434,7 +415,7 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
               <button class="text-xs px-2 py-1 bg-success-100 text-success-700 rounded" (click)="saveCategoryEdit(cat)" [attr.aria-label]="'Guardar categoría ' + cat.name">✓</button>
               <button class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded" (click)="editingCatId.set(null)" [attr.aria-label]="'Cancelar edición de categoría ' + cat.name">✕</button>
             } @else {
-              <button class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-700 transition-colors"
+              <button class="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 transition-colors"
                       [attr.aria-label]="'Editar categoría ' + cat.name"
                       (click)="startEditCat(cat)">✏️</button>
             }
@@ -457,8 +438,8 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
 <!-- ════════════ TAB: COMBOS ═══════════════════════════════════════════════════ -->
 @if (activeTab() === 'combos') {
   <div class="flex items-center justify-between mb-3">
-    <p class="text-sm font-semibold text-gray-700">Combos del comercio</p>
-    <button class="btn-primary text-sm" (click)="openComboForm()">+ Nuevo combo</button>
+    <p class="text-sm font-black text-[#111827]">Combos del comercio</p>
+    <button class="h-10 px-4 rounded-xl bg-[#eb1b8d] hover:bg-[#c71473] text-white text-sm font-bold" (click)="openComboForm()">+ Nuevo combo</button>
   </div>
 
   @if (combos().length === 0 && !combosLoading()) {
@@ -471,19 +452,19 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     @for (combo of combos(); track combo.id) {
-      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+      <div class="bg-white border border-[#e7eaf1] rounded-2xl p-4 flex items-start gap-3 shadow-[0_8px_24px_rgba(18,24,40,.07)] hover:shadow-[0_18px_42px_rgba(18,24,40,.11)] transition-all">
+        <div class="w-12 h-12 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0">
           @if (combo.photo_url) {
             <img [src]="combo.photo_url" class="w-full h-full object-cover" alt="" />
           } @else { <div class="w-full h-full flex items-center justify-center text-xl">🎁</div> }
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between gap-2">
-            <p class="text-sm font-semibold text-gray-800 truncate">{{ combo.name }}</p>
-            <span class="text-sm font-bold text-primary-700 flex-shrink-0">RD\${{ combo.price | number:'1.0-0' }}</span>
+            <p class="text-sm font-black text-[#111827] truncate">{{ combo.name }}</p>
+            <span class="text-sm font-black text-[#eb1b8d] flex-shrink-0">RD\${{ combo.price | number:'1.0-0' }}</span>
           </div>
           @if (combo.description) {
-            <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ combo.description }}</p>
+            <p class="text-xs text-[#667085] mt-0.5 line-clamp-1">{{ combo.description }}</p>
           }
           <div class="flex items-center gap-2 mt-2">
             <span class="text-xs px-1.5 py-0.5 rounded-full font-medium"
@@ -507,34 +488,34 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
 
 <!-- ════════════ TAB: HISTORIAL ════════════════════════════════════════════════ -->
 @if (activeTab() === 'history') {
-  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-      <p class="text-sm font-semibold text-gray-700">Historial de cambios</p>
-      <p class="text-xs text-gray-400">Últimas 50 entradas</p>
+  <div class="bg-white border border-[#e7eaf1] rounded-3xl shadow-[0_8px_24px_rgba(18,24,40,.07)] overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#eef1f6]">
+      <p class="text-sm font-black text-[#111827]">Historial de cambios</p>
+      <p class="text-xs text-[#98a2b3]">Últimas 50 entradas</p>
     </div>
 
     @if (historyLoading()) {
-      <div class="p-8 text-center text-gray-400 animate-pulse">Cargando historial…</div>
+      <div class="p-8 text-center text-[#98a2b3] animate-pulse">Cargando historial…</div>
     } @else {
-      <div class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+      <div class="divide-y divide-[#eef1f6] max-h-[500px] overflow-y-auto">
         @for (entry of changeLog(); track entry.id) {
-          <div class="flex items-start gap-3 px-4 py-3">
-            <div class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs flex-shrink-0 font-bold text-gray-500">
+          <div class="flex items-start gap-3 px-5 py-3 hover:bg-[#fbfcff] transition-colors">
+            <div class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs flex-shrink-0 font-bold text-[#667085]">
               {{ entry.changed_by_name.charAt(0).toUpperCase() }}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-xs font-semibold text-gray-700">{{ entry.changed_by_name }}</span>
-                <span class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">{{ changeTypeLabel(entry.change_type) }}</span>
+                <span class="text-xs font-semibold text-[#111827]">{{ entry.changed_by_name }}</span>
+                <span class="text-xs px-1.5 py-0.5 bg-[#f4f6f9] text-[#667085] rounded-full">{{ changeTypeLabel(entry.change_type) }}</span>
                 @if (entry.product_name) {
-                  <span class="text-xs text-gray-500 truncate max-w-[200px]">{{ entry.product_name }}</span>
+                  <span class="text-xs text-[#667085] truncate max-w-[200px]">{{ entry.product_name }}</span>
                 }
               </div>
               @if (entry.notes) {
-                <p class="text-xs text-gray-400 mt-0.5">{{ entry.notes }}</p>
+                <p class="text-xs text-[#98a2b3] mt-0.5">{{ entry.notes }}</p>
               }
             </div>
-            <span class="text-[10px] text-gray-400 flex-shrink-0">{{ entry.created_at | timeAgo }}</span>
+            <span class="text-[10px] text-[#98a2b3] flex-shrink-0">{{ entry.created_at | timeAgo }}</span>
           </div>
         }
         @if (changeLog().length === 0) {
@@ -796,6 +777,7 @@ export class StoreProductManagerPageComponent implements OnInit {
     // Products tab
     readonly products = signal<CatalogProduct[]>([]);
     readonly productsLoading = signal(true);
+    readonly productsLoadError = signal(false);
     readonly totalCount = signal(0);
     readonly currentPage = signal(1);
     readonly pageSize = 30;
@@ -803,6 +785,9 @@ export class StoreProductManagerPageComponent implements OnInit {
 
     readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
     readonly pendingCount = computed(() => this.products().filter(p => p.price_pending != null).length);
+    readonly outOfStockCount = computed(() => this.products().filter(p => p.stock_status === 'agotado').length);
+    readonly reviewCount = computed(() => this.products().filter(p => p.moderation_status === 'bajo_revision').length);
+    readonly unavailableCount = computed(() => this.products().filter(p => !p.is_available).length);
 
     productSearch = '';
     filterCategory = '';
@@ -898,6 +883,7 @@ export class StoreProductManagerPageComponent implements OnInit {
     reloadProducts(resetPage = false): void {
         if (resetPage) this.currentPage.set(1);
         this.productsLoading.set(true);
+        this.productsLoadError.set(false);
         const filters: CatalogFilters = {
             page: this.currentPage(),
             page_size: this.pageSize,
@@ -916,8 +902,64 @@ export class StoreProductManagerPageComponent implements OnInit {
                 this.selectedIds.set(new Set());
                 this.productsLoading.set(false);
             },
-            error: () => this.productsLoading.set(false),
+            error: () => {
+                this.productsLoading.set(false);
+                this.productsLoadError.set(true);
+            },
         });
+    }
+
+    hasProductFilters(): boolean {
+        return Boolean(
+            this.productSearch.trim() ||
+            this.filterCategory ||
+            this.filterModeration !== 'all' ||
+            this.filterPending ||
+            this.filterAvailability !== null ||
+            this.filterStockStatus !== 'all' ||
+            this.filterMinPrice !== null ||
+            this.filterMaxPrice !== null
+        );
+    }
+
+    resetAllProductFilters(): void {
+        this.productSearch = '';
+        this.filterCategory = '';
+        this.filterModeration = 'all';
+        this.filterPending = false;
+        this.filterAvailability = null;
+        this.filterStockStatus = 'all';
+        this.filterMinPrice = null;
+        this.filterMaxPrice = null;
+        this.reloadProducts(true);
+    }
+
+    clearProductQuickFilters(): void {
+        this.filterModeration = 'all';
+        this.filterPending = false;
+        this.filterAvailability = null;
+        this.filterStockStatus = 'all';
+        this.reloadProducts(true);
+    }
+
+    togglePendingQuick(): void {
+        this.filterPending = !this.filterPending;
+        this.reloadProducts(true);
+    }
+
+    setStockQuick(status: string): void {
+        this.filterStockStatus = this.filterStockStatus === status ? 'all' : status;
+        this.reloadProducts(true);
+    }
+
+    setModerationQuick(status: ModerationStatus): void {
+        this.filterModeration = this.filterModeration === status ? 'all' : status;
+        this.reloadProducts(true);
+    }
+
+    setAvailabilityQuick(available: boolean): void {
+        this.filterAvailability = this.filterAvailability === available ? null : available;
+        this.reloadProducts(true);
     }
 
     onProductSearch(): void {
