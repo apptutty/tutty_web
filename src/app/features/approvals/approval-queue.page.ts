@@ -41,6 +41,9 @@ const COMMERCE_LABELS: Record<CommerceType, string> = {
             [class]="autoApprove() ? 'bg-success-500' : 'bg-gray-200'"
             (click)="toggleAutoApprove()"
             [disabled]="savingAutoApprove()"
+            role="switch"
+            [attr.aria-checked]="autoApprove()"
+            aria-label="Activar auto-aprobación de comercios"
           >
             <span class="inline-block w-5 h-5 transform rounded-full bg-white shadow transition-transform"
               [class]="autoApprove() ? 'translate-x-5' : 'translate-x-0.5'"></span>
@@ -59,6 +62,8 @@ const COMMERCE_LABELS: Record<CommerceType, string> = {
               ? 'bg-white text-gray-800 shadow-theme-xs'
               : 'text-gray-500 hover:text-gray-700'"
             (click)="switchTab(tab.key)"
+            [attr.aria-current]="activeTab() === tab.key ? 'page' : null"
+            [attr.aria-label]="'Ver comercios ' + tab.label.toLowerCase()"
           >
             {{ tab.label }}
             @if (tab.key === 'pendiente' && pendingCount() > 0) {
@@ -69,6 +74,21 @@ const COMMERCE_LABELS: Record<CommerceType, string> = {
           </button>
         }
       </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 mb-6">
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'pendiente'" (click)="switchTab('pendiente')">
+        Pendientes {{ pendingCount() }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'aprobado'" (click)="switchTab('aprobado')">
+        Aprobados {{ storesCountByStatus('aprobado') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'rechazado'" (click)="switchTab('rechazado')">
+        Rechazados {{ storesCountByStatus('rechazado') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'suspendido'" (click)="switchTab('suspendido')">
+        Suspendidos {{ storesCountByStatus('suspendido') }}
+      </button>
     </div>
 
     <!-- Cards grid -->
@@ -551,5 +571,11 @@ export class ApprovalQueuePageComponent implements OnInit, OnDestroy {
       rechazado: 'rechazado', suspendido: 'suspendido',
     };
     return map[tab];
+  }
+
+  storesCountByStatus(status: ApprovalStatus): number {
+    if (this.activeTab() === status) return this.stores().length;
+    if (status === 'pendiente') return this.pendingCount();
+    return 0;
   }
 }

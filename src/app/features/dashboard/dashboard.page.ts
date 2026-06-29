@@ -22,7 +22,10 @@ const STATUS_ORDER = ['recibido', 'confirmado', 'en_preparacion', 'en_camino', '
         StatusBadgeComponent, PageHeaderComponent, CurrencyDopPipe, AdminEmptyStateComponent,
     ],
     template: `
-    <app-page-header title="Dashboard" subtitle="Resumen en tiempo real de la plataforma" />
+    <app-page-header title="Dashboard" subtitle="Resumen en tiempo real de la plataforma">
+      <a routerLink="/orders" class="admin-btn admin-btn--secondary text-sm">Ver pedidos</a>
+      <a routerLink="/support" class="admin-btn admin-btn--secondary text-sm">Centro de soporte</a>
+    </app-page-header>
 
     <!-- KPI Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -61,13 +64,20 @@ const STATUS_ORDER = ['recibido', 'confirmado', 'en_preparacion', 'en_camino', '
       />
     </div>
 
+    <div class="flex flex-wrap items-center gap-2 mb-6">
+      <a routerLink="/orders" class="admin-chip admin-chip--active">Activos {{ kpis()?.pedidos_activos ?? 0 }}</a>
+      <a routerLink="/orders" class="admin-chip">Entregados {{ getStatusCount('entregado') }}</a>
+      <a routerLink="/orders" class="admin-chip">Cancelados {{ getStatusCount('cancelado') }}</a>
+      <a routerLink="/approvals" class="admin-chip">Aprobaciones {{ pendingApprovals().length }}</a>
+    </div>
+
     <!-- Main grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- Recent orders table -->
       <div class="lg:col-span-2 admin-table-card">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <h2 class="text-sm font-semibold text-gray-800">Pedidos Recientes</h2>
-          <a href="/orders" class="text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors">Ver todos →</a>
+          <a routerLink="/orders" class="text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors">Ver todos →</a>
         </div>
         <app-data-table
           [columns]="orderColumns"
@@ -234,5 +244,9 @@ export class DashboardPageComponent implements OnInit {
             cancelado: 'bg-error-500',
         };
         return map[status] ?? 'bg-gray-300';
+    }
+
+    getStatusCount(status: string): number {
+        return this.statusCounts().find(s => s.status === status)?.count ?? 0;
     }
 }

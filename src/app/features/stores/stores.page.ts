@@ -58,6 +58,24 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
       <button class="btn-primary" (click)="openForm()">+ Nuevo comercio</button>
     </app-page-header>
 
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeType() === ''" (click)="setCommerceType('')">
+        Todos {{ stores().length }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="approvalFilter === 'pendiente'" (click)="setApprovalFilter('pendiente')">
+        Pendientes {{ approvalCount('pendiente') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="approvalFilter === 'aprobado'" (click)="setApprovalFilter('aprobado')">
+        Aprobados {{ approvalCount('aprobado') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="openFilter === 'open'" (click)="setOpenFilter('open')">
+        Abiertos {{ openCount(true) }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="openFilter === 'closed'" (click)="setOpenFilter('closed')">
+        Cerrados {{ openCount(false) }}
+      </button>
+    </div>
+
     <!-- Commerce type tabs (horizontal scroll on mobile) -->
     <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4">
       <div class="flex gap-1 min-w-max">
@@ -68,6 +86,8 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
             [class]="activeType() === tab.value
               ? 'bg-brand-500 text-white shadow-sm'
               : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+            [attr.aria-current]="activeType() === tab.value ? 'page' : null"
+            [attr.aria-label]="'Filtrar comercios por ' + tab.label.toLowerCase()"
           >{{ tab.label }}</button>
         }
       </div>
@@ -85,17 +105,18 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
           placeholder="Buscar por nombre o slug..."
           [(ngModel)]="searchText"
           (ngModelChange)="onSearch()"
+          aria-label="Buscar comercios por nombre o slug"
         />
       </div>
       <div class="flex gap-2 flex-wrap sm:flex-nowrap">
-        <select class="input-field flex-1 sm:w-44" [(ngModel)]="approvalFilter" (ngModelChange)="loadStores()">
+        <select class="input-field flex-1 sm:w-44" [(ngModel)]="approvalFilter" (ngModelChange)="loadStores()" aria-label="Filtrar comercios por estado de aprobación">
           <option value="">Todas las aprobaciones</option>
           <option value="pendiente">Pendiente</option>
           <option value="aprobado">Aprobado</option>
           <option value="rechazado">Rechazado</option>
           <option value="suspendido">Suspendido</option>
         </select>
-        <select class="input-field flex-1 sm:w-36" [(ngModel)]="openFilter" (ngModelChange)="loadStores()">
+        <select class="input-field flex-1 sm:w-36" [(ngModel)]="openFilter" (ngModelChange)="loadStores()" aria-label="Filtrar comercios por apertura">
           <option value="">Todos</option>
           <option value="open">Abiertos</option>
           <option value="closed">Cerrados</option>
@@ -449,6 +470,24 @@ export class StoresPageComponent implements OnInit, OnDestroy {
         this.approvalFilter = '';
         this.openFilter = '';
         this.loadStores();
+    }
+
+    setApprovalFilter(value: ApprovalStatus | ''): void {
+        this.approvalFilter = value;
+        this.loadStores();
+    }
+
+    setOpenFilter(value: 'open' | 'closed' | ''): void {
+        this.openFilter = value;
+        this.loadStores();
+    }
+
+    approvalCount(status: ApprovalStatus): number {
+        return this.stores().filter(s => s.approval_status === status).length;
+    }
+
+    openCount(isOpen: boolean): number {
+        return this.stores().filter(s => !!s.is_open === isOpen).length;
     }
 
     openForm(store?: Restaurant): void {

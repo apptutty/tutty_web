@@ -58,6 +58,7 @@ type StatusTab = 'todos' | 'activos' | OrderStatus;
                 ? 'bg-white text-gray-800 shadow-theme-xs'
                 : 'text-gray-500 hover:text-gray-700'"
               (click)="setTab(tab.key)"
+              [attr.aria-label]="'Filtrar pedidos por ' + tab.label"
             >{{ tab.label }}</button>
           }
         </div>
@@ -73,6 +74,7 @@ type StatusTab = 'todos' | 'activos' | OrderStatus;
           placeholder="Buscar por # pedido..."
           [(ngModel)]="searchText"
           (ngModelChange)="onSearchChange()"
+          aria-label="Buscar pedidos por número"
         />
       </div>
       <select class="input-field sm:w-44" [(ngModel)]="dateRange" (ngModelChange)="applyDateFilter()">
@@ -81,6 +83,27 @@ type StatusTab = 'todos' | 'activos' | OrderStatus;
         <option value="week">Esta semana</option>
         <option value="month">Este mes</option>
       </select>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'todos'" (click)="setTab('todos')">
+        Todos {{ totalCount() }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'recibido'" (click)="setTab('recibido')">
+        Recibidos {{ statusOnPage('recibido') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'en_preparacion'" (click)="setTab('en_preparacion')">
+        En preparación {{ statusOnPage('en_preparacion') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'en_camino'" (click)="setTab('en_camino')">
+        En camino {{ statusOnPage('en_camino') }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'entregado'" (click)="setTab('entregado')">
+        Entregados {{ deliveredOnPage() }}
+      </button>
+      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'cancelado'" (click)="setTab('cancelado')">
+        Cancelados {{ cancelledOnPage() }}
+      </button>
     </div>
 
     @if (loadError()) {
@@ -153,6 +176,10 @@ export class OrdersPageComponent implements OnInit, OnDestroy {
   );
   readonly deliveredOnPage = computed(() => this.orders().filter(o => o.status === 'entregado').length);
   readonly cancelledOnPage = computed(() => this.orders().filter(o => o.status === 'cancelado').length);
+
+  statusOnPage(status: OrderStatus): number {
+    return this.orders().filter(o => o.status === status).length;
+  }
 
   ngOnInit(): void {
     this.loadOrders();
