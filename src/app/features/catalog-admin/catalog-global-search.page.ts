@@ -347,7 +347,7 @@ const MOD_CLASSES: Partial<Record<string, string>> = {
             }
             <!-- Price > venue anomaly -->
             @if (item.in_venue_price && item.price > item.in_venue_price) {
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-error-100 text-error-700 font-bold" title="Precio en app mayor que en sala">⚠️ App&gt;Sala</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-error-100 text-error-700 font-bold" title="Precio en app mayor que en sala" aria-label="Precio en app mayor que en sala" role="img">⚠️ App&gt;Sala</span>
             }
           </div>
         </div>

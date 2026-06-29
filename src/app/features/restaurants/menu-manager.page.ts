@@ -144,7 +144,7 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto z-10">
           <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
             <h3 class="font-semibold text-gray-800">{{ editingItem() ? 'Editar ítem' : 'Nuevo ítem' }}</h3>
-            <button class="text-gray-400 hover:text-gray-600" (click)="showItemModal.set(false)">✕</button>
+            <button aria-label="Cerrar modal de ítem de menú" class="text-gray-400 hover:text-gray-600" (click)="showItemModal.set(false)">✕</button>
           </div>
           <form [formGroup]="itemForm" (ngSubmit)="saveItem()" class="p-6 space-y-4">
             <div>

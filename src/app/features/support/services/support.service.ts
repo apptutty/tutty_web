@@ -260,7 +260,7 @@ export class SupportService {
                 order:orders(id, order_number, total),
                 store:commerces(id, name, commerce_type),
                 repartidor:repartidores(id, user:users!repartidores_user_id_fkey(full_name)),
-                booking:excursion_bookings(id, booking_number),
+                booking:bookings(id, booking_number),
                 assigned_to:users!assigned_to(id, full_name),
                 message_count:ticket_messages(count),
                 unread_count:ticket_messages(count).filter(read_by_support.eq.false)`,
@@ -334,7 +334,7 @@ export class SupportService {
                 order:orders(id, order_number, total),
                 store:commerces(id, name, commerce_type),
                 repartidor:repartidores(id, user:users!repartidores_user_id_fkey(full_name)),
-                booking:excursion_bookings(id, booking_number),
+                booking:bookings(id, booking_number),
                 assigned_to:users!assigned_to(id, full_name),
                 messages:ticket_messages(
                     id, ticket_id, sender:users(id, full_name, avatar_url),
@@ -561,8 +561,7 @@ export class SupportService {
                 .eq('status', 'resuelto')
                 .gte('resolved_at', todayStart.toISOString()),
             this.supabase.from('support_tickets').select('id', { count: 'exact', head: true })
-                .eq('sla_breached', true)
-                .not('status', 'in', '("resuelto","cerrado")'),
+                .eq('sla_breached', true),
             this.supabase.from('support_tickets').select('created_at, resolved_at')
                 .eq('status', 'resuelto')
                 .not('resolved_at', 'is', null),
@@ -767,7 +766,6 @@ export class SupportService {
                 assigned_to:users!assigned_to(id, full_name)`
             )
             .eq('sla_breached', true)
-            .not('status', 'in', '("resuelto","cerrado")')
             .order('sla_deadline', { ascending: true });
 
         if (error) throw error;
@@ -932,7 +930,7 @@ export class SupportService {
     searchBookings(query: string): Observable<BookingSearchResult[]> {
         return from(
             this.supabase
-                .from('excursion_bookings')
+                .from('bookings')
                 .select('id, booking_number, total, status, booking_date, excursion:excursions(name)')
                 .ilike('booking_number', `%${query}%`)
                 .limit(6)

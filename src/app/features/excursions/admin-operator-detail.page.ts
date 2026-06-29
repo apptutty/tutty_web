@@ -55,7 +55,7 @@ type OperatorTab = 'overview' | 'excursions' | 'admins' | 'bookings';
             <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ operator()!.description }}</p>
           }
           <div class="flex gap-4 mt-2 text-sm text-gray-500">
-            <span>⭐ {{ (operator()!.avg_rating ?? 0).toFixed(1) }} ({{ operator()!.total_reviews }} reseñas)</span>
+            <span>⭐ {{ operator()!.avg_rating.toFixed(1) }} ({{ operator()!.total_reviews }} reseñas)</span>
             @if (operator()!.whatsapp_number) { <span>📱 {{ operator()!.whatsapp_number }}</span> }
           </div>
         </div>
@@ -106,7 +106,7 @@ type OperatorTab = 'overview' | 'excursions' | 'admins' | 'bookings';
               <div class="flex justify-between"><dt class="text-gray-500">Valor</dt><dd class="font-medium text-gray-800">{{ operator()!.management_fee_value != null ? (operator()!.management_fee_type === 'percentage' ? operator()!.management_fee_value + '%' : 'RD$ ' + operator()!.management_fee_value) : '—' }}</dd></div>
               <div class="flex justify-between"><dt class="text-gray-500">Licencia turismo</dt><dd class="font-medium text-gray-800">{{ operator()!.has_tourism_license ? '✓ ' + (operator()!.tourism_license_number ?? '') : 'No' }}</dd></div>
               <div class="flex justify-between"><dt class="text-gray-500">Seguro</dt><dd class="font-medium text-gray-800">{{ operator()!.has_insurance ? '✓ Sí' : 'No' }}</dd></div>
-              <div class="flex justify-between"><dt class="text-gray-500">Idiomas</dt><dd class="font-medium text-gray-800">{{ operator()!.languages?.join(', ') || '—' }}</dd></div>
+              <div class="flex justify-between"><dt class="text-gray-500">Idiomas</dt><dd class="font-medium text-gray-800">{{ operator()!.languages.join(', ') || '—' }}</dd></div>
             </dl>
           </div>
           @if (operator()!.description) {

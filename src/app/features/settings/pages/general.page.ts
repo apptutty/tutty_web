@@ -9,59 +9,66 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div class="max-w-2xl">
-      <div class="card p-6 mb-6">
-        <h3 class="text-lg font-semibold mb-4 text-gray-900">Configuración General</h3>
+    <div class="max-w-5xl">
+      <div class="admin-form-card mb-6">
+        <div class="admin-form-card__header">
+          <h3 class="admin-card-title">General platform settings</h3>
+          <p class="text-sm text-gray-500 mt-1">Parámetros globales de operación, pedidos y tarifas base.</p>
+        </div>
+        <div class="admin-form-card__body">
         @if (loading()) {
           <div class="space-y-4">
-            @for (i of [1,2,3,4]; track i) {
+            @for (i of skeleton4; track i) {
               <div class="animate-pulse h-10 bg-gray-200 rounded"></div>
             }
           </div>
         } @else {
-          <form (ngSubmit)="save()" class="space-y-4">
-            <div>
+          <form (ngSubmit)="save()" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
               <label class="label">Monto Mínimo de Pedido (RD$)</label>
               <input type="number" class="input-field" [(ngModel)]="form.min_order_amount" name="min_order_amount" min="0" step="1" />
-            </div>
-            <div>
+              </div>
+              <div>
               <label class="label">Tarifa de Envío Predeterminada (RD$)</label>
               <input type="number" class="input-field" [(ngModel)]="form.default_delivery_fee" name="default_delivery_fee" min="0" step="1" />
-            </div>
-            <div>
+              </div>
+              <div>
               <label class="label">Comisión Predeterminada (%)</label>
               <input type="number" class="input-field" [(ngModel)]="form.default_commission_rate" name="default_commission_rate" min="0" max="100" step="0.1" />
-            </div>
-            <div>
+              </div>
+              <div>
               <label class="label">Tasa ITBIS (%)</label>
               <input type="number" class="input-field" [(ngModel)]="form.itbis_rate" name="itbis_rate" min="0" max="100" step="0.1" />
-            </div>
-            <div>
+              </div>
+              <div>
               <label class="label">Máx. Artículos por Pedido</label>
               <input type="number" class="input-field" [(ngModel)]="form.max_items_per_order" name="max_items_per_order" min="1" step="1" />
-            </div>
-            <div>
+              </div>
+              <div>
               <label class="label">Máx. Pedidos simultáneos</label>
               <input type="number" class="input-field" [(ngModel)]="form.max_orders_in_flight" name="max_orders_in_flight" min="1" step="1" />
-            </div>
-            <div>
+              </div>
+              <div>
               <label class="label">Bono por referido (RD$)</label>
               <input type="number" class="input-field" [(ngModel)]="form.referral_bonus_amount" name="referral_bonus_amount" min="0" step="1" />
-            </div>
-            <div>
+              </div>
+              <div>
               <label class="label">Auto-cancelar pedido sin confirmar (min)</label>
               <input type="number" class="input-field" [(ngModel)]="form.order_auto_cancel_minutes" name="order_auto_cancel_minutes" min="1" step="1" />
-            </div>
-            <div>
+              </div>
+              <div class="md:col-span-2">
               <label class="label">Umbral Envío Gratis (RD$)</label>
               <input type="number" class="input-field" [(ngModel)]="form.free_delivery_threshold" name="free_delivery_threshold" min="0" step="1" />
               <p class="text-xs text-gray-500 mt-1">0 = desactivado</p>
+              </div>
             </div>
             <button type="submit" class="btn-primary" [disabled]="saving()">
               {{ saving() ? 'Guardando...' : 'Guardar Cambios' }}
             </button>
           </form>
         }
+        </div>
       </div>
     </div>
   `,
@@ -72,6 +79,7 @@ export class GeneralSettingsPageComponent implements OnInit {
 
     readonly loading = signal(true);
     readonly saving = signal(false);
+    readonly skeleton4 = [1, 2, 3, 4];
 
     form = {
         min_order_amount: 0,

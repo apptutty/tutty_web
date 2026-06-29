@@ -24,7 +24,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
 
       @if (loading()) {
         <div class="card p-6 space-y-3">
-          @for (i of [1,2,3,4]; track i) {
+          @for (i of skeleton4; track i) {
             <div class="animate-pulse h-12 bg-gray-200 rounded"></div>
           }
         </div>
@@ -38,7 +38,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
             (action)="openForm()" />
         </div>
       } @else {
-        <div class="card overflow-hidden">
+        <div class="admin-table-card">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
               <tr>
@@ -58,7 +58,10 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
                   (dragstart)="onDragStart(i)" (dragover)="onDragOver($event)" (drop)="onDrop(i)"
                   class="transition-colors"
                   [class]="draggedIndex() === i ? 'opacity-40 bg-brand-50' : 'hover:bg-gray-50 cursor-grab'">
-                  <td class="px-3 py-3 text-gray-300 text-lg select-none">⠿</td>
+                  <td class="px-3 py-3 text-gray-300 text-lg select-none">
+                    <span aria-hidden="true">⠿</span>
+                    <span class="sr-only">Arrastrar para reordenar categoría</span>
+                  </td>
                   <td class="px-4 py-3 font-medium text-gray-800">{{ cat.name }}</td>
                   <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ cat.slug }}</td>
                   <td class="px-4 py-3 text-gray-600">{{ typeLabel(cat.commerce_type) }}</td>
@@ -86,12 +89,18 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
 
     @if (showModal()) {
       <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
-          <h3 class="text-lg font-semibold mb-4">
-            {{ editing()?.id ? 'Editar Categoría' : 'Nueva Categoría' }}
-          </h3>
-          <form (ngSubmit)="save()" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
+        <div class="admin-modal w-full max-w-lg">
+          <div class="admin-modal__header">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold mb-0">{{ editing()?.id ? 'Editar Categoría' : 'Nueva Categoría' }}</h3>
+                <p class="text-sm text-gray-500 mt-1">Gestiona metadatos de categoría y visibilidad en el catálogo.</p>
+              </div>
+              <button type="button" class="admin-icon-btn" aria-label="Cerrar modal de categoría" (click)="showModal.set(false)">✕</button>
+            </div>
+          </div>
+          <form (ngSubmit)="save()" class="admin-modal__body space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="label">Nombre</label>
                 <input type="text" class="input-field" [(ngModel)]="form.name"
@@ -103,7 +112,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
                   [(ngModel)]="form.slug" name="cat_slug" required />
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="label">Tipo de Comercio</label>
                 <select class="input-field" [(ngModel)]="form.commerce_type" name="cat_type">
@@ -113,7 +122,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
                 </select>
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="label">Orden de visualización</label>
                 <input type="number" class="input-field" [(ngModel)]="form.display_order" name="cat_order" min="0" step="1" />
@@ -121,16 +130,17 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
               <div class="flex items-center gap-3 pt-6">
                 <button type="button"
                   (click)="form.is_active = !form.is_active"
-                  class="relative inline-flex h-6 w-11 rounded-full transition-colors"
-                  [class]="form.is_active ? 'bg-brand-500' : 'bg-gray-200'">
-                  <span [class]="form.is_active
-                    ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'
-                    : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                  class="admin-switch"
+                  aria-label="Alternar estado de categoría"
+                  role="switch"
+                  [attr.aria-checked]="form.is_active"
+                  [class.admin-switch--on]="form.is_active">
+                  <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.is_active"></span>
                 </button>
                 <span class="text-sm text-gray-700">{{ form.is_active ? 'Activa' : 'Inactiva' }}</span>
               </div>
             </div>
-            <div class="flex gap-3 pt-2">
+            <div class="admin-modal__footer">
               <button type="button" class="btn-secondary flex-1" (click)="showModal.set(false)">Cancelar</button>
               <button type="submit" class="btn-primary flex-1" [disabled]="saving()">
                 {{ saving() ? 'Guardando...' : 'Guardar' }}
@@ -153,6 +163,7 @@ export class CategoriesPageComponent implements OnInit {
   readonly showModal = signal(false);
   readonly editing = signal<StoreCategory | null>(null);
   readonly draggedIndex = signal<number | null>(null);
+  readonly skeleton4 = [1, 2, 3, 4];
   typeFilter: CommerceType | 'all' = 'all';
   form: { name: string; slug: string; commerce_type: CommerceType; display_order: number; is_active: boolean } = {
     name: '', slug: '', commerce_type: 'restaurante', display_order: 0, is_active: true,

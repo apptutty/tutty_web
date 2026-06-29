@@ -9,9 +9,13 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div class="max-w-2xl">
-      <div class="card p-6 mb-6">
-        <h3 class="text-lg font-semibold mb-4 text-gray-900">Tarifas Especiales</h3>
+    <div class="max-w-5xl">
+      <div class="admin-form-card mb-6">
+        <div class="admin-form-card__header">
+          <h3 class="admin-card-title">Delivery settings</h3>
+          <p class="text-sm text-gray-500 mt-1">Recargos de clima y alta demanda para la tarifa de entrega.</p>
+        </div>
+        <div class="admin-form-card__body">
         @if (loading()) {
           <div class="animate-pulse h-40 bg-gray-200 rounded"></div>
         } @else {
@@ -25,8 +29,12 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
                 </div>
                 <button type="button"
                   (click)="form.weather_surcharge_enabled = !form.weather_surcharge_enabled"
-                  [class]="form.weather_surcharge_enabled ? 'bg-brand-500 relative inline-flex h-6 w-11 rounded-full transition-colors' : 'bg-gray-200 relative inline-flex h-6 w-11 rounded-full transition-colors'">
-                  <span [class]="form.weather_surcharge_enabled ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5' : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                  aria-label="Alternar recargo climático"
+                  role="switch"
+                  [attr.aria-checked]="form.weather_surcharge_enabled"
+                  class="admin-switch"
+                  [class.admin-switch--on]="form.weather_surcharge_enabled">
+                  <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.weather_surcharge_enabled"></span>
                 </button>
               </div>
               @if (form.weather_surcharge_enabled) {
@@ -46,8 +54,12 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
                 </div>
                 <button type="button"
                   (click)="form.surge_pricing_enabled = !form.surge_pricing_enabled"
-                  [class]="form.surge_pricing_enabled ? 'bg-brand-500 relative inline-flex h-6 w-11 rounded-full transition-colors' : 'bg-gray-200 relative inline-flex h-6 w-11 rounded-full transition-colors'">
-                  <span [class]="form.surge_pricing_enabled ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5' : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                  aria-label="Alternar recargo de hora pico"
+                  role="switch"
+                  [attr.aria-checked]="form.surge_pricing_enabled"
+                  class="admin-switch"
+                  [class.admin-switch--on]="form.surge_pricing_enabled">
+                  <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.surge_pricing_enabled"></span>
                 </button>
               </div>
               @if (form.surge_pricing_enabled) {
@@ -73,6 +85,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
             </button>
           </form>
         }
+        </div>
       </div>
     </div>
   `,

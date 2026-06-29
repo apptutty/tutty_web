@@ -1,24 +1,10 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SupportTicket, TicketStatus, TicketType, TicketPriority } from '../../services/support.service';
+import { SupportTicket, TicketStatus, TicketPriority } from '../../services/support.service';
 import { TimeAgoPipe } from '../../../../shared/pipes/time-ago.pipe';
 import { AdminEmptyStateComponent } from '../../../../shared/ui/admin-empty-state/admin-empty-state.component';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const PRIORITY_BAR: Record<TicketPriority, string> = {
-    urgente: 'bg-error-500',
-    alta: 'bg-orange-500',
-    media: 'bg-warning-400',
-    baja: 'bg-success-500',
-};
-
-const REPORTER_AVATAR_BG: Record<string, string> = {
-    cliente: 'bg-blue-500',
-    store_admin: 'bg-orange-500',
-    repartidor: 'bg-purple-500',
-    excursion_operator: 'bg-success-600',
-};
 
 const TICKET_STATUS_LABEL: Record<TicketStatus, string> = {
     abierto: 'Abierto',
@@ -38,28 +24,19 @@ const TICKET_STATUS_CLASS: Record<TicketStatus, string> = {
     cerrado: 'bg-gray-100 text-gray-500',
 };
 
-const TICKET_TYPE_LABEL: Record<TicketType, string> = {
-    queja_pedido: 'Queja pedido',
-    queja_repartidor: 'Queja repartidor',
-    queja_comercio: 'Queja comercio',
-    problema_tecnico: 'Problema técnico',
-    solicitud_reembolso: 'Sol. reembolso',
-    duda_general: 'Duda general',
-    reporte_fraude: 'Reporte fraude',
-    problema_pago: 'Problema pago',
-    queja_excursion: 'Queja excursión',
-    cancelacion_excursion: 'Cancelación exc.',
-    otro: 'Otro',
+const PRIORITY_LABEL: Record<TicketPriority, string> = {
+    urgente: 'Urgente',
+    alta: 'Alta',
+    media: 'Media',
+    baja: 'Baja',
 };
 
-function initials(name: string): string {
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map(w => w[0] ?? '')
-        .join('')
-        .toUpperCase();
-}
+const PRIORITY_CLASS: Record<TicketPriority, string> = {
+    urgente: 'bg-red-100 text-red-700',
+    alta: 'bg-yellow-100 text-yellow-700',
+    media: 'bg-blue-100 text-blue-700',
+    baja: 'bg-gray-100 text-gray-700',
+};
 
 // ─── TicketRowSkeletonComponent ───────────────────────────────────────────────
 
@@ -67,24 +44,17 @@ function initials(name: string): string {
     selector: 'app-ticket-row-skeleton',
     standalone: true,
     template: `
-      <div class="flex items-center gap-3 px-4 py-3 animate-pulse">
-        <!-- priority bar -->
-        <div class="w-1 self-stretch rounded-full bg-gray-100 flex-shrink-0"></div>
-        <!-- avatar -->
-        <div class="w-9 h-9 rounded-full bg-gray-100 flex-shrink-0"></div>
-        <!-- text -->
-        <div class="flex-1 min-w-0 space-y-2">
-          <div class="flex gap-2 items-center">
-            <div class="h-3 bg-gray-100 rounded w-20"></div>
-            <div class="h-3 bg-gray-100 rounded w-14"></div>
-          </div>
-          <div class="h-3.5 bg-gray-100 rounded w-3/4"></div>
-          <div class="h-3 bg-gray-100 rounded w-1/2"></div>
+      <div class="rounded-3xl border border-gray-200 p-4 bg-white animate-pulse">
+        <div class="flex items-center justify-between gap-3">
+          <div class="h-3.5 bg-gray-100 rounded w-28"></div>
+          <div class="h-3.5 bg-gray-100 rounded w-16"></div>
         </div>
-        <!-- meta -->
-        <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
-          <div class="h-5 bg-gray-100 rounded-full w-16"></div>
-          <div class="h-3 bg-gray-100 rounded w-10"></div>
+        <div class="h-5 bg-gray-100 rounded w-2/3 mt-2.5"></div>
+        <div class="h-3.5 bg-gray-100 rounded w-5/6 mt-2"></div>
+        <div class="flex gap-2 mt-3.5">
+          <div class="h-6 bg-gray-100 rounded-full w-16"></div>
+          <div class="h-6 bg-gray-100 rounded-full w-20"></div>
+          <div class="h-6 bg-gray-100 rounded-full w-16"></div>
         </div>
       </div>
     `,
@@ -99,94 +69,42 @@ export class TicketRowSkeletonComponent { }
     imports: [CommonModule, TimeAgoPipe],
     template: `
       <div
-        class="relative flex items-stretch gap-3 px-4 py-3 cursor-pointer select-none
-               transition-colors border-b border-gray-100 last:border-b-0"
-        [class.border-l-2]="selected"
-        [class.border-l-error-500]="selected"
-        [class.bg-primary-50]="selected"
-        [class.bg-error-50]="!selected && ticket.sla_breached"
+        class="rounded-3xl border p-4 cursor-pointer select-none transition-colors"
+        [class.border-[#f7c4de]]="selected"
+        [class.bg-[#fff8fc]]="selected"
+        [class.border-gray-200]="!selected"
         [class.hover:bg-gray-50]="!selected"
         (click)="rowClick.emit(ticket.id)"
         role="button"
         [attr.aria-selected]="selected"
       >
-        <!-- Priority bar -->
-        <div class="w-1 rounded-full flex-shrink-0 self-stretch" [class]="priorityBar"></div>
-
-        <!-- Avatar -->
-        <div class="flex-shrink-0 self-center">
-          @if (ticket.reporter.avatar_url) {
-            <img
-              [src]="ticket.reporter.avatar_url"
-              [alt]="ticket.reporter.full_name"
-              class="w-9 h-9 rounded-full object-cover"
-              loading="lazy"
-            />
-          } @else {
-            <div
-              class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-              [class]="avatarBg"
-            >{{ avatarInitials }}</div>
-          }
+        <div class="flex items-start justify-between gap-3">
+          <span class="text-xs font-black text-[#ec2a8f]">{{ ticket.ticket_number }}</span>
+          <span class="text-xs font-semibold text-gray-400 whitespace-nowrap">{{ ticket.created_at | timeAgo }}</span>
         </div>
 
-        <!-- Text column -->
-        <div class="flex-1 min-w-0">
-          <!-- Row 1: ticket number + type badge + SLA -->
-          <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
-            <span class="text-[11px] font-mono text-gray-400 flex-shrink-0">
-              {{ ticket.ticket_number }}
-            </span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-medium leading-none flex-shrink-0">
-              {{ typeLabel }}
-            </span>
-            @if (ticket.sla_breached) {
-              <span class="text-[10px] text-error-600 font-bold leading-none animate-pulse flex-shrink-0">
-                ⚡ SLA vencido
-              </span>
-            }
-          </div>
+        <h3 class="text-[16px] md:text-[18px] leading-[1.3] tracking-tight font-black text-gray-900 mt-2">
+          {{ ticket.subject }}
+        </h3>
 
-          <!-- Row 2: subject -->
-          <p class="text-sm font-semibold text-gray-800 truncate leading-snug">
-            {{ ticket.subject }}
-          </p>
+        <p class="text-[13px] md:text-[14px] leading-relaxed text-gray-500 mt-1.5 line-clamp-2">
+          {{ ticket.description }}
+        </p>
 
-          <!-- Row 3: reporter + contextual links -->
-          <p class="text-xs text-gray-500 truncate mt-0.5 leading-snug">
-            {{ ticket.reporter.full_name }}
-            <span class="mx-1 text-gray-300">·</span>
-            {{ reporterTypeLabel }}
-            @if (ticket.order) {
-              <span class="mx-1 text-gray-300">·</span>
-              <span class="text-gray-400">Pedido #{{ ticket.order.order_number }}</span>
-            }
-            @if (ticket.store) {
-              <span class="mx-1 text-gray-300">·</span>
-              <span class="text-gray-400">{{ ticket.store.name }}</span>
-            }
-          </p>
-        </div>
-
-        <!-- Meta column -->
-        <div class="flex flex-col items-end justify-between gap-1 flex-shrink-0">
-          <!-- Status badge -->
+        <div class="flex flex-wrap items-center gap-1.5 mt-3.5">
           <span
-            class="text-[10px] px-2 py-0.5 rounded-full font-semibold leading-snug whitespace-nowrap"
+            class="text-xs px-2.5 py-1 rounded-full font-semibold leading-snug whitespace-nowrap"
             [class]="statusClass"
           >{{ statusLabel }}</span>
-
-          <!-- Time ago -->
-          <span class="text-[11px] text-gray-400 whitespace-nowrap">
-            {{ ticket.created_at | timeAgo }}
+          <span class="text-xs px-2.5 py-1 rounded-full font-semibold leading-snug whitespace-nowrap" [class]="priorityClass">
+            {{ priorityLabel }}
           </span>
-
-          <!-- Unread count -->
-          @if (ticket.unread_count > 0) {
-            <span
-              class="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full
-                     bg-blue-500 text-white text-[10px] font-bold"
-            >{{ ticket.unread_count > 9 ? '9+' : ticket.unread_count }}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-50 text-blue-700">{{ reporterTypeLabel }}</span>
+          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-100 text-slate-600">
+            {{ ticket.assigned_to?.full_name ?? 'Sin asignar' }}
+          </span>
+          @if (ticket.sla_breached) {
+            <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700">SLA vencido</span>
           }
         </div>
       </div>
@@ -197,20 +115,12 @@ export class TicketRowComponent {
     @Input() selected = false;
     @Output() rowClick = new EventEmitter<string>();
 
-    get priorityBar(): string {
-        return PRIORITY_BAR[this.ticket.priority] ?? 'bg-gray-200';
+    get priorityClass(): string {
+        return PRIORITY_CLASS[this.ticket.priority] ?? 'bg-gray-100 text-gray-700';
     }
 
-    get avatarBg(): string {
-        return REPORTER_AVATAR_BG[this.ticket.reporter_type] ?? 'bg-gray-400';
-    }
-
-    get avatarInitials(): string {
-        return initials(this.ticket.reporter.full_name);
-    }
-
-    get typeLabel(): string {
-        return TICKET_TYPE_LABEL[this.ticket.type] ?? this.ticket.type;
+    get priorityLabel(): string {
+        return PRIORITY_LABEL[this.ticket.priority] ?? this.ticket.priority;
     }
 
     get reporterTypeLabel(): string {

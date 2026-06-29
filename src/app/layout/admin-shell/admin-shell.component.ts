@@ -142,7 +142,7 @@ const SUPER_ADMIN_NAV_GROUPS: NavGroup[] = [
         </div>
       } @else {
         <div class="px-1 flex justify-center">
-          <span class="w-2 h-2 rounded-full bg-brand-500" title="SUPER ADMIN"></span>
+          <span class="w-2 h-2 rounded-full bg-brand-500" title="SUPER ADMIN" aria-label="Super administrador" role="img"></span>
         </div>
       }
     </div>

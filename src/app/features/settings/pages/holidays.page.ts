@@ -11,16 +11,23 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
   standalone: true,
   imports: [CommonModule, FormsModule, AdminEmptyStateComponent],
   template: `
-    <div class="max-w-2xl">
-      <div class="card p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Feriados Nacionales</h3>
+    <div class="max-w-5xl">
+      <div class="admin-form-card">
+        <div class="admin-form-card__header flex items-center justify-between gap-3">
+          <div>
+            <h3 class="admin-card-title">Delivery settings · Feriados nacionales</h3>
+            <p class="text-sm text-gray-500 mt-1">Gestiona excepciones de calendario y recargos especiales.</p>
+          </div>
           <button class="btn-primary text-sm" (click)="openForm()">+ Agregar Feriado</button>
+        </div>
+        <div class="admin-form-card__body">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="font-semibold text-gray-900">Listado</h4>
         </div>
 
         @if (loading()) {
           <div class="space-y-2">
-            @for (i of [1,2,3]; track i) {
+            @for (i of skeleton3; track i) {
               <div class="animate-pulse h-12 bg-gray-200 rounded"></div>
             }
           </div>
@@ -46,14 +53,23 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
             }
           </div>
         }
+        </div>
       </div>
     </div>
 
     @if (showModal()) {
       <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold mb-4">{{ editing()?.id ? 'Editar Feriado' : 'Nuevo Feriado' }}</h3>
-          <form (ngSubmit)="save()" class="space-y-4">
+        <div class="admin-modal w-full max-w-md">
+          <div class="admin-modal__header">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold">{{ editing()?.id ? 'Editar Feriado' : 'Nuevo Feriado' }}</h3>
+                <p class="text-sm text-gray-500 mt-1">Completa los campos para guardar la configuración del feriado.</p>
+              </div>
+              <button type="button" class="admin-icon-btn" aria-label="Cerrar modal de feriado" (click)="showModal.set(false)">✕</button>
+            </div>
+          </div>
+          <form (ngSubmit)="save()" class="admin-modal__body space-y-4">
             <div>
               <label class="label">Nombre</label>
               <input type="text" class="input-field" [(ngModel)]="form.name" name="name" required />
@@ -66,7 +82,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
               <label class="label">Recargo Especial (%) — 0 si no aplica</label>
               <input type="number" class="input-field" [(ngModel)]="form.surcharge" name="surcharge" min="0" max="200" step="1" />
             </div>
-            <div class="flex gap-3 pt-2">
+            <div class="admin-modal__footer">
               <button type="button" class="btn-secondary flex-1" (click)="showModal.set(false)">Cancelar</button>
               <button type="submit" class="btn-primary flex-1" [disabled]="saving()">
                 {{ saving() ? 'Guardando...' : 'Guardar' }}
@@ -87,6 +103,7 @@ export class HolidaysPageComponent implements OnInit {
   readonly holidays = signal<Holiday[]>([]);
   readonly showModal = signal(false);
   readonly editing = signal<Holiday | null>(null);
+  readonly skeleton3 = [1, 2, 3];
   form: { name: string; date: string; surcharge: number } = { name: '', date: '', surcharge: 0 };
 
   ngOnInit() { this.load(); }

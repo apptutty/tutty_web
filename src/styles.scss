@@ -194,6 +194,20 @@
     @apply inline-flex items-center justify-center w-9 h-9 rounded-xl border bg-white text-gray-500 hover:text-gray-700 transition-colors;
     border-color: var(--admin-line);
   }
+  .admin-switch {
+    @apply relative inline-flex h-6 w-11 rounded-full transition-colors;
+    background: #e5e7eb;
+  }
+  .admin-switch--on {
+    background: var(--admin-primary);
+  }
+  .admin-switch__thumb {
+    @apply inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5;
+    transform: translateX(0);
+  }
+  .admin-switch__thumb--on {
+    transform: translateX(24px);
+  }
   .admin-badge {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
   }
@@ -235,9 +249,29 @@
   .admin-form-card__body {
     @apply px-5 py-5;
   }
+  .admin-modal {
+    @apply bg-white border rounded-3xl shadow-2xl overflow-hidden;
+    border-color: var(--admin-card-border);
+    box-shadow: var(--admin-shadow-soft);
+  }
+  .admin-modal__header {
+    @apply px-5 py-4 border-b relative;
+    border-color: var(--admin-line-soft);
+  }
+  .admin-modal__body {
+    @apply px-5 py-5;
+  }
+  .admin-modal__footer {
+    @apply px-5 pt-2 pb-5 flex gap-3;
+  }
   .admin-form-grid {
     @apply grid gap-4;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .admin-form-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   .admin-form-field {
     @apply min-w-0;

@@ -221,13 +221,13 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
       }
     </div>
   } @else {
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="w-10 px-4 py-2.5">
-                <input type="checkbox" class="rounded" (change)="toggleSelectAll($event)" />
+                <input type="checkbox" class="rounded" aria-label="Seleccionar todos los productos visibles" (change)="toggleSelectAll($event)" />
               </th>
               <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Producto</th>
               <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Categoría</th>
@@ -247,6 +247,7 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
               >
                 <td class="px-4 py-3 text-center">
                   <input type="checkbox" class="rounded"
+                         [attr.aria-label]="'Seleccionar producto ' + p.name"
                          [checked]="selectedIds().has(p.id)"
                          (change)="toggleSelect(p.id, $event)" />
                 </td>
@@ -301,6 +302,9 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
                     class="relative w-8 h-4 rounded-full transition-colors flex-shrink-0"
                     [class]="p.is_available ? 'bg-success-400' : 'bg-gray-200'"
                     (click)="quickToggleAvailability(p)"
+                    role="switch"
+                    [attr.aria-checked]="p.is_available"
+                    [attr.aria-label]="p.is_available ? 'Desactivar disponibilidad de ' + p.name : 'Activar disponibilidad de ' + p.name"
                   >
                     <span class="absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform"
                           [style.left]="p.is_available ? '17px' : '2px'"></span>
@@ -309,7 +313,8 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
                 <td class="px-4 py-3">
                   <div class="flex items-center justify-end gap-1">
                     <a [routerLink]="['/catalog', storeId, 'products', p.id]"
-                       class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors" title="Editar">
+                       class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors" title="Editar"
+                       [attr.aria-label]="'Editar producto ' + p.name">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
@@ -317,6 +322,7 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
                     <button
                       class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-500 transition-colors"
                       title="Duplicar"
+                      [attr.aria-label]="'Duplicar producto ' + p.name"
                       (click)="duplicateProduct(p)"
                     >
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,17 +333,20 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
                       <button
                         class="p-1.5 rounded-lg hover:bg-warning-50 text-warning-500 transition-colors"
                         title="Revisar precio"
+                        [attr.aria-label]="'Revisar precio de ' + p.name"
                         (click)="openPriceReview(p)"
                       >💰</button>
                     }
                     <button
                       class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
                       title="Moderar"
+                      [attr.aria-label]="'Moderar producto ' + p.name"
                       (click)="openModerate(p)"
                     >🔍</button>
                     <button
                       class="p-1.5 rounded-lg hover:bg-error-50 text-gray-300 hover:text-error-500 transition-colors"
                       title="Eliminar"
+                      [attr.aria-label]="'Eliminar producto ' + p.name"
                       (click)="deleteProduct(p)"
                     >
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -422,10 +431,11 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
           </label>
           <div class="flex items-center gap-1">
             @if (editingCatId() === cat.id) {
-              <button class="text-xs px-2 py-1 bg-success-100 text-success-700 rounded" (click)="saveCategoryEdit(cat)">✓</button>
-              <button class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded" (click)="editingCatId.set(null)">✕</button>
+              <button class="text-xs px-2 py-1 bg-success-100 text-success-700 rounded" (click)="saveCategoryEdit(cat)" [attr.aria-label]="'Guardar categoría ' + cat.name">✓</button>
+              <button class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded" (click)="editingCatId.set(null)" [attr.aria-label]="'Cancelar edición de categoría ' + cat.name">✕</button>
             } @else {
               <button class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-700 transition-colors"
+                      [attr.aria-label]="'Editar categoría ' + cat.name"
                       (click)="startEditCat(cat)">✏️</button>
             }
           </div>
@@ -482,8 +492,10 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
             </span>
             <div class="flex items-center gap-1 ml-auto">
               <button class="text-xs px-2 py-1 hover:bg-gray-100 rounded text-gray-500 transition-colors"
+                      [attr.aria-label]="'Editar combo ' + combo.name"
                       (click)="openComboForm(combo)">✏️</button>
               <button class="text-xs px-2 py-1 hover:bg-error-50 rounded text-gray-400 hover:text-error-500 transition-colors"
+                      [attr.aria-label]="'Eliminar combo ' + combo.name"
                       (click)="deleteCombo(combo.id)">🗑️</button>
             </div>
           </div>

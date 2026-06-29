@@ -2,10 +2,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ExcursionsService } from './excursions.service';
+import { ExcursionsService, ExcursionPhotoAsset } from './excursions.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { ExcursionOperator, ExcursionCategoryAdmin } from '../../core/supabase/database.types';
+import { ALLOWED_IMAGE_TYPES, validateImageFile } from '../../shared/utils/media-utils';
 
 interface ExcursionFormModel {
   name: string;
@@ -248,7 +249,7 @@ function blankForm(): ExcursionFormModel {
               @for (item of whatIsIncluded(); track item) {
                 <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-success-50 text-success-700 text-sm">
                   {{ item }}
-                  <button type="button" class="text-success-400 hover:text-success-700 ml-1 leading-none" (click)="removeTag('included', item)">×</button>
+                  <button type="button" class="text-success-400 hover:text-success-700 ml-1 leading-none" (click)="removeTag('included', item)" [attr.aria-label]="'Quitar elemento incluido ' + item">×</button>
                 </span>
               }
               @if (whatIsIncluded().length === 0) {
@@ -269,7 +270,7 @@ function blankForm(): ExcursionFormModel {
               @for (item of whatIsNotIncluded(); track item) {
                 <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error-50 text-error-700 text-sm">
                   {{ item }}
-                  <button type="button" class="text-error-400 hover:text-error-700 ml-1 leading-none" (click)="removeTag('notIncluded', item)">×</button>
+                  <button type="button" class="text-error-400 hover:text-error-700 ml-1 leading-none" (click)="removeTag('notIncluded', item)" [attr.aria-label]="'Quitar elemento no incluido ' + item">×</button>
                 </span>
               }
               @if (whatIsNotIncluded().length === 0) {
@@ -290,7 +291,7 @@ function blankForm(): ExcursionFormModel {
               @for (item of whatToBring(); track item) {
                 <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-warning-50 text-warning-700 text-sm">
                   {{ item }}
-                  <button type="button" class="text-warning-400 hover:text-warning-700 ml-1 leading-none" (click)="removeTag('toBring', item)">×</button>
+                  <button type="button" class="text-warning-400 hover:text-warning-700 ml-1 leading-none" (click)="removeTag('toBring', item)" [attr.aria-label]="'Quitar elemento de qué llevar ' + item">×</button>
                 </span>
               }
               @if (whatToBring().length === 0) {
@@ -311,7 +312,7 @@ function blankForm(): ExcursionFormModel {
               @for (item of requiredEquipment(); track item) {
                 <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-sm">
                   {{ item }}
-                  <button type="button" class="text-brand-400 hover:text-brand-700 ml-1 leading-none" (click)="removeTag('equipment', item)">×</button>
+                  <button type="button" class="text-brand-400 hover:text-brand-700 ml-1 leading-none" (click)="removeTag('equipment', item)" [attr.aria-label]="'Quitar equipamiento ' + item">×</button>
                 </span>
               }
               @if (requiredEquipment().length === 0) {
@@ -341,26 +342,60 @@ function blankForm(): ExcursionFormModel {
         <!-- ── SECCIÓN 6: Fotos ─────────────────────────────────────────── -->
         <div class="card p-6 space-y-4">
           <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide">6. Fotos</h3>
-          <p class="text-xs text-gray-500">Agrega las URLs de las fotos. La primera será la imagen principal.</p>
-          <div class="flex gap-2 mb-2">
-            <input class="input-field flex-1" [(ngModel)]="tagInputs.photo" name="_photo_input"
-              placeholder="https://..." (keydown.enter)="$event.preventDefault(); addTag('photo')" />
-            <button type="button" class="btn-secondary px-4" (click)="addTag('photo')">+ Agregar</button>
-          </div>
+          <p class="text-xs text-gray-500">Sube portada y galería. Se registran en Storage + media library automáticamente.</p>
+
+          @if (!isEdit()) {
+            <div class="rounded-xl border border-warning-200 bg-warning-50 text-warning-700 px-4 py-3 text-sm">
+              Guarda primero la excursión para habilitar el upload de imágenes.
+            </div>
+          } @else {
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="btn-secondary px-4" (click)="coverInput.click()" [disabled]="photoLoading()">
+                Subir portada
+              </button>
+              <button type="button" class="btn-secondary px-4" (click)="galleryInput.click()" [disabled]="photoLoading() || photos().length >= 10">
+                Subir galería
+              </button>
+              @if (photoLoading()) {
+                <span class="text-xs text-gray-500 self-center">Subiendo imagen…</span>
+              }
+            </div>
+
+            <input #coverInput type="file" class="hidden" accept="image/jpeg,image/png,image/webp,image/avif" (change)="onPhotoFileSelected($event, 'excursion_cover')" />
+            <input #galleryInput type="file" class="hidden" accept="image/jpeg,image/png,image/webp,image/avif" multiple (change)="onGalleryFilesSelected($event)" />
+          }
+
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            @for (url of photos(); track url; let i = $index) {
+            @for (photo of excursionPhotos(); track photo.media_asset_id; let i = $index) {
               <div class="relative group rounded-xl overflow-hidden border border-gray-200 aspect-video bg-gray-100">
-                <img [src]="url" class="w-full h-full object-cover" (error)="$any($event.target).style.display='none'" alt="" />
-                @if (i === 0) {
+                <img [src]="photo.public_url" class="w-full h-full object-cover" (error)="$any($event.target).style.display='none'" [alt]="'Foto de excursión ' + (i + 1)" />
+                @if (photo.kind === 'excursion_cover' || i === 0) {
                   <span class="absolute top-1 left-1 text-[10px] bg-brand-500 text-white px-1.5 py-0.5 rounded-full font-semibold">Principal</span>
                 }
                 <button type="button"
                   class="absolute top-1 right-1 bg-error-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                  (click)="removeTag('photo', url)">×</button>
+                  (click)="removePhoto(photo)"
+                  [disabled]="photoLoading()"
+                  [attr.aria-label]="'Eliminar foto ' + (i + 1)">×</button>
               </div>
             }
+
+            @if (legacyPhotos().length > 0) {
+              @for (url of legacyPhotos(); track url; let i = $index) {
+                <div class="relative group rounded-xl overflow-hidden border border-gray-200 aspect-video bg-gray-100">
+                  <img [src]="url" class="w-full h-full object-cover" (error)="$any($event.target).style.display='none'" [alt]="'Foto legacy ' + (i + 1)" />
+                  <span class="absolute top-1 left-1 text-[10px] bg-gray-800 text-white px-1.5 py-0.5 rounded-full font-semibold">Legacy</span>
+                  <button type="button"
+                    class="absolute top-1 right-1 bg-error-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                    (click)="removeLegacyPhoto(url)"
+                    [disabled]="photoLoading()"
+                    [attr.aria-label]="'Eliminar foto legacy ' + (i + 1)">×</button>
+                </div>
+              }
+            }
+
             @if (photos().length === 0) {
-              <p class="col-span-full text-xs text-gray-400 italic">Sin fotos. Agrega URLs de imágenes.</p>
+              <p class="col-span-full text-xs text-gray-400 italic">Sin fotos cargadas.</p>
             }
           </div>
         </div>
@@ -413,6 +448,9 @@ export class AdminExcursionEditPageComponent implements OnInit {
   readonly whatToBring = signal<string[]>([]);
   readonly requiredEquipment = signal<string[]>([]);
   readonly photos = signal<string[]>([]);
+  readonly excursionPhotos = signal<ExcursionPhotoAsset[]>([]);
+  readonly legacyPhotos = signal<string[]>([]);
+  readonly photoLoading = signal<boolean>(false);
 
   // Temporary tag inputs
   tagInputs = { included: '', notIncluded: '', toBring: '', equipment: '', photo: '' };
@@ -476,6 +514,10 @@ export class AdminExcursionEditPageComponent implements OnInit {
           this.whatToBring.set(Array.isArray(exc.what_to_bring) ? exc.what_to_bring : []);
           this.requiredEquipment.set(Array.isArray(exc.required_equipment) ? exc.required_equipment : []);
           this.photos.set(Array.isArray(exc.photos) ? exc.photos : []);
+          this.legacyPhotos.set(Array.isArray(exc.photos) ? exc.photos : []);
+          if (this.isEdit()) {
+            void this.refreshExcursionPhotos();
+          }
           resolve();
         },
         error: () => { this.toastService.error('Error al cargar la excursión'); resolve(); },
@@ -511,6 +553,108 @@ export class AdminExcursionEditPageComponent implements OnInit {
       photo:       this.photos,
     };
     sigMap[field].update(arr => arr.filter(x => x !== item));
+  }
+
+  async onPhotoFileSelected(event: Event, kind: 'excursion_cover' | 'excursion_gallery'): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.excursionId || !this.form.operator_id) return;
+    const validationError = validateImageFile(file, 8, ALLOWED_IMAGE_TYPES);
+    if (validationError) {
+      this.toastService.error(validationError.message);
+      return;
+    }
+
+    this.photoLoading.set(true);
+    try {
+      if (kind === 'excursion_gallery' && this.photos().length >= 10) {
+        this.toastService.error('Máximo 10 fotos por excursión.');
+        return;
+      }
+      await this.service.uploadExcursionPhoto({
+        excursionId: this.excursionId,
+        operatorId: this.form.operator_id,
+        file,
+        kind,
+      });
+      await this.refreshExcursionPhotos();
+      this.toastService.success(kind === 'excursion_cover' ? 'Portada actualizada' : 'Foto agregada');
+    } catch {
+      this.toastService.error('No se pudo subir la imagen');
+    } finally {
+      this.photoLoading.set(false);
+    }
+  }
+
+  async onGalleryFilesSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (!files.length || !this.excursionId || !this.form.operator_id) return;
+
+    const remaining = Math.max(0, 10 - this.photos().length);
+    const batch = files.slice(0, remaining);
+    if (!batch.length) {
+      this.toastService.error('Máximo 10 fotos por excursión.');
+      return;
+    }
+
+    this.photoLoading.set(true);
+    try {
+      for (const file of batch) {
+        const validationError = validateImageFile(file, 8, ALLOWED_IMAGE_TYPES);
+        if (validationError) {
+          this.toastService.error(validationError.message);
+          continue;
+        }
+        await this.service.uploadExcursionPhoto({
+          excursionId: this.excursionId,
+          operatorId: this.form.operator_id,
+          file,
+          kind: 'excursion_gallery',
+        });
+      }
+      await this.refreshExcursionPhotos();
+      this.toastService.success(batch.length === 1 ? 'Foto agregada' : `${batch.length} fotos agregadas`);
+    } catch {
+      this.toastService.error('No se pudieron subir todas las imágenes');
+    } finally {
+      this.photoLoading.set(false);
+    }
+  }
+
+  async removePhoto(photo: ExcursionPhotoAsset): Promise<void> {
+    if (!photo.media_asset_id) return;
+    this.photoLoading.set(true);
+    try {
+      await this.service.removeExcursionPhoto(photo.media_asset_id);
+      await this.refreshExcursionPhotos();
+      this.toastService.success('Foto eliminada');
+    } catch {
+      this.toastService.error('No se pudo eliminar la foto');
+    } finally {
+      this.photoLoading.set(false);
+    }
+  }
+
+  removeLegacyPhoto(url: string): void {
+    this.legacyPhotos.update(arr => arr.filter(item => item !== url));
+    this.photos.set(this.excursionPhotos().map(photo => photo.public_url).concat(this.legacyPhotos()));
+  }
+
+  private async refreshExcursionPhotos(): Promise<void> {
+    if (!this.excursionId) return;
+    try {
+      const assets = await this.service.getExcursionPhotos(this.excursionId);
+      this.excursionPhotos.set(assets);
+      const rpcUrls = assets.map(photo => photo.public_url);
+      const extras = this.legacyPhotos().filter(url => !rpcUrls.includes(url));
+      this.photos.set([...rpcUrls, ...extras]);
+    } catch {
+      this.excursionPhotos.set([]);
+      this.photos.set(this.legacyPhotos());
+    }
   }
 
   async save(): Promise<void> {

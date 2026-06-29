@@ -59,12 +59,12 @@ type DetailTab = 'overview' | 'documents' | 'vehicle' | 'location' | 'wallet' | 
         </div>
         <div class="card p-5">
           <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Rating / Entregas</p>
-          <p class="text-2xl font-bold text-gray-800">⭐ {{ (courier()!.avg_rating ?? 0).toFixed(1) }}</p>
-          <p class="text-sm text-gray-500 mt-1">{{ courier()!.total_deliveries ?? 0 }} entregas</p>
+          <p class="text-2xl font-bold text-gray-800">⭐ {{ courier()!.avg_rating.toFixed(1) }}</p>
+          <p class="text-sm text-gray-500 mt-1">{{ courier()!.total_deliveries }} entregas</p>
         </div>
         <div class="card p-5">
           <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Ganancias totales</p>
-          <p class="text-2xl font-bold text-gray-800">RD$ {{ (courier()!.total_earnings ?? 0).toFixed(0) }}</p>
+          <p class="text-2xl font-bold text-gray-800">RD$ {{ courier()!.total_earnings.toFixed(0) }}</p>
           <div class="mt-1">
             <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
               [class]="courier()!.is_available ? 'bg-success-50 text-success-700' : 'bg-gray-100 text-gray-500'">
@@ -304,7 +304,7 @@ type DetailTab = 'overview' | 'documents' | 'vehicle' | 'location' | 'wallet' | 
           <div class="card p-0 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 class="font-semibold text-gray-800">Calificaciones</h3>
-              <span class="text-sm text-gray-500">⭐ {{ (courier()!.avg_rating ?? 0).toFixed(1) }} promedio</span>
+              <span class="text-sm text-gray-500">⭐ {{ courier()!.avg_rating.toFixed(1) }} promedio</span>
             </div>
             <ul class="divide-y divide-gray-100">
               @for (r of ratings(); track r.id) {

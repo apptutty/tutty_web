@@ -121,7 +121,7 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
                         <p class="text-xs text-gray-400">{{ r.phone }}</p>
                       </div>
                       @if (!r.photo_url || !r.cedula_photo_url || !r.vehicle_photo_url || !r.license_photo_url) {
-                        <span class="text-warning-500 text-xs" title="Documentos faltantes">⚠️</span>
+                        <span class="text-warning-500 text-xs" title="Documentos faltantes" aria-label="Documentos faltantes" role="img">⚠️</span>
                       }
                     </div>
                   </td>
@@ -139,9 +139,9 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
                   <td class="px-4 py-3">
                     <app-status-badge [status]="r.approval_status ?? 'pendiente'" type="approval" />
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-700">⭐ {{ (r.avg_rating ?? 0).toFixed(1) }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700">{{ r.total_deliveries ?? 0 }}</td>
-                  <td class="px-4 py-3 text-sm font-medium text-gray-700">RD$ {{ (r.total_earnings ?? 0).toFixed(0) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">⭐ {{ r.avg_rating.toFixed(1) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ r.total_deliveries }}</td>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-700">RD$ {{ r.total_earnings.toFixed(0) }}</td>
                   <td class="px-4 py-3">
                     <div class="flex gap-1">
                       <button class="btn-secondary px-2 py-1 text-xs" (click)="router.navigate(['/couriers', r.id])">Ver</button>

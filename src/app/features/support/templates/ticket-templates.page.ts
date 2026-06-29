@@ -168,6 +168,7 @@ function emptyForm(): TemplatePayload {
                     <button
                       class="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                       [title]="tpl.is_active ? 'Desactivar' : 'Activar'"
+                      [attr.aria-label]="tpl.is_active ? 'Desactivar plantilla ' + tpl.name : 'Activar plantilla ' + tpl.name"
                       (click)="toggleActive(tpl)"
                       [disabled]="toggling() === tpl.id"
                     >
@@ -193,6 +194,7 @@ function emptyForm(): TemplatePayload {
                     <button
                       class="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-700"
                       title="Editar"
+                      [attr.aria-label]="'Editar plantilla ' + tpl.name"
                       (click)="openEdit(tpl)"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,6 +207,7 @@ function emptyForm(): TemplatePayload {
                     <button
                       class="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-700"
                       title="Duplicar"
+                      [attr.aria-label]="'Duplicar plantilla ' + tpl.name"
                       (click)="duplicate(tpl)"
                       [disabled]="duplicating() === tpl.id"
                     >
@@ -218,6 +221,7 @@ function emptyForm(): TemplatePayload {
                     <button
                       class="p-1.5 rounded-lg hover:bg-error-50 transition-colors text-gray-300 hover:text-error-500"
                       title="Eliminar"
+                      [attr.aria-label]="'Eliminar plantilla ' + tpl.name"
                       (click)="confirmDelete(tpl)"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,7 +252,7 @@ function emptyForm(): TemplatePayload {
         <h3 class="text-base font-bold text-gray-900">
           {{ editingId() ? 'Editar plantilla' : 'Nueva plantilla' }}
         </h3>
-        <button class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors" (click)="closeForm()">
+        <button aria-label="Cerrar formulario de plantilla" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors" (click)="closeForm()">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>

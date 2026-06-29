@@ -11,7 +11,13 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
   standalone: true,
   imports: [CommonModule, FormsModule, DatePipe, AdminEmptyStateComponent],
   template: `
-    <div>
+    <div class="max-w-7xl space-y-4">
+      <div class="admin-form-card">
+        <div class="admin-form-card__header">
+          <h3 class="admin-card-title">Security / roles · Audit log</h3>
+          <p class="text-sm text-gray-500 mt-1">Consulta trazabilidad de acciones administrativas a nivel plataforma.</p>
+        </div>
+        <div class="admin-form-card__body">
       <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3 mb-4">
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Admin</label>
@@ -37,8 +43,8 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
         </div>
       </div>
 
-      <div class="card overflow-hidden">
-        <div class="overflow-x-auto">
+      <div class="admin-table-card">
+        <div>
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
               <tr>
@@ -52,7 +58,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
               @if (loading()) {
-                @for (i of [1,2,3,4,5]; track i) {
+                @for (i of skeleton5; track i) {
                   <tr class="animate-pulse">
                     <td colspan="6" class="px-4 py-3">
                       <div class="h-4 bg-gray-200 rounded w-full"></div>
@@ -91,6 +97,8 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
           </table>
         </div>
       </div>
+        </div>
+      </div>
     </div>
   `,
 })
@@ -100,6 +108,7 @@ export class AuditPageComponent implements OnInit {
 
   readonly loading = signal(false);
   readonly logs = signal<AuditLogEntry[]>([]);
+  readonly skeleton5 = [1, 2, 3, 4, 5];
   filter = { admin: '', dateFrom: '', dateTo: '', action: '' };
 
   ngOnInit() { this.load(); }

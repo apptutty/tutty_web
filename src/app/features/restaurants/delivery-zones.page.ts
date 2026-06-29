@@ -149,7 +149,7 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
           <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
             <h3 class="font-semibold text-gray-800">{{ editingZone() ? 'Editar zona' : 'Nueva zona' }}</h3>
-            <button class="text-gray-400 hover:text-gray-600" (click)="closeModal()">✕</button>
+            <button aria-label="Cerrar modal de zona" class="text-gray-400 hover:text-gray-600" (click)="closeModal()">✕</button>
           </div>
           <form [formGroup]="zoneForm" (ngSubmit)="saveZone()" class="p-6 space-y-5">
             <div class="grid grid-cols-2 gap-4">
@@ -165,7 +165,7 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
                   @for (s of sectors; track s) {
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 text-sm">
                       {{ s }}
-                      <button type="button" (click)="removeSector(s)" class="ml-1 text-brand-400 hover:text-brand-600">×</button>
+                      <button type="button" (click)="removeSector(s)" class="ml-1 text-brand-400 hover:text-brand-600" [attr.aria-label]="'Quitar sector ' + s">×</button>
                     </span>
                   }
                   <input

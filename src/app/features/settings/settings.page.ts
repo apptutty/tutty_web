@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { SettingsService, AdminUser } from './settings.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
+import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
 import { AppSetting, Holiday, StoreCategory, AuditLogEntry, CommerceType } from '../../core/supabase/database.types';
 
 type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usuarios' | 'comercios' | 'categorias' | 'auditoria' | 'surcharge';
@@ -12,7 +13,7 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
 @Component({
   selector: 'app-settings-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, PageHeaderComponent, AdminEmptyStateComponent],
   template: `
     <div class="p-6">
       <app-page-header title="Configuración" subtitle="Gestión de parámetros del sistema" />
@@ -39,7 +40,7 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
             <h3 class="text-lg font-semibold mb-4 text-gray-900">Configuración General</h3>
             @if (loadingSettings()) {
               <div class="space-y-4">
-                @for (i of [1,2,3,4]; track i) {
+                @for (i of skeleton4; track i) {
                   <div class="animate-pulse h-10 bg-gray-200 rounded"></div>
                 }
               </div>
@@ -172,12 +173,16 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
 
             @if (loadingHolidays()) {
               <div class="space-y-2">
-                @for (i of [1,2,3]; track i) {
+                @for (i of skeleton3; track i) {
                   <div class="animate-pulse h-12 bg-gray-200 rounded"></div>
                 }
               </div>
             } @else if (holidays().length === 0) {
-              <p class="text-center text-gray-500 py-8">No hay feriados registrados</p>
+              <app-admin-empty-state
+                icon="search"
+                title="No hay feriados registrados"
+                description="Agrega el primer feriado nacional para gestionar disponibilidad."
+                variant="soft" />
             } @else {
               <div class="space-y-2">
                 @for (h of holidays(); track h.id) {
@@ -234,7 +239,7 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
             <h3 class="text-lg font-semibold mb-4 text-gray-900">Notificaciones del Sistema</h3>
             @if (loadingSettings()) {
               <div class="space-y-4">
-                @for (i of [1,2,3]; track i) {
+                @for (i of skeleton3; track i) {
                   <div class="animate-pulse h-16 bg-gray-200 rounded"></div>
                 }
               </div>
@@ -317,12 +322,12 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
 
           @if (loadingUsers()) {
             <div class="card p-6 space-y-3">
-              @for (i of [1,2,3]; track i) {
+              @for (i of skeleton3; track i) {
                 <div class="animate-pulse h-14 bg-gray-200 rounded"></div>
               }
             </div>
           } @else {
-            <div class="card overflow-hidden">
+            <div class="admin-table-card">
               <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                   <tr>
@@ -517,18 +522,21 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
 
           @if (loadingCategories()) {
             <div class="card p-6 space-y-3">
-              @for (i of [1,2,3,4]; track i) {
+              @for (i of skeleton4; track i) {
                 <div class="animate-pulse h-12 bg-gray-200 rounded"></div>
               }
             </div>
           } @else if (categories().length === 0) {
-            <div class="card p-10 text-center text-gray-400">
-              <p class="text-2xl mb-2">🏷</p>
-              <p class="font-medium">No hay categorías registradas</p>
-              <p class="text-sm mt-1">Crea la primera categoría para organizar los comercios</p>
+            <div class="card p-6">
+              <app-admin-empty-state
+                icon="search"
+                title="No hay categorías registradas"
+                description="Crea la primera categoría para organizar los comercios."
+                actionLabel="+ Nueva Categoría"
+                (action)="openCategoryForm()" />
             </div>
           } @else {
-            <div class="card overflow-hidden">
+            <div class="admin-table-card">
               <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                   <tr>
@@ -551,7 +559,10 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
                       (drop)="onCategoryDrop(i)"
                       class="transition-colors"
                       [class]="draggedIndex() === i ? 'opacity-40 bg-brand-50' : 'hover:bg-gray-50 cursor-grab'">
-                      <td class="px-3 py-3 text-gray-300 text-lg select-none">⠿</td>
+                      <td class="px-3 py-3 text-gray-300 text-lg select-none">
+                        <span aria-hidden="true">⠿</span>
+                        <span class="sr-only">Arrastrar para reordenar categoría</span>
+                      </td>
                       <td class="px-4 py-3 font-medium text-gray-800">{{ cat.name }}</td>
                       <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ cat.slug }}</td>
                       <td class="px-4 py-3 text-gray-600">{{ commerceTypeLabel(cat.commerce_type) }}</td>
@@ -655,8 +666,8 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
             <button class="btn-secondary text-sm" (click)="exportAuditCsv()">⬇ Exportar CSV</button>
           </div>
 
-          <div class="card overflow-hidden">
-            <div class="overflow-x-auto">
+          <div class="admin-table-card">
+            <div>
               <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                   <tr>
@@ -670,7 +681,7 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                   @if (loadingAudit()) {
-                    @for (i of [1,2,3,4,5]; track i) {
+                    @for (i of skeleton5; track i) {
                       <tr class="animate-pulse">
                         <td colspan="6" class="px-4 py-3">
                           <div class="h-4 bg-gray-200 rounded w-full"></div>
@@ -679,8 +690,12 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
                     }
                   } @else if (auditLogs().length === 0) {
                     <tr>
-                      <td colspan="6" class="px-4 py-12 text-center text-gray-400">
-                        Sin registros de auditoría para los filtros seleccionados
+                      <td colspan="6" class="px-4 py-6">
+                        <app-admin-empty-state
+                          icon="search"
+                          title="Sin registros de auditoría"
+                          description="No hay registros para los filtros seleccionados."
+                          variant="soft" />
                       </td>
                     </tr>
                   } @else {
@@ -837,6 +852,9 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
 export class SettingsPageComponent implements OnInit {
   private settingsService = inject(SettingsService);
   private toast = inject(ToastService);
+  readonly skeleton3 = [1, 2, 3];
+  readonly skeleton4 = [1, 2, 3, 4];
+  readonly skeleton5 = [1, 2, 3, 4, 5];
 
   activeTab = signal<SettingsTab>('general');
   tabs = [

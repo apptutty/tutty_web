@@ -122,6 +122,9 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
                       class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
                       [class]="p.is_active ? 'bg-success-500' : 'bg-gray-200'"
                       (click)="togglePromo(p)"
+                      role="switch"
+                      [attr.aria-checked]="p.is_active"
+                      [attr.aria-label]="p.is_active ? 'Desactivar promoción ' + p.name : 'Activar promoción ' + p.name"
                     >
                       <span class="inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform"
                         [class]="p.is_active ? 'translate-x-4' : 'translate-x-0.5'"></span>
@@ -151,7 +154,7 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
               <h3 class="font-semibold text-gray-800">Estadísticas — {{ statsPromo()!.name }}</h3>
               <code class="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono">{{ statsPromo()!.code }}</code>
             </div>
-            <button class="text-gray-400" (click)="statsPromo.set(null)">✕</button>
+            <button aria-label="Cerrar estadísticas de promoción" class="text-gray-400" (click)="statsPromo.set(null)">✕</button>
           </div>
           <div class="p-6 space-y-5">
             <!-- KPIs -->
@@ -235,7 +238,7 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto z-10">
           <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
             <h3 class="font-semibold">{{ editingId() ? 'Editar promoción' : 'Nueva promoción' }}</h3>
-            <button class="text-gray-400" (click)="showForm.set(false)">✕</button>
+            <button aria-label="Cerrar formulario de promoción" class="text-gray-400" (click)="showForm.set(false)">✕</button>
           </div>
           <form [formGroup]="promoForm" (ngSubmit)="save()" class="p-6 space-y-4">
             <div class="grid grid-cols-2 gap-4">

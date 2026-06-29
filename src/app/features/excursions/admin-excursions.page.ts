@@ -6,7 +6,6 @@ import { ExcursionsService } from './excursions.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { DataTableComponent, TableColumn } from '../../shared/ui/data-table/data-table.component';
-import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { ExcursionOperator, Excursion, ExcursionDate, BookingStatus } from '../../core/supabase/database.types';
 
 type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
@@ -14,7 +13,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
 @Component({
   selector: 'app-excursions-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, StatusBadgeComponent, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, RouterLink],
   template: `
     <app-page-header title="Excursiones" subtitle="Gestión de operadores, excursiones y reservas">
       @if (activeTab() === 'operadores') {
@@ -129,7 +128,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
           <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
             <h3 class="font-semibold text-gray-800">{{ editingOperator() ? 'Editar operador' : 'Nuevo operador' }}</h3>
-            <button class="text-gray-400" (click)="showOperatorModal.set(false)">✕</button>
+            <button aria-label="Cerrar modal de operador" class="text-gray-400" (click)="showOperatorModal.set(false)">✕</button>
           </div>
           <form [formGroup]="operatorForm" (ngSubmit)="saveOperator()" class="p-6 space-y-5">
 
@@ -233,7 +232,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
           <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
             <h3 class="font-semibold text-gray-800">Reserva {{ selectedBooking()!.booking_number }}</h3>
-            <button class="text-gray-400" (click)="selectedBooking.set(null); bookingDetail.set(null)">✕</button>
+            <button aria-label="Cerrar detalle de reserva" class="text-gray-400" (click)="selectedBooking.set(null); bookingDetail.set(null)">✕</button>
           </div>
           <div class="p-6 space-y-5">
             <div class="grid grid-cols-2 gap-4 text-sm">
@@ -325,7 +324,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
             </div>
             <div class="flex gap-2">
               <button class="btn-primary text-sm" (click)="showAddDatesModal.set(true)">+ Agregar fechas</button>
-              <button class="text-gray-400 hover:text-gray-600" (click)="closeDatesModal()">✕</button>
+              <button aria-label="Cerrar fechas de excursión" class="text-gray-400 hover:text-gray-600" (click)="closeDatesModal()">✕</button>
             </div>
           </div>
           <div class="p-6">
@@ -378,7 +377,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10">
           <div class="px-6 py-4 border-b border-gray-200 flex justify-between">
             <h3 class="font-semibold">Agregar fechas</h3>
-            <button class="text-gray-400" (click)="showAddDatesModal.set(false)">✕</button>
+            <button aria-label="Cerrar modal para agregar fechas" class="text-gray-400" (click)="showAddDatesModal.set(false)">✕</button>
           </div>
           <form (ngSubmit)="addExcursionDates()" class="p-6 space-y-4">
             <div>
@@ -389,7 +388,7 @@ type ActiveTab = 'operadores' | 'excursiones' | 'reservas' | 'categorias';
                 @for (d of newDates; track d) {
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 text-xs">
                     {{ d }}
-                    <button type="button" (click)="removeDate(d)" class="text-brand-400">×</button>
+                    <button type="button" (click)="removeDate(d)" class="text-brand-400" [attr.aria-label]="'Quitar fecha ' + d">×</button>
                   </span>
                 }
               </div>

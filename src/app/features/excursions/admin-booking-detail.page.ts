@@ -58,12 +58,12 @@ import { BookingDetail, BookingStatus } from '../../core/supabase/database.types
               </div>
               <div>
                 <p class="text-gray-400 text-xs mb-0.5">Hora de salida</p>
-                <p class="font-medium text-gray-800">{{ booking()!.excursion_date?.departure_time ?? '—' }}</p>
+                <p class="font-medium text-gray-800">{{ booking()!.excursion_date.departure_time }}</p>
               </div>
               <div>
                 <p class="text-gray-400 text-xs mb-0.5">Cliente</p>
                 <p class="font-medium text-gray-800">{{ booking()!.customer_name }}</p>
-                <p class="text-xs text-gray-400">{{ booking()!.customer?.phone ?? '—' }}</p>
+                <p class="text-xs text-gray-400">{{ booking()!.customer.phone ?? '—' }}</p>
               </div>
               <div>
                 <p class="text-gray-400 text-xs mb-0.5">Personas</p>
@@ -96,9 +96,9 @@ import { BookingDetail, BookingStatus } from '../../core/supabase/database.types
           <!-- Participants -->
           <div class="card p-0 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100">
-              <h3 class="font-semibold text-gray-800">Participantes ({{ booking()!.participants?.length ?? 0 }})</h3>
+              <h3 class="font-semibold text-gray-800">Participantes ({{ booking()!.participants.length }})</h3>
             </div>
-            @if (!booking()!.participants?.length) {
+            @if (!booking()!.participants.length) {
               <p class="px-6 py-8 text-center text-gray-400 text-sm">Sin participantes registrados</p>
             } @else {
               <div class="overflow-x-auto">

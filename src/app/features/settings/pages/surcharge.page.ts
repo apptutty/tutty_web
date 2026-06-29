@@ -12,8 +12,12 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
     <div class="max-w-4xl">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <!-- Input panel -->
-        <div class="card p-5 space-y-4">
-          <h3 class="font-semibold text-gray-800">Parámetros de Tarifa</h3>
+        <div class="admin-form-card">
+          <div class="admin-form-card__header">
+            <h3 class="admin-card-title">Delivery fee simulator</h3>
+            <p class="text-sm text-gray-500 mt-1">Prueba escenarios de recargos antes de guardar parámetros globales.</p>
+          </div>
+          <div class="admin-form-card__body space-y-4">
           <div>
             <label class="label">Tarifa base (RD$)</label>
             <input type="number" class="input-field" [(ngModel)]="form.baseFee" min="0" step="5" />
@@ -49,28 +53,31 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
               <span class="text-sm text-gray-700">🌧 ¿Simular lluvia?</span>
               <button type="button"
                 (click)="form.isRaining = !form.isRaining"
-                class="relative inline-flex h-6 w-11 rounded-full transition-colors"
-                [class]="form.isRaining ? 'bg-brand-500' : 'bg-gray-200'">
-                <span [class]="form.isRaining
-                  ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'
-                  : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                class="admin-switch"
+                aria-label="Alternar simulación de lluvia"
+                role="switch"
+                [attr.aria-checked]="form.isRaining"
+                [class.admin-switch--on]="form.isRaining">
+                <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.isRaining"></span>
               </button>
             </div>
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span class="text-sm text-gray-700">🎉 ¿Simular feriado?</span>
               <button type="button"
                 (click)="form.isHoliday = !form.isHoliday"
-                class="relative inline-flex h-6 w-11 rounded-full transition-colors"
-                [class]="form.isHoliday ? 'bg-brand-500' : 'bg-gray-200'">
-                <span [class]="form.isHoliday
-                  ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'
-                  : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                class="admin-switch"
+                aria-label="Alternar simulación de feriado"
+                role="switch"
+                [attr.aria-checked]="form.isHoliday"
+                [class.admin-switch--on]="form.isHoliday">
+                <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.isHoliday"></span>
               </button>
             </div>
           </div>
           <button class="btn-primary w-full" (click)="save()" [disabled]="saving()">
             {{ saving() ? 'Guardando...' : '💾 Guardar estos parámetros' }}
           </button>
+          </div>
         </div>
 
         <!-- Live output -->

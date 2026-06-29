@@ -10,7 +10,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
   standalone: true,
   imports: [CommonModule, FormsModule, AdminEmptyStateComponent],
   template: `
-    <div>
+    <div class="max-w-6xl">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">Usuarios Administradores</h3>
         <button class="btn-primary text-sm" (click)="openForm()">+ Nuevo Usuario</button>
@@ -18,12 +18,12 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
 
       @if (loading()) {
         <div class="card p-6 space-y-3">
-          @for (i of [1,2,3]; track i) {
+          @for (i of skeleton3; track i) {
             <div class="animate-pulse h-14 bg-gray-200 rounded"></div>
           }
         </div>
       } @else {
-        <div class="card overflow-hidden">
+        <div class="admin-table-card">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -77,9 +77,17 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
 
     @if (showModal()) {
       <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold mb-4">Nuevo Usuario Admin</h3>
-          <form (ngSubmit)="create()" class="space-y-4">
+        <div class="admin-modal w-full max-w-md">
+          <div class="admin-modal__header">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold mb-0">Nuevo Usuario Admin</h3>
+                <p class="text-sm text-gray-500 mt-1">Asigna perfil de acceso y credenciales temporales.</p>
+              </div>
+              <button type="button" class="admin-icon-btn" aria-label="Cerrar modal de usuario" (click)="showModal.set(false)">✕</button>
+            </div>
+          </div>
+          <form (ngSubmit)="create()" class="admin-modal__body space-y-4">
             <div>
               <label class="label">Nombre Completo</label>
               <input type="text" class="input-field" [(ngModel)]="form.full_name" name="full_name" required />
@@ -104,7 +112,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
             @if (createError()) {
               <p class="text-sm text-error-600">{{ createError() }}</p>
             }
-            <div class="flex gap-3 pt-2">
+            <div class="admin-modal__footer">
               <button type="button" class="btn-secondary flex-1" (click)="showModal.set(false)">Cancelar</button>
               <button type="submit" class="btn-primary flex-1" [disabled]="creating()">
                 {{ creating() ? 'Creando...' : 'Crear Usuario' }}
@@ -125,6 +133,7 @@ export class UsersPageComponent implements OnInit {
   readonly users = signal<AdminUser[]>([]);
   readonly showModal = signal(false);
   readonly createError = signal('');
+  readonly skeleton3 = [1, 2, 3];
   form = { full_name: '', email: '', password: '', role: 'restaurant_admin' };
 
   readonly roleLabels: Record<string, string> = {

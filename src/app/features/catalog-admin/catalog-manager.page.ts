@@ -117,7 +117,7 @@ const COMMERCE_TYPES = [
               {{ item.price_change_pct > 0 ? '+' : '' }}{{ item.price_change_pct }}%
             </span>
             @if (item.price_change_pct > 20) {
-              <span title="Supera el límite habitual del 20%">⚠️</span>
+              <span title="Supera el límite habitual del 20%" aria-label="Supera el límite habitual del 20%" role="img">⚠️</span>
             }
           </div>
           <!-- Actions -->

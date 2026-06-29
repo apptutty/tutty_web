@@ -141,13 +141,13 @@ type PctFilter = 0 | 10 | 20 | 30;
 }
 
 @if (!loading() && filteredItems().length > 0) {
-  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <div class="admin-table-card">
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="w-10 px-4 py-2.5">
-              <input type="checkbox" class="rounded" (change)="toggleSelectAll($event)" />
+              <input type="checkbox" class="rounded" aria-label="Seleccionar todas las solicitudes visibles" (change)="toggleSelectAll($event)" />
             </th>
             <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Comercio</th>
             <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Producto</th>
@@ -167,6 +167,7 @@ type PctFilter = 0 | 10 | 20 | 30;
             >
               <td class="px-4 py-3 text-center">
                 <input type="checkbox" class="rounded"
+                       [attr.aria-label]="'Seleccionar solicitud de ' + item.product_name"
                        [checked]="selectedIds().has(item.product_id)"
                        (change)="toggleSelect(item.product_id, $event)" />
               </td>
@@ -213,7 +214,7 @@ type PctFilter = 0 | 10 | 20 | 30;
                     {{ item.price_change_pct > 0 ? '▲' : '▼' }} {{ item.price_change_pct | number:'1.0-0' }}%
                   </span>
                   @if (isSuspicious(item)) {
-                    <span class="text-orange-500" title="Supera el límite del {{ pctLimit() }}%">⚠️</span>
+                    <span class="text-orange-500" title="Supera el límite del {{ pctLimit() }}%" [attr.aria-label]="'Supera el límite del ' + pctLimit() + '%'" role="img">⚠️</span>
                   }
                 </div>
               </td>
@@ -241,12 +242,14 @@ type PctFilter = 0 | 10 | 20 | 30;
                     (click)="quickApprove(item)"
                     [disabled]="approving() === item.product_id || (isSuspicious(item) && !item.pending_notes)"
                     [title]="isSuspicious(item) && !item.pending_notes ? 'Requiere nota del comercio' : 'Aprobar precio'"
+                    [attr.aria-label]="'Aprobar precio de ' + item.product_name"
                   >✅</button>
 
                   <!-- Reject -->
                   <button
                     class="px-2 py-1 bg-error-50 hover:bg-error-100 text-error-700 text-xs font-semibold rounded-lg transition-colors"
                     (click)="openReject(item)"
+                    [attr.aria-label]="'Rechazar propuesta de ' + item.product_name"
                   >❌</button>
 
                   <!-- Ask clarification -->
@@ -254,6 +257,7 @@ type PctFilter = 0 | 10 | 20 | 30;
                     class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition-colors"
                     title="Pedir aclaración"
                     (click)="askClarification(item)"
+                    [attr.aria-label]="'Pedir aclaración para ' + item.product_name"
                   >💬</button>
                 </div>
               </td>

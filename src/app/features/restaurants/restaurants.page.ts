@@ -111,6 +111,9 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
                       class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
                       [class]="r.is_open ? 'bg-success-500' : 'bg-gray-200'"
                       (click)="toggleOpen(r)"
+                      role="switch"
+                      [attr.aria-checked]="r.is_open"
+                      [attr.aria-label]="r.is_open ? 'Cerrar comercio ' + r.name : 'Abrir comercio ' + r.name"
                     >
                       <span class="inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform"
                         [class]="r.is_open ? 'translate-x-4' : 'translate-x-0.5'"></span>
@@ -121,6 +124,9 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
                       class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
                       [class]="r.is_active ? 'bg-success-500' : 'bg-gray-200'"
                       (click)="toggleActive(r)"
+                      role="switch"
+                      [attr.aria-checked]="r.is_active"
+                      [attr.aria-label]="r.is_active ? 'Desactivar comercio ' + r.name : 'Activar comercio ' + r.name"
                     >
                       <span class="inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform"
                         [class]="r.is_active ? 'translate-x-4' : 'translate-x-0.5'"></span>
@@ -156,7 +162,7 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
             <h3 class="font-semibold text-gray-800">
               {{ editingRestaurant() ? 'Editar restaurante' : 'Nuevo restaurante' }}
             </h3>
-            <button class="text-gray-400 hover:text-gray-600" (click)="showForm.set(false)">✕</button>
+            <button aria-label="Cerrar modal de comercio" class="text-gray-400 hover:text-gray-600" (click)="showForm.set(false)">✕</button>
           </div>
           <form [formGroup]="restaurantForm" (ngSubmit)="saveRestaurant()" class="p-6 space-y-6">
             <!-- Basic info -->

@@ -10,6 +10,70 @@ import {
 export class ExcursionsService {
     private readonly supabase = getSupabaseClient();
 
+    // ── Excursion media ─────────────────────────────────────────────────────────
+    async getExcursionPhotos(excursionId: string): Promise<ExcursionPhotoAsset[]> {
+        const { data, error } = await this.supabase.rpc('get_excursion_photos', {
+            p_excursion_id: excursionId,
+        });
+        if (error) throw error;
+        return (data ?? []) as ExcursionPhotoAsset[];
+    }
+
+    async uploadExcursionPhoto(params: {
+        excursionId: string;
+        operatorId: string;
+        file: File;
+        kind: 'excursion_cover' | 'excursion_gallery';
+        displayName?: string;
+    }): Promise<ExcursionPhotoAsset> {
+        const transformed = await this.toWebp(params.file);
+        const folder = params.kind === 'excursion_cover' ? 'covers' : 'gallery';
+        const storagePath = `${params.operatorId}/${folder}/${crypto.randomUUID()}.webp`;
+
+        const { error: uploadError } = await this.supabase.storage
+            .from('excursions')
+            .upload(storagePath, transformed.file, { contentType: transformed.file.type || 'image/webp' });
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = this.supabase.storage.from('excursions').getPublicUrl(storagePath);
+        const publicUrl = publicData.publicUrl;
+
+        const { data, error } = await this.supabase.rpc('add_excursion_photo', {
+            p_excursion_id: params.excursionId,
+            p_storage_path: storagePath,
+            p_public_url: publicUrl,
+            p_kind: params.kind,
+            p_display_name: params.displayName ?? null,
+            p_size_bytes: transformed.sizeBytes,
+            p_width: transformed.width,
+            p_height: transformed.height,
+        });
+        if (error) throw error;
+
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) throw new Error('No se pudo registrar la foto de la excursión.');
+
+        return {
+            media_asset_id: row.media_asset_id,
+            public_url: row.public_url,
+            kind: row.kind,
+            role: row.role,
+            sort_order: row.sort_order,
+            width: row.width,
+            height: row.height,
+            size_bytes: row.size_bytes,
+            is_primary: row.is_primary,
+            display_name: row.display_name,
+        } as ExcursionPhotoAsset;
+    }
+
+    async removeExcursionPhoto(mediaAssetId: string): Promise<void> {
+        const { error } = await this.supabase.rpc('remove_excursion_photo', {
+            p_media_asset_id: mediaAssetId,
+        });
+        if (error) throw error;
+    }
+
     // ── Stats ──────────────────────────────────────────────────────────────────
     getExcursionStats(): Observable<ExcursionStats> {
         return from((async () => {
@@ -176,6 +240,44 @@ export class ExcursionsService {
         if (error) throw error;
     }
 
+    private async toWebp(file: File): Promise<{
+        file: File;
+        width: number | null;
+        height: number | null;
+        sizeBytes: number;
+    }> {
+        try {
+            const bitmap = await createImageBitmap(file);
+            const width = bitmap.width;
+            const height = bitmap.height;
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('No se pudo iniciar el canvas para la imagen.');
+            ctx.drawImage(bitmap, 0, 0, width, height);
+            bitmap.close();
+
+            const blob = await new Promise<Blob>((resolve, reject) => {
+                canvas.toBlob((out) => {
+                    if (out) resolve(out);
+                    else reject(new Error('No se pudo convertir la imagen a WEBP.'));
+                }, 'image/webp', 0.9);
+            });
+
+            const webpFile = new File([blob], `${crypto.randomUUID()}.webp`, { type: 'image/webp' });
+            return { file: webpFile, width, height, sizeBytes: webpFile.size };
+        } catch {
+            return {
+                file,
+                width: null,
+                height: null,
+                sizeBytes: file.size,
+            };
+        }
+    }
+
     // ── Excursion Dates ────────────────────────────────────────────────────────
     getExcursionDates(excursionId: string): Observable<ExcursionDate[]> {
         return from(
@@ -274,3 +376,15 @@ export class ExcursionsService {
     }
 }
 
+export interface ExcursionPhotoAsset {
+    media_asset_id: string;
+    public_url: string;
+    kind: 'excursion_cover' | 'excursion_gallery';
+    role: string | null;
+    sort_order: number | null;
+    width: number | null;
+    height: number | null;
+    size_bytes: number | null;
+    is_primary: boolean;
+    display_name: string | null;
+}

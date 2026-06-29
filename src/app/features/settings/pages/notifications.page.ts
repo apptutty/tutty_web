@@ -9,12 +9,16 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="max-w-2xl">
-      <div class="card p-6 mb-6">
-        <h3 class="text-lg font-semibold mb-4 text-gray-900">Notificaciones del Sistema</h3>
+    <div class="max-w-5xl">
+      <div class="admin-form-card mb-6">
+        <div class="admin-form-card__header">
+          <h3 class="admin-card-title">Notification settings</h3>
+          <p class="text-sm text-gray-500 mt-1">Define alertas operativas para pedidos, WhatsApp y notificaciones push.</p>
+        </div>
+        <div class="admin-form-card__body">
         @if (loading()) {
           <div class="space-y-4">
-            @for (i of [1,2,3]; track i) {
+            @for (i of skeleton3; track i) {
               <div class="animate-pulse h-16 bg-gray-200 rounded"></div>
             }
           </div>
@@ -28,8 +32,12 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
                 </div>
                 <button type="button"
                   (click)="form.push_enabled = !form.push_enabled"
-                  [class]="form.push_enabled ? 'bg-brand-500 relative inline-flex h-6 w-11 rounded-full transition-colors' : 'bg-gray-200 relative inline-flex h-6 w-11 rounded-full transition-colors'">
-                  <span [class]="form.push_enabled ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5' : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                  aria-label="Alternar notificaciones push"
+                  role="switch"
+                  [attr.aria-checked]="form.push_enabled"
+                  class="admin-switch"
+                  [class.admin-switch--on]="form.push_enabled">
+                  <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.push_enabled"></span>
                 </button>
               </div>
             </div>
@@ -41,8 +49,12 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
                 </div>
                 <button type="button"
                   (click)="form.whatsapp_enabled = !form.whatsapp_enabled"
-                  [class]="form.whatsapp_enabled ? 'bg-brand-500 relative inline-flex h-6 w-11 rounded-full transition-colors' : 'bg-gray-200 relative inline-flex h-6 w-11 rounded-full transition-colors'">
-                  <span [class]="form.whatsapp_enabled ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5' : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                  aria-label="Alternar notificaciones de WhatsApp"
+                  role="switch"
+                  [attr.aria-checked]="form.whatsapp_enabled"
+                  class="admin-switch"
+                  [class.admin-switch--on]="form.whatsapp_enabled">
+                  <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.whatsapp_enabled"></span>
                 </button>
               </div>
             </div>
@@ -54,8 +66,12 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
                 </div>
                 <button type="button"
                   (click)="form.new_order_alert = !form.new_order_alert"
-                  [class]="form.new_order_alert ? 'bg-brand-500 relative inline-flex h-6 w-11 rounded-full transition-colors' : 'bg-gray-200 relative inline-flex h-6 w-11 rounded-full transition-colors'">
-                  <span [class]="form.new_order_alert ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5' : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                  aria-label="Alternar alertas de nuevos pedidos"
+                  role="switch"
+                  [attr.aria-checked]="form.new_order_alert"
+                  class="admin-switch"
+                  [class.admin-switch--on]="form.new_order_alert">
+                  <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.new_order_alert"></span>
                 </button>
               </div>
             </div>
@@ -67,8 +83,12 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
                 </div>
                 <button type="button"
                   (click)="form.unassigned_alert = !form.unassigned_alert"
-                  [class]="form.unassigned_alert ? 'bg-brand-500 relative inline-flex h-6 w-11 rounded-full transition-colors' : 'bg-gray-200 relative inline-flex h-6 w-11 rounded-full transition-colors'">
-                  <span [class]="form.unassigned_alert ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5' : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                  aria-label="Alternar alertas de pedidos sin repartidor"
+                  role="switch"
+                  [attr.aria-checked]="form.unassigned_alert"
+                  class="admin-switch"
+                  [class.admin-switch--on]="form.unassigned_alert">
+                  <span class="admin-switch__thumb" [class.admin-switch__thumb--on]="form.unassigned_alert"></span>
                 </button>
               </div>
               @if (form.unassigned_alert) {
@@ -83,6 +103,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
             </button>
           </form>
         }
+        </div>
       </div>
     </div>
   `,
@@ -93,6 +114,7 @@ export class NotificationsSettingsPageComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly skeleton3 = [1, 2, 3];
 
   form = {
     push_enabled: true,

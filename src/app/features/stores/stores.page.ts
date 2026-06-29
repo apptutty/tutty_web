@@ -173,6 +173,9 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                       [class]="s.is_open ? 'bg-success-500' : 'bg-gray-200'"
                       (click)="toggleOpen(s)"
                       [title]="s.is_open ? 'Cerrar comercio' : 'Abrir comercio'"
+                      role="switch"
+                      [attr.aria-checked]="s.is_open"
+                      [attr.aria-label]="s.is_open ? 'Cerrar comercio ' + s.name : 'Abrir comercio ' + s.name"
                     >
                       <span class="inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform"
                         [class]="s.is_open ? 'translate-x-4' : 'translate-x-0.5'"></span>
@@ -185,6 +188,9 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                       [class]="s.is_active ? 'bg-success-500' : 'bg-gray-200'"
                       (click)="toggleActive(s)"
                       [title]="s.is_active ? 'Desactivar' : 'Activar'"
+                      role="switch"
+                      [attr.aria-checked]="s.is_active"
+                      [attr.aria-label]="s.is_active ? 'Desactivar comercio ' + s.name : 'Activar comercio ' + s.name"
                     >
                       <span class="inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform"
                         [class]="s.is_active ? 'translate-x-4' : 'translate-x-0.5'"></span>
@@ -212,13 +218,17 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                         class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
                         (click)="$event.stopPropagation(); toggleMenu(s.id)"
                         title="Acciones"
+                        aria-label="Abrir acciones del comercio"
+                        aria-haspopup="menu"
+                        [attr.aria-expanded]="openMenuId === s.id"
+                        [attr.aria-controls]="'store-actions-menu-' + s.id"
                       >
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                           <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                         </svg>
                       </button>
                       @if (openMenuId === s.id) {
-                        <div class="absolute right-0 top-9 z-50 bg-white rounded-xl shadow-theme-lg border border-gray-100 py-1 min-w-[168px]">
+                        <div [id]="'store-actions-menu-' + s.id" role="menu" class="absolute right-0 top-9 z-50 bg-white rounded-xl shadow-theme-lg border border-gray-100 py-1 min-w-[168px]">
                           <button (click)="router.navigate(['/stores', s.id]); closeMenu()"
                             class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left">
                             👁 Ver detalle
@@ -267,7 +277,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
             <h3 class="font-semibold text-gray-800">
               {{ editingStore() ? 'Editar comercio' : 'Nuevo comercio' }}
             </h3>
-            <button class="text-gray-400 hover:text-gray-600" (click)="showForm.set(false)">✕</button>
+            <button aria-label="Cerrar modal de comercio" class="text-gray-400 hover:text-gray-600" (click)="showForm.set(false)">✕</button>
           </div>
           <form [formGroup]="storeForm" (ngSubmit)="saveStore()" class="p-6 space-y-6">
             <!-- Basic -->
