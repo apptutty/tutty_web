@@ -1,5 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router, RouterOutlet, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet, RouterLink } from '@angular/router';
+import { filter, map, startWith } from 'rxjs/operators';
 
 interface Step { index: number; label: string; }
 
@@ -78,9 +80,17 @@ const STEPS: Step[] = [
 export class OperatorRegisterShellComponent {
     private readonly router = inject(Router);
     readonly steps = STEPS;
+    private readonly currentUrl = toSignal(
+        this.router.events.pipe(
+            filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+            map(event => event.urlAfterRedirects),
+            startWith(this.router.url),
+        ),
+        { initialValue: this.router.url },
+    );
 
     readonly activeStepIndex = computed(() => {
-        const url = this.router.url.split('?')[0];
+        const url = this.currentUrl().split('?')[0];
         if (url.endsWith('/register/operator') || url.endsWith('/register/operator/')) return 0;
         if (url.includes('/register/operator/tours')) return 1;
         if (url.includes('/register/operator/account')) return 2;

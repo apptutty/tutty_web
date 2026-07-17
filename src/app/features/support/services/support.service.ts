@@ -3,6 +3,7 @@ import { Observable, from } from 'rxjs';
 import { getSupabaseClient } from '../../../core/supabase/supabase.client';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { buildStorageObjectKey } from '../../../shared/utils/storage-key.utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -394,7 +395,7 @@ export class SupportService {
         // 1. Upload attachments to Supabase Storage
         const attachmentUrls: string[] = [];
         for (const file of attachments) {
-            const path = `support/${ticketId}/${crypto.randomUUID()}-${file.name}`;
+            const path = buildStorageObjectKey(`support/${ticketId}`, file);
             const { error: uploadError } = await this.supabase.storage
                 .from('attachments')
                 .upload(path, file);
@@ -1026,7 +1027,7 @@ export class SupportService {
         // Upload attachments
         const attachmentUrls: string[] = [];
         for (const file of payload.attachments ?? []) {
-            const path = `support/attachments/${crypto.randomUUID()}-${file.name}`;
+            const path = buildStorageObjectKey('support/attachments', file);
             const { error: uploadError } = await this.supabase.storage
                 .from('attachments')
                 .upload(path, file);

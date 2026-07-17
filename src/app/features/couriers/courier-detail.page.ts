@@ -34,8 +34,8 @@ type DetailTab = 'overview' | 'documents' | 'vehicle' | 'location' | 'wallet' | 
       <section class="rounded-[28px] border border-[#e7eaf1] bg-[radial-gradient(circle_at_92%_12%,rgba(235,27,141,.11),transparent_24%),linear-gradient(180deg,#fff,#fbfcff)] shadow-[0_8px_24px_rgba(18,24,40,.07)] px-6 py-5 mb-5">
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div class="flex items-center gap-4 min-w-0">
-            @if (courier()!.photo_url || courier()!.avatar_url) {
-              <img [src]="courier()!.photo_url ?? courier()!.avatar_url" class="w-16 h-16 rounded-2xl object-cover border border-[#f5d0e7]" alt="" />
+            @if (courierPhotoPreviewUrl()) {
+              <img [src]="courierPhotoPreviewUrl()!" class="w-16 h-16 rounded-2xl object-cover border border-[#f5d0e7]" alt="" />
             } @else {
               <div class="w-16 h-16 rounded-2xl bg-[#ffe7f4] flex items-center justify-center text-2xl font-black text-[#c71473]">{{ courier()!.full_name?.charAt(0) ?? '?' }}</div>
             }
@@ -609,6 +609,13 @@ export class CourierDetailPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
 
   readonly courier = signal<Courier | null>(null);
+  readonly courierPhotoPreviewUrl = signal<string | null>(null);
+  readonly documentPreviewUrls = signal<{ photo: string | null; cedula: string | null; vehicle: string | null; license: string | null }>({
+    photo: null,
+    cedula: null,
+    vehicle: null,
+    license: null,
+  });
   readonly loading = signal(true);
   readonly activeTab = signal<DetailTab>('overview');
   readonly showRejectModal = signal(false);
@@ -670,12 +677,12 @@ export class CourierDetailPageComponent implements OnInit {
   ];
 
   readonly docItems = () => {
-    const c = this.courier();
+    const docs = this.documentPreviewUrls();
     return [
-      { key: 'photo', label: 'Foto del repartidor', url: c?.photo_url ?? c?.avatar_url ?? null },
-      { key: 'cedula', label: 'Cédula', url: c?.cedula_photo_url ?? null },
-      { key: 'vehicle', label: 'Foto del vehículo', url: c?.vehicle_photo_url ?? null },
-      { key: 'license', label: 'Licencia de conducir', url: c?.license_photo_url ?? null },
+      { key: 'photo', label: 'Foto del repartidor', url: docs.photo },
+      { key: 'cedula', label: 'Cédula', url: docs.cedula },
+      { key: 'vehicle', label: 'Foto del vehículo', url: docs.vehicle },
+      { key: 'license', label: 'Licencia de conducir', url: docs.license },
     ];
   };
 
@@ -699,9 +706,33 @@ export class CourierDetailPageComponent implements OnInit {
   loadCourier(): void {
     this.loading.set(true);
     this.service.getCourierById(this.courierId).subscribe({
-      next: data => { this.courier.set(data); this.loading.set(false); },
+      next: data => {
+        this.courier.set(data);
+        void this.resolveDocumentPreviews(data);
+        this.loading.set(false);
+      },
       error: () => { this.toastService.error('Error al cargar el repartidor'); this.loading.set(false); },
     });
+  }
+
+  private async resolveDocumentPreviews(courier: Courier): Promise<void> {
+    const [photo, cedula, vehicle, license] = await Promise.all([
+      this.resolveFirstAvailableUrl([courier.photo_url, courier.avatar_url]),
+      this.resolveFirstAvailableUrl([courier.cedula_photo_url]),
+      this.resolveFirstAvailableUrl([courier.vehicle_photo_url]),
+      this.resolveFirstAvailableUrl([courier.license_photo_url]),
+    ]);
+
+    this.courierPhotoPreviewUrl.set(photo);
+    this.documentPreviewUrls.set({ photo, cedula, vehicle, license });
+  }
+
+  private async resolveFirstAvailableUrl(candidates: Array<string | null | undefined>): Promise<string | null> {
+    for (const candidate of candidates) {
+      const resolved = await this.service.resolveCourierDocumentUrl(candidate);
+      if (resolved) return resolved;
+    }
+    return null;
   }
 
   setTab(tab: DetailTab): void {

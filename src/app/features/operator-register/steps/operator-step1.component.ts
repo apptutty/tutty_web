@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { OperatorRegisterService } from '../operator-register.service';
 import { AppConfigService } from '../../../core/config/app-config.service';
+import { buildStorageObjectKey } from '../../../shared/utils/storage-key.utils';
 
 function toSlug(text: string): string {
   return text
@@ -284,10 +285,10 @@ export class OperatorStep1Component implements OnInit {
       const tempSlug = this.form.slug;
 
       if (this.logoFile) {
-        logo_url = await this.svc.uploadFile(this.logoFile, `operators/${tempSlug}/logo.${this.logoFile.name.split('.').pop()}`);
+        logo_url = await this.svc.uploadFile(this.logoFile, buildStorageObjectKey(`operators/${tempSlug}/logo`, this.logoFile));
       }
       if (this.bannerFile) {
-        banner_url = await this.svc.uploadFile(this.bannerFile, `operators/${tempSlug}/banner.${this.bannerFile.name.split('.').pop()}`);
+        banner_url = await this.svc.uploadFile(this.bannerFile, buildStorageObjectKey(`operators/${tempSlug}/banner`, this.bannerFile));
       }
       this.svc.update({ ...this.form, logo_url, banner_url });
       this.router.navigate(['/register/operator/tours']);

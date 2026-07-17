@@ -26,15 +26,20 @@ export class StoreAdminService {
     readonly approvedStores = computed(() =>
         this.stores().filter(s => s.approval_status === 'aprobado')
     );
+    readonly pendingStores = computed(() =>
+        this.stores().filter(s => s.approval_status !== 'aprobado')
+    );
 
     async loadUserStores(userId: string): Promise<void> {
         this.isLoading.set(true);
+        console.log('[StoreAdminService] loadUserStores start', { userId });
         const { data, error } = await this.supabase
             .from('commerce_admins')
             .select('commerces(*)')
             .eq('user_id', userId);
 
         if (error || !data) {
+            console.error('[StoreAdminService] loadUserStores error', { userId, error: error?.message ?? 'no data' });
             this.isLoading.set(false);
             return;
         }
@@ -44,19 +49,30 @@ export class StoreAdminService {
             .filter(Boolean) as Restaurant[];
 
         this.stores.set(restaurants);
+        console.log('[StoreAdminService] loadUserStores result', {
+            userId,
+            count: restaurants.length,
+            approvalStatuses: restaurants.map(r => ({ id: r.id, status: r.approval_status })),
+        });
 
-        // Keep saved id if still valid, else pick first approved
+        // Keep saved id if valid. Prefer approved stores when available,
+        // otherwise fall back to the first pending store.
         const savedId = this.activeStoreId();
-        const validSaved = restaurants.find(r => r.id === savedId && r.approval_status === 'aprobado');
-        if (!validSaved) {
-            const firstApproved = restaurants.find(r => r.approval_status === 'aprobado');
-            if (firstApproved) {
-                // Set the active store without navigating — the guard or redirect handles routing
-                this.activeStoreId.set(firstApproved.id);
-                localStorage.setItem(ACTIVE_STORE_KEY, firstApproved.id);
-            } else {
-                this.activeStoreId.set(null);
-            }
+        const approved = restaurants.filter(r => r.approval_status === 'aprobado');
+        const fallback = approved[0] ?? restaurants[0] ?? null;
+        const validSaved = restaurants.find(r =>
+            r.id === savedId && (approved.length === 0 || r.approval_status === 'aprobado')
+        );
+        const target = validSaved ?? fallback;
+
+        if (target) {
+            this.activeStoreId.set(target.id);
+            localStorage.setItem(ACTIVE_STORE_KEY, target.id);
+            console.log('[StoreAdminService] active store set', { storeId: target.id, status: target.approval_status });
+        } else {
+            this.activeStoreId.set(null);
+            localStorage.removeItem(ACTIVE_STORE_KEY);
+            console.warn('[StoreAdminService] no store available to set active');
         }
 
         this.isLoading.set(false);

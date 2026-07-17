@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
 import { ExcursionOperator, ExcursionOperatorNotifPrefs } from '../../core/supabase/database.types';
+import { buildStorageObjectKey } from '../../shared/utils/storage-key.utils';
 
 export interface TeamMember {
     id: string;
@@ -79,15 +80,13 @@ export class OperatorProfileService {
         let bannerUrl = data.banner_url;
 
         if (logoFile) {
-            const ext = logoFile.name.split('.').pop();
-            const path = `operators/${slug}/logo.${ext}`;
+            const path = buildStorageObjectKey(`operators/${slug}/logo`, logoFile);
             await this.supabase.storage.from('media').upload(path, logoFile, { upsert: true });
             const { data: pub } = this.supabase.storage.from('media').getPublicUrl(path);
             logoUrl = pub.publicUrl;
         }
         if (bannerFile) {
-            const ext = bannerFile.name.split('.').pop();
-            const path = `operators/${slug}/banner.${ext}`;
+            const path = buildStorageObjectKey(`operators/${slug}/banner`, bannerFile);
             await this.supabase.storage.from('media').upload(path, bannerFile, { upsert: true });
             const { data: pub } = this.supabase.storage.from('media').getPublicUrl(path);
             bannerUrl = pub.publicUrl;

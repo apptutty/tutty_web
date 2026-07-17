@@ -27,7 +27,13 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
 
         <!-- Hours -->
         <section class="section">
-          <h2 class="section-title">⏰ Horario de atención</h2>
+          <h2 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8" />
+              <path d="M12 8v4.2l2.8 1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Horario de atención
+          </h2>
           <div class="form-row">
             <div class="form-group">
               <label class="label" for="opening">Apertura</label>
@@ -63,7 +69,14 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
 
         <!-- Delivery -->
         <section class="section">
-          <h2 class="section-title">🚴 Configuración de delivery</h2>
+          <h2 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="7" cy="17" r="2.5" stroke="currentColor" stroke-width="1.8" />
+              <circle cx="17" cy="17" r="2.5" stroke="currentColor" stroke-width="1.8" />
+              <path d="M7 17l3.5-7H14l3 7M10.5 10h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Configuración de delivery
+          </h2>
           <div class="form-row">
             <div class="form-group">
               <label class="label" for="avg_delivery">Tiempo promedio de entrega: <strong>{{ form.value.avg_delivery_minutes }} min</strong></label>
@@ -94,7 +107,13 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
         <!-- Commerce-type specific -->
         @if (commerceType() === 'farmacia') {
           <section class="section">
-            <h2 class="section-title">💊 Detalles de farmacia</h2>
+            <h2 class="section-title">
+              <svg class="section-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 7v10M7 12h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <rect x="5" y="5" width="14" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6" />
+              </svg>
+              Detalles de farmacia
+            </h2>
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" formControlName="requires_prescription" />
@@ -112,7 +131,12 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
 
         @if (commerceType() === 'tienda_ropa') {
           <section class="section">
-            <h2 class="section-title">👗 Detalles de tienda de ropa</h2>
+            <h2 class="section-title">
+              <svg class="section-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 5l3 2 3-2 3 3-2 3v8H8v-8L6 8l3-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+              </svg>
+              Detalles de tienda de ropa
+            </h2>
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" formControlName="handles_sizes" />
@@ -140,7 +164,13 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
 
         @if (commerceType() === 'electronica') {
           <section class="section">
-            <h2 class="section-title">📱 Detalles de electrónica</h2>
+            <h2 class="section-title">
+              <svg class="section-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="7" y="3" width="10" height="18" rx="2.5" stroke="currentColor" stroke-width="1.8" />
+                <circle cx="12" cy="17.5" r="1" fill="currentColor" />
+              </svg>
+              Detalles de electrónica
+            </h2>
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" formControlName="offers_warranty" />
@@ -158,7 +188,13 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
 
         @if (commerceType() === 'bodega' || commerceType() === 'colmado' || commerceType() === 'supermercado') {
           <section class="section">
-            <h2 class="section-title">📦 Detalles adicionales</h2>
+            <h2 class="section-title">
+              <svg class="section-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 8h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z" stroke="currentColor" stroke-width="1.8" />
+                <path d="M9 8V6a3 3 0 1 1 6 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              Detalles adicionales
+            </h2>
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" formControlName="realtime_inventory" />
@@ -205,11 +241,15 @@ const UNIT_TYPES = ['kg', 'litro', 'unidad', 'caja', 'paquete', 'docena', 'libra
     }
 
     .section-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
       font-size: 0.95rem;
       font-weight: 700;
       color: #374151;
       margin: 0 0 1rem;
     }
+    .section-icon { width: 1rem; height: 1rem; color: #6b7280; }
 
     .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.75rem; }
 
@@ -351,7 +391,7 @@ export class RegisterStepDetailsComponent implements OnInit {
     const open = this.form?.value.opening_time ?? '';
     const close = this.form?.value.closing_time ?? '';
     const days = this.selectedDays().map(d => DAY_LABELS[d] ?? d).join(', ');
-    return open && close ? `✓ Abierto ${days} de ${open} a ${close}` : `✓ Días: ${days}`;
+    return open && close ? `Abierto ${days} de ${open} a ${close}` : `Días: ${days}`;
   });
 
   readonly form = this.fb.group({

@@ -11,6 +11,23 @@ import {
 export class CouriersService {
     private readonly supabase = getSupabaseClient();
 
+    async resolveCourierDocumentUrl(value: string | null | undefined): Promise<string | null> {
+        if (!value || !value.trim()) return null;
+        if (/^https?:\/\//i.test(value)) return value;
+
+        const normalizedPath = value
+            .replace(/^\/+/, '')
+            .replace(/^repartidor-docs\//, '');
+
+        const { data, error } = await this.supabase
+            .storage
+            .from('repartidor-docs')
+            .createSignedUrl(normalizedPath, 60 * 60);
+
+        if (error || !data?.signedUrl) return null;
+        return data.signedUrl;
+    }
+
     getDriverStats(): Observable<DriverStats> {
         return from((async () => {
             const { data } = await this.supabase.from('repartidores').select('is_available, approval_status, photo_url, cedula_photo_url, vehicle_photo_url, license_photo_url, total_deliveries, total_earnings, avg_rating, last_location_at');
@@ -250,4 +267,3 @@ export class CouriersService {
         );
     }
 }
-

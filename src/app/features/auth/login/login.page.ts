@@ -170,7 +170,9 @@ export class LoginPageComponent {
         const { email, password } = this.loginForm.getRawValue();
 
         try {
+            console.log('[Login] submit start', { email });
             await this.authService.signIn(email!, password!);
+            console.log('[Login] signIn resolved, waiting for auth state/profile');
             // Wait up to 8 s for the auth event to load the profile.
             // `isLoading` is set to false at startup, so we can't rely on it
             // here — poll for isAuthenticated() instead.
@@ -178,6 +180,12 @@ export class LoginPageComponent {
                 const deadline = Date.now() + 8000;
                 const check = () => {
                     if (this.authService.isAuthenticated() || Date.now() > deadline) {
+                        console.log('[Login] wait loop done', {
+                            isAuthenticated: this.authService.isAuthenticated(),
+                            sessionExists: this.authService.sessionExists(),
+                            userId: this.authService.currentUser()?.id ?? null,
+                            role: this.authService.currentUser()?.role ?? null,
+                        });
                         resolve();
                         return;
                     }
@@ -187,11 +195,14 @@ export class LoginPageComponent {
             });
             if (this.authService.isAuthenticated()) {
                 const role = this.authService.currentUser()?.role;
+                 console.log('[Login] navigating after auth', { role, target: role === 'store_admin' ? '/store' : '/dashboard' });
                 await this.router.navigate([role === 'store_admin' ? '/store' : '/dashboard']);
             } else {
+                console.warn('[Login] authenticated session but profile not resolved');
                 this.errorMessage.set('No se encontró el perfil de usuario. Contacta al administrador.');
             }
         } catch (err: any) {
+            console.error('[Login] submit failed', err);
             this.errorMessage.set(
                 err?.message === 'Invalid login credentials'
                     ? 'Correo o contraseña incorrectos'

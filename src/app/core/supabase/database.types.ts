@@ -954,6 +954,8 @@ export interface RegistrationDraft {
   city: string;
   logo_url: string | null;
   banner_url: string | null;
+  temp_logo_path?: string | null;
+  temp_banner_path?: string | null;
   category_id: string | null;
   // Step 3 – operational details
   opening_time: string;

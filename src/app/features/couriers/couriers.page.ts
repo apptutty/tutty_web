@@ -444,6 +444,7 @@ export class CouriersPageComponent implements OnInit {
         vehicle_type: val.vehicle_type as VehicleType,
         vehicle_plate: val.vehicle_plate ?? null,
         is_available: true,
+        ...(!this.editingId() ? { approval_status: 'pendiente' as const } : {}),
       });
       this.toastService.success('Repartidor guardado');
       this.showForm.set(false);

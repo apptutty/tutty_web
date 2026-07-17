@@ -124,6 +124,21 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
       font-size: 18px;
       line-height: 1;
     }
+
+    .pending-shell-lock {
+      filter: grayscale(1);
+      opacity: 0.72;
+    }
+
+    .pending-overlay {
+      @apply absolute inset-0 z-10 flex items-center justify-center px-4;
+      background: rgba(248, 250, 252, 0.72);
+      backdrop-filter: blur(1px);
+    }
+
+    .pending-card {
+      @apply max-w-lg w-full rounded-2xl border border-amber-200 bg-white/95 p-5 text-center shadow-sm;
+    }
   `],
     template: `
     <div class="flex min-h-[100dvh] bg-gray-50 overflow-hidden font-poppins">
@@ -310,6 +325,7 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
                 <button
                   class="top-range-btn focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-500"
                   [class.active]="storeService.timeRange() === range.value"
+                  [disabled]="isPendingReview()"
                   (click)="storeService.timeRange.set(range.value)"
                 >{{ range.label }}</button>
               }
@@ -321,6 +337,7 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
             class="status-btn"
             [class.open]="storeService.activeStore()?.is_open"
             [class.closed]="!storeService.activeStore()?.is_open"
+            [disabled]="isPendingReview()"
             (click)="confirmToggleOpen()"
           >
             @if (storeService.activeStore()?.is_open) {
@@ -347,9 +364,25 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
           </button>
         </header>
 
+        @if (isPendingReview()) {
+          <div class="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+            Tu comercio está en revisión. Puedes ver el panel, pero las acciones estarán bloqueadas hasta aprobación.
+          </div>
+        }
+
         <!-- ── Page content ── -->
-        <main class="flex-1 overflow-y-auto pb-16 lg:pb-0">
+        <main class="relative flex-1 overflow-y-auto pb-16 lg:pb-0" [class.pending-shell-lock]="isPendingReview()">
           <router-outlet />
+          @if (isPendingReview()) {
+            <div class="pending-overlay">
+              <div class="pending-card">
+                <h3 class="text-sm font-semibold text-gray-900">Comercio en revisión</h3>
+                <p class="mt-1 text-xs text-gray-600">
+                  Cuando el equipo apruebe tu comercio, se habilitarán pedidos, catálogo y configuración.
+                </p>
+              </div>
+            </div>
+          }
         </main>
 
         <!-- ── Mobile bottom navigation ── -->
@@ -363,6 +396,8 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
               class="flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0 transition-colors focus-visible:outline-none"
               [class.text-brand-600]="rla.isActive"
               [class.text-gray-500]="!rla.isActive"
+              [class.opacity-50]="isPendingReview() && item.path !== 'dashboard'"
+              [class.pointer-events-none]="isPendingReview() && item.path !== 'dashboard'"
             >
               <div class="relative">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -439,6 +474,8 @@ const BOTTOM_NAV = ['dashboard', 'orders', 'catalog', 'settings'];
         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors text-sm"
         [class.nav-active]="rla.isActive"
         [class.justify-center]="collapsed()"
+        [class.opacity-50]="isPendingReview() && item.path !== 'dashboard'"
+        [class.pointer-events-none]="isPendingReview() && item.path !== 'dashboard'"
         [title]="collapsed() ? catalogLabel(item) : ''"
         (click)="drawerOpen.set(false)"
       >
@@ -527,6 +564,9 @@ export class StoreAdminShellComponent {
     );
 
     readonly showScheduleWarning = computed(() => this.storeService.isOutsideSchedule());
+    readonly isPendingReview = computed(() =>
+        this.storeService.activeStore()?.approval_status === 'pendiente'
+    );
     readonly scheduleWindow = computed(() => {
         const store = this.storeService.activeStore();
         if (!store?.opening_time || !store?.closing_time) return 'Horario no configurado';
@@ -542,6 +582,7 @@ export class StoreAdminShellComponent {
     }
 
     confirmToggleOpen() {
+        if (this.isPendingReview()) return;
         this.toggleModalOpen.set(true);
     }
 

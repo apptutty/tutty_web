@@ -42,7 +42,12 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
       @if (isAuthenticated()) {
         <div class="auth-card">
           <div class="auth-user-info">
-            <div class="auth-avatar">👤</div>
+            <div class="auth-avatar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8" />
+                <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </div>
             <div>
               <p class="auth-name">{{ currentUser()?.full_name }}</p>
               <p class="auth-email">{{ currentUser()?.email }}</p>
@@ -60,7 +65,7 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
           <div class="step-actions">
             <button type="button" class="btn-secondary" (click)="back()" [disabled]="submitting()">← Atrás</button>
             <button type="button" class="btn-primary" [disabled]="submitting()" (click)="submitAuthenticated()">
-              @if (submitting()) { <span>Registrando…</span> } @else { <span>Registrar mi comercio 🚀</span> }
+              @if (submitting()) { <span>Registrando…</span> } @else { <span>Registrar mi comercio</span> }
             </button>
           </div>
         </div>
@@ -110,7 +115,18 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
               placeholder="Mínimo 8 caracteres"
               autocomplete="new-password" />
             <button type="button" class="toggle-pass" (click)="showPassword.set(!showPassword())" tabindex="-1">
-              {{ showPassword() ? '🙈' : '👁️' }}
+              @if (showPassword()) {
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M10.6 10.6a2.1 2.1 0 0 0 2.8 2.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M2.5 12s3.2-6 9.5-6c2 0 3.8.6 5.2 1.5M21.5 12s-3.2 6-9.5 6c-2 0-3.8-.6-5.2-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M2.5 12s3.2-6 9.5-6 9.5 6 9.5 6-3.2 6-9.5 6-9.5-6-9.5-6z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="2.7" stroke="currentColor" stroke-width="1.8" />
+                </svg>
+              }
             </button>
           </div>
           @if (f['password'].value) {
@@ -165,7 +181,7 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
             @if (submitting()) {
               <span>Registrando…</span>
             } @else {
-              <span>Registrar mi comercio 🚀</span>
+              <span>Registrar mi comercio</span>
             }
           </button>
         </div>
@@ -199,9 +215,12 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 1rem;
+      width: 1.25rem;
+      height: 1.25rem;
+      color: #6b7280;
       padding: 0;
     }
+    .toggle-pass svg { width: 100%; height: 100%; display: block; }
 
     .strength-bar {
       height: 4px;
@@ -293,7 +312,8 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
       padding: 1rem;
     }
 
-    .auth-avatar { font-size: 2rem; }
+    .auth-avatar { width: 2rem; height: 2rem; color: #6b7280; }
+    .auth-avatar svg { width: 100%; height: 100%; display: block; }
 
     .auth-name {
       font-weight: 600;

@@ -11,9 +11,20 @@ export const operatorGuard: CanActivateFn = async () => {
   const router = inject(Router);
   await auth.profileReady;
   const user = auth.currentUser();
+  console.log('[OperatorGuard] check', {
+    hasUser: !!user,
+    userId: user?.id ?? null,
+    role: user?.role ?? null,
+    sessionExists: auth.sessionExists(),
+  });
   if (!user) {
+    console.log('[OperatorGuard] no user decision', { decision: auth.sessionExists() ? 'allow' : 'redirect-login' });
     return auth.sessionExists() ? true : router.createUrlTree(['/login']);
   }
-  if (user.role === 'store_admin') return router.createUrlTree(['/store']);
+  if (user.role === 'store_admin') {
+    console.log('[OperatorGuard] redirect store_admin -> /store');
+    return router.createUrlTree(['/store']);
+  }
+  console.log('[OperatorGuard] allow');
   return true;
 };

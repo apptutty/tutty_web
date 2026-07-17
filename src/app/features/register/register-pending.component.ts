@@ -20,7 +20,12 @@ type ScreenState = 'loading' | 'approved' | 'pending' | 'rejected';
 
         @case ('approved') {
           <div class="state-card approved">
-            <div class="state-icon">🎉</div>
+            <div class="state-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M7 12.5l3.2 3.2L17.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+              </svg>
+            </div>
             <h1>¡Tu comercio fue aprobado!</h1>
             <p>
               Estás listo para comenzar a vender en Tuttys. Configura tu catálogo,
@@ -32,7 +37,11 @@ type ScreenState = 'loading' | 'approved' | 'pending' | 'rejected';
 
         @case ('pending') {
           <div class="state-card pending">
-            <div class="state-icon">⏳</div>
+            <div class="state-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M8 4h8M8 20h8M8 4v3l3 3-3 3v3M16 4v3l-3 3 3 3v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
             <h1>Solicitud en revisión</h1>
             <p>
               Nuestro equipo revisará tu información en las próximas
@@ -55,7 +64,12 @@ type ScreenState = 'loading' | 'approved' | 'pending' | 'rejected';
 
         @case ('rejected') {
           <div class="state-card rejected">
-            <div class="state-icon">❌</div>
+            <div class="state-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
             <h1>Solicitud rechazada</h1>
             <p>
               Lo sentimos, tu solicitud de registro no fue aprobada en esta ocasión.
@@ -100,7 +114,8 @@ type ScreenState = 'loading' | 'approved' | 'pending' | 'rejected';
     .state-card.rejected { border-color: #fca5a5; background: #fef2f2; }
     .state-card.pending  { border-color: #fde68a; background: #fffbeb; }
 
-    .state-icon { font-size: 3.5rem; line-height: 1; }
+    .state-icon { width: 3rem; height: 3rem; line-height: 1; }
+    .state-icon svg { width: 100%; height: 100%; display: block; }
 
     h1 {
       font-size: 1.5rem;

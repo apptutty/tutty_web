@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { OperatorRegisterService } from '../operator-register.service';
 import { ExcursionDifficulty } from '../../../core/supabase/database.types';
+import { buildStorageObjectKey } from '../../../shared/utils/storage-key.utils';
 
 const DIFFICULTIES: { key: ExcursionDifficulty; label: string; color: string }[] = [
   { key: 'facil', label: 'Fácil', color: '#10b981' },
@@ -195,7 +196,7 @@ export class OperatorStep2Component {
       const uploadedPhotos: string[] = [];
       for (let i = 0; i < this.photoFiles.length; i++) {
         const f = this.photoFiles[i];
-        const path = `operators/${this.svc.draft().slug}/tours/photo${i + 1}.${f.name.split('.').pop()}`;
+        const path = buildStorageObjectKey(`operators/${this.svc.draft().slug}/tours`, f);
         const url = await this.svc.uploadFile(f, path);
         uploadedPhotos.push(url);
       }

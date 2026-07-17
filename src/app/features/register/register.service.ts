@@ -13,6 +13,8 @@ const DEFAULT_DRAFT: RegistrationDraft = {
   city: '',
   logo_url: null,
   banner_url: null,
+  temp_logo_path: null,
+  temp_banner_path: null,
   category_id: null,
   opening_time: '08:00',
   closing_time: '22:00',
@@ -94,98 +96,42 @@ export class RegisterService {
       throw authError ?? new Error('No se pudo crear la cuenta');
     }
 
-    // When Supabase requires email confirmation, signUp returns session: null.
-    // Without a session we can't make authenticated DB inserts — surface a clear error.
+    // Ensure we have an authenticated session before DB writes guarded by RLS.
+    let userId = authData.user.id;
     if (!authData.session) {
-      throw new Error(
-        'Tu cuenta fue creada. Por favor revisa tu correo electrónico y confirma tu cuenta antes de continuar.'
-      );
+      const { data: signInData, error: signInError } = await this.supabase.auth.signInWithPassword({
+        email: draft.email,
+        password: draft.password,
+      });
+      if (signInError || !signInData.user) {
+        throw signInError ?? new Error('Cuenta creada, pero no se pudo iniciar sesión para completar el registro.');
+      }
+      userId = signInData.user.id;
     }
 
-    const userId = authData.user.id;
-
-    // 2. Insert user profile with store_admin role
+    // 2. Ensure user profile exists with store_admin role
     const { error: userError } = await this.supabase
       .from('users')
-      .insert({
+      .upsert({
         id: userId,
         email: draft.email,
         full_name: draft.full_name,
-        phone: draft.phone,
+        phone: draft.phone || null,
         role: 'store_admin',
-      });
+      }, { onConflict: 'id' });
 
     if (userError) throw userError;
 
-    // 3. Insert commerce
-    const restaurantPayload: Record<string, unknown> = {
-      name: draft.name,
-      slug: draft.slug,
-      description: draft.description || null,
-      commerce_type: draft.commerce_type,
-      whatsapp_number: draft.whatsapp_number || null,
-      address: draft.address || null,
-      sector: draft.sector || null,
-      city: draft.city,
-      logo_url: draft.logo_url,
-      banner_url: draft.banner_url,
-      category_id: draft.category_id,
-      opening_time: draft.opening_time,
-      closing_time: draft.closing_time,
-      open_days: draft.open_days,
-      avg_delivery_time: draft.avg_delivery_minutes,
-      min_order_amount: draft.min_order_amount,
-      free_delivery_threshold: draft.free_delivery_enabled ? draft.free_delivery_threshold : null,
-      approval_status: 'pendiente',
-      is_active: false,
-      is_open: false,
-      submitted_at: new Date().toISOString(),
-    };
+    // 3. Insert commerce via secure RPC (RLS-safe)
+    const { data: restaurantData, error: restaurantError } = await this.supabase.rpc('register_commerce', this.buildRegisterCommercePayload(draft));
+    if (restaurantError || !restaurantData) throw restaurantError ?? new Error('No se pudo crear el comercio');
 
-    // Commerce-type specific fields (stored as JSONB metadata or dedicated columns if present)
-    if (draft.commerce_type === 'farmacia') {
-      restaurantPayload['sespas_number'] = draft.sespas_number ?? null;
-      restaurantPayload['farmacia_24h'] = draft.farmacia_24h ?? false;
-      restaurantPayload['requires_prescription'] = draft.requires_prescription ?? false;
-    } else if (draft.commerce_type === 'restaurante') {
-      restaurantPayload['cuisine_types'] = draft.cuisine_types ?? [];
-    }
-
-    const { data: restaurant, error: restaurantError } = await this.supabase
-      .from('commerces')
-      .insert(restaurantPayload)
-      .select('id')
-      .single();
-
-    if (restaurantError || !restaurant) throw restaurantError ?? new Error('No se pudo crear el comercio');
+    const restaurant = Array.isArray(restaurantData) ? restaurantData[0] : restaurantData;
+    if (!restaurant?.id) throw new Error('No se recibió el comercio creado');
 
     const commerceId = restaurant.id;
     this.lastCommerceId.set(commerceId);
-
-    // 4. Link commerce admin
-    const { error: adminError } = await this.supabase
-      .from('commerce_admins')
-      .insert({ user_id: userId, commerce_id: commerceId });
-
-    if (adminError) throw adminError;
-
-    // 5. Check auto-approve setting
-    const { data: setting } = await this.supabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'store_auto_approve')
-      .maybeSingle();
-
-    const autoApprove = setting?.value === 'true';
-
-    if (autoApprove) {
-      await this.supabase
-        .from('commerces')
-        .update({ approval_status: 'aprobado', is_active: true, activated_at: new Date().toISOString() })
-        .eq('id', commerceId);
-    }
-
-    return { approved: autoApprove, commerceId };
+    return { approved: false, commerceId };
   }
 
   async getMyStoreStatus(commerceId: string): Promise<{ approval_status: string; rejection_reason: string | null } | null> {
@@ -202,71 +148,52 @@ export class RegisterService {
   /** For users who are already authenticated — skips signUp, uses existing userId. */
   async submitRegistrationForExistingUser(userId: string): Promise<SubmitResult> {
     const draft = this.registrationData();
+    const { data: authData } = await this.supabase.auth.getUser();
+    const authUser = authData.user;
 
-    const restaurantPayload: Record<string, unknown> = {
-      name: draft.name,
-      slug: draft.slug,
-      description: draft.description || null,
-      commerce_type: draft.commerce_type,
-      whatsapp_number: draft.whatsapp_number || null,
-      address: draft.address || null,
-      sector: draft.sector || null,
-      city: draft.city,
-      logo_url: draft.logo_url,
-      banner_url: draft.banner_url,
-      category_id: draft.category_id,
-      opening_time: draft.opening_time,
-      closing_time: draft.closing_time,
-      open_days: draft.open_days,
-      avg_delivery_time: draft.avg_delivery_minutes,
-      min_order_amount: draft.min_order_amount,
-      free_delivery_threshold: draft.free_delivery_enabled ? draft.free_delivery_threshold : null,
-      approval_status: 'pendiente',
-      is_active: false,
-      is_open: false,
-      submitted_at: new Date().toISOString(),
-    };
+    // Promote/update existing user to store_admin.
+    const { error: roleError } = await this.supabase
+      .from('users')
+      .upsert({
+        id: userId,
+        email: authUser?.email ?? draft.email,
+        role: 'store_admin',
+        full_name: draft.full_name || authUser?.user_metadata?.['full_name'] || null,
+        phone: draft.phone || null,
+      }, { onConflict: 'id' });
+    if (roleError) throw roleError;
 
-    if (draft.commerce_type === 'farmacia') {
-      restaurantPayload['sespas_number'] = draft.sespas_number ?? null;
-      restaurantPayload['farmacia_24h'] = draft.farmacia_24h ?? false;
-      restaurantPayload['requires_prescription'] = draft.requires_prescription ?? false;
-    } else if (draft.commerce_type === 'restaurante') {
-      restaurantPayload['cuisine_types'] = draft.cuisine_types ?? [];
-    }
+    const { data: restaurantData, error: restaurantError } = await this.supabase.rpc('register_commerce', this.buildRegisterCommercePayload(draft));
+    if (restaurantError || !restaurantData) throw restaurantError ?? new Error('No se pudo crear el comercio');
 
-    const { data: restaurant, error: restaurantError } = await this.supabase
-      .from('commerces')
-      .insert(restaurantPayload)
-      .select('id')
-      .single();
-
-    if (restaurantError || !restaurant) throw restaurantError ?? new Error('No se pudo crear el comercio');
+    const restaurant = Array.isArray(restaurantData) ? restaurantData[0] : restaurantData;
+    if (!restaurant?.id) throw new Error('No se recibió el comercio creado');
 
     const commerceId = restaurant.id;
     this.lastCommerceId.set(commerceId);
+    return { approved: false, commerceId };
+  }
 
-    const { error: adminError } = await this.supabase
-      .from('commerce_admins')
-      .insert({ user_id: userId, commerce_id: commerceId });
-
-    if (adminError) throw adminError;
-
-    const { data: setting } = await this.supabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'store_auto_approve')
-      .maybeSingle();
-
-    const autoApprove = setting?.value === 'true';
-
-    if (autoApprove) {
-      await this.supabase
-        .from('commerces')
-        .update({ approval_status: 'aprobado', is_active: true, activated_at: new Date().toISOString() })
-        .eq('id', commerceId);
-    }
-
-    return { approved: autoApprove, commerceId };
+  private buildRegisterCommercePayload(draft: RegistrationDraft): Record<string, unknown> {
+    return {
+      p_name: draft.name,
+      p_slug: draft.slug,
+      p_commerce_type: draft.commerce_type,
+      p_description: draft.description || null,
+      p_whatsapp_number: draft.whatsapp_number || null,
+      p_address: draft.address || null,
+      p_sector: draft.sector || null,
+      p_city: draft.city,
+      p_category_id: draft.category_id,
+      p_cuisine_types: draft.cuisine_types ?? [],
+      p_open_days: draft.open_days,
+      p_opening_time: draft.opening_time,
+      p_closing_time: draft.closing_time,
+      p_min_order_amount: draft.min_order_amount,
+      p_avg_delivery_time: draft.avg_delivery_minutes,
+      p_free_delivery_threshold: draft.free_delivery_enabled ? draft.free_delivery_threshold : null,
+      p_temp_logo_path: draft.temp_logo_path ?? null,
+      p_temp_banner_path: draft.temp_banner_path ?? null,
+    };
   }
 }

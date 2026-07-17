@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { getSupabaseClient } from '../../../core/supabase/supabase.client';
 import { Excursion, ExcursionDate } from '../../../core/supabase/database.types';
+import { buildStorageObjectKey } from '../../../shared/utils/storage-key.utils';
 
 export interface ExcursionWithMeta extends Excursion {
     nextDate?: ExcursionDate | null;
@@ -135,9 +136,8 @@ export class ExcursionService {
 
     // ─── Photos ───────────────────────────────────────────────────────────────
 
-    async uploadPhoto(operatorId: string, excursionId: string, file: File, index: number): Promise<string> {
-        const ext = file.name.split('.').pop();
-        const path = `excursions/${operatorId}/${excursionId}/photo_${index}.${ext}`;
+    async uploadPhoto(operatorId: string, excursionId: string, file: File, _index: number): Promise<string> {
+        const path = buildStorageObjectKey(`excursions/${operatorId}/${excursionId}`, file);
         const { error } = await this.supabase.storage.from('media').upload(path, file, { upsert: true });
         if (error) throw new Error(error.message);
         const { data } = this.supabase.storage.from('media').getPublicUrl(path);

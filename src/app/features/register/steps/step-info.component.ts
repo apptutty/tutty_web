@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, AsyncVal
 import { debounceTime, distinctUntilChanged, switchMap, map, catchError, of } from 'rxjs';
 import { RegisterService } from '../register.service';
 import { StoreCategory } from '../../../core/supabase/database.types';
+import { buildStorageObjectKey } from '../../../shared/utils/storage-key.utils';
 
 const SD_SECTORS = [
   'Naco', 'Piantini', 'Bella Vista', 'Gazcue', 'Zona Colonial', 'Los Prados',
@@ -128,7 +129,7 @@ function slugify(text: string): string {
           <select id="category" class="input-field" formControlName="category_id">
             <option value="">Sin categoría específica</option>
             @for (cat of categories(); track cat.id) {
-              <option [value]="cat.id">{{ getCategoryIcon(cat.slug) }} {{ cat.name }}</option>
+              <option [value]="cat.id">{{ formatCategoryName(cat.name) }}</option>
             }
           </select>
         </div>
@@ -169,7 +170,11 @@ function slugify(text: string): string {
               <img [src]="logoPreview()" class="preview-image" alt="Logo preview" />
             } @else {
               <div class="upload-placeholder">
-                <span class="upload-icon">🖼️</span>
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8" />
+                  <circle cx="9" cy="9.5" r="1.5" fill="currentColor" />
+                  <path d="M6.5 17l4-4 2.8 2.8 1.7-1.7 2.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
                 <span>Haz clic para subir tu logo</span>
                 <span class="upload-hint">PNG, JPG • Max 2 MB • Recomendado: cuadrado</span>
               </div>
@@ -189,7 +194,11 @@ function slugify(text: string): string {
               <img [src]="bannerPreview()" class="preview-image banner-preview" alt="Banner preview" />
             } @else {
               <div class="upload-placeholder">
-                <span class="upload-icon">🌅</span>
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" stroke="currentColor" stroke-width="1.8" />
+                  <path d="M5.5 15.5l4-4 3 3 2.5-2.5 3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  <circle cx="16.5" cy="9" r="1.3" fill="currentColor" />
+                </svg>
                 <span>Haz clic para subir tu banner</span>
                 <span class="upload-hint">PNG, JPG • Max 5 MB • Recomendado: 1280×400 px</span>
               </div>
@@ -308,7 +317,7 @@ function slugify(text: string): string {
     .banner-area { min-height: 140px; }
 
     .upload-placeholder { display: flex; flex-direction: column; gap: 0.35rem; align-items: center; color: #6b7280; }
-    .upload-icon { font-size: 2rem; }
+    .upload-icon { width: 2rem; height: 2rem; color: #9ca3af; }
     .upload-hint { font-size: 0.75rem; color: #9ca3af; }
 
     .preview-image { max-height: 100px; border-radius: 6px; object-fit: cover; }
@@ -457,10 +466,10 @@ export class RegisterStepInfoComponent implements OnInit {
 
     this.logoUploading.set(true);
     try {
-      const path = `logos/${Date.now()}-${file.name}`;
-      const url = await this.registerService.uploadFile(file, 'restaurant-assets', path);
+      const path = buildStorageObjectKey('logos', file);
+      const url = await this.registerService.uploadFile(file, 'restaurants', path);
       this.logoPreview.set(url);
-      this.registerService.update({ logo_url: url });
+      this.registerService.update({ logo_url: url, temp_logo_path: path });
     } catch {
       // File upload failed silently; user can retry
     } finally {
@@ -474,10 +483,10 @@ export class RegisterStepInfoComponent implements OnInit {
 
     this.bannerUploading.set(true);
     try {
-      const path = `banners/${Date.now()}-${file.name}`;
-      const url = await this.registerService.uploadFile(file, 'restaurant-assets', path);
+      const path = buildStorageObjectKey('banners', file);
+      const url = await this.registerService.uploadFile(file, 'restaurants', path);
       this.bannerPreview.set(url);
-      this.registerService.update({ banner_url: url });
+      this.registerService.update({ banner_url: url, temp_banner_path: path });
     } catch {
       // File upload failed silently; user can retry
     } finally {
@@ -487,14 +496,8 @@ export class RegisterStepInfoComponent implements OnInit {
 
   isCuisineSelected(c: string): boolean { return this.selectedCuisines.includes(c); }
 
-  getCategoryIcon(slug: string): string {
-    const icons: Record<string, string> = {
-      dominicana: '🍽️', pizza: '🍕', pollo: '🍗', rapida: '🍔', mariscos: '🦞',
-      sushi: '🍣', hamburguesas: '🍔', postres: '🍰', bebidas: '🥤', saludable: '🥗',
-      farmacia: '💊', bodega: '📦', colmado: '🛒', tienda_ropa: '👗',
-      supermercado: '🛒', electronica: '📱', otro: '🏪',
-    };
-    return icons[slug] ?? '🏪';
+  formatCategoryName(name: string): string {
+    return name.replace(/^[^\p{L}\p{N}]+/u, '').trim();
   }
 
   toggleCuisine(c: string): void {
