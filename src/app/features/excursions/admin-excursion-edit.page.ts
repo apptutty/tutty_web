@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ExcursionsService, ExcursionPhotoAsset } from './excursions.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
@@ -91,7 +91,7 @@ function blankForm(): ExcursionFormModel {
               <button type="button" class="h-11 inline-flex items-center justify-center rounded-2xl border border-[#e7eaf1] bg-white px-4 text-sm font-bold text-[#344054] hover:bg-[#f8fafc]" (click)="router.navigate(['/excursions'])" aria-label="Cancelar y volver a excursiones">
                 Cancelar
               </button>
-              <button type="button" class="h-11 inline-flex items-center justify-center rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-white px-4 text-sm font-black" [disabled]="saveLoading() || !canSave()" (click)="save()">
+              <button type="button" class="h-11 inline-flex items-center justify-center rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-white px-4 text-sm font-black disabled:opacity-60 disabled:cursor-not-allowed" [disabled]="saveLoading()" (click)="save()">
                 {{ saveLoading() ? 'Guardando...' : (isEdit() ? 'Guardar cambios' : 'Crear excursión') }}
               </button>
             </div>
@@ -105,7 +105,7 @@ function blankForm(): ExcursionFormModel {
           </section>
         }
 
-        <form (ngSubmit)="save()" class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start min-w-0">
+        <form #excursionForm="ngForm" (ngSubmit)="save(excursionForm)" class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start min-w-0">
           <div class="space-y-4 min-w-0">
             <section class="rounded-3xl border border-[#e7eaf1] bg-white shadow-[0_8px_24px_rgba(18,24,40,.07)] p-5">
               <h2 class="text-base font-black text-[#111827]">Información básica</h2>
@@ -164,7 +164,10 @@ function blankForm(): ExcursionFormModel {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div class="md:col-span-2">
                     <label class="label">Nombre de la excursión *</label>
-                    <input class="input-field" [(ngModel)]="form.name" name="name" required placeholder="Ej: Isla Saona Premium Tour" />
+                    <input class="input-field" [(ngModel)]="form.name" #nameModel="ngModel" name="name" required placeholder="Ej: Isla Saona Premium Tour" />
+                    @if (nameModel.invalid && (nameModel.touched || submitAttempted())) {
+                      <p role="alert" class="mt-1 text-xs text-[#b42318]">El nombre de la excursión es obligatorio.</p>
+                    }
                   </div>
 
                   <div class="md:col-span-2">
@@ -184,12 +187,15 @@ function blankForm(): ExcursionFormModel {
 
                   <div>
                     <label class="label">Operador *</label>
-                    <select class="input-field" [(ngModel)]="form.operator_id" name="operator_id" required>
+                    <select class="input-field" [(ngModel)]="form.operator_id" #operatorModel="ngModel" name="operator_id" required>
                       <option value="">Selecciona el operador responsable</option>
                       @for (op of operators(); track op.id) {
                         <option [value]="op.id">{{ op.name }}</option>
                       }
                     </select>
+                    @if (operatorModel.invalid && (operatorModel.touched || submitAttempted())) {
+                      <p role="alert" class="mt-1 text-xs text-[#b42318]">Debes seleccionar el operador responsable.</p>
+                    }
                   </div>
 
                   <div>
@@ -246,7 +252,10 @@ function blankForm(): ExcursionFormModel {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label class="label">Precio por persona *</label>
-                  <input class="input-field" type="number" min="0" step="0.01" [(ngModel)]="form.price_per_person" name="price_per_person" required />
+                  <input class="input-field" type="number" min="0" step="0.01" [(ngModel)]="form.price_per_person" #priceModel="ngModel" name="price_per_person" required />
+                  @if ((priceModel.invalid || form.price_per_person < 0) && (priceModel.touched || submitAttempted())) {
+                    <p role="alert" class="mt-1 text-xs text-[#b42318]">Ingresa un precio válido (0 o mayor).</p>
+                  }
                 </div>
                 <div>
                   <label class="label">Estado de publicación</label>
@@ -376,7 +385,7 @@ function blankForm(): ExcursionFormModel {
 
             <div class="flex flex-col sm:flex-row gap-2 sm:justify-end pb-3">
               <button type="button" class="h-11 px-5 rounded-2xl border border-[#e7eaf1] text-sm font-bold text-[#344054] hover:bg-[#f8fafc] w-full sm:w-auto" (click)="router.navigate(['/excursions'])">Cancelar</button>
-              <button type="submit" class="h-11 px-5 rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-sm font-black text-white w-full sm:w-auto" [disabled]="saveLoading() || !canSave()">
+              <button type="submit" class="h-11 px-5 rounded-2xl bg-[#eb1b8d] hover:bg-[#c71473] text-sm font-black text-white w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed" [disabled]="saveLoading()">
                 {{ saveLoading() ? 'Guardando...' : (isEdit() ? 'Guardar cambios' : 'Crear excursión') }}
               </button>
             </div>
@@ -459,6 +468,7 @@ export class AdminExcursionEditPageComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly saveLoading = signal(false);
+  readonly submitAttempted = signal(false);
   readonly isEdit = signal(false);
   private excursionId = '';
 
@@ -785,8 +795,14 @@ export class AdminExcursionEditPageComponent implements OnInit {
     }
   }
 
-  async save(): Promise<void> {
-    if (!this.form.name || !this.form.operator_id) return;
+  async save(formRef?: NgForm): Promise<void> {
+    this.submitAttempted.set(true);
+    formRef?.control.markAllAsTouched();
+    const validationMessage = this.formValidationMessage();
+    if (validationMessage) {
+      this.toastService.error(validationMessage);
+      return;
+    }
     this.saveLoading.set(true);
     try {
       const payload: Record<string, unknown> = {
@@ -829,5 +845,14 @@ export class AdminExcursionEditPageComponent implements OnInit {
     } finally {
       this.saveLoading.set(false);
     }
+  }
+
+  private formValidationMessage(): string | null {
+    if (!this.form.name?.trim()) return 'El nombre de la excursión es obligatorio.';
+    if (!this.form.operator_id) return 'Debes seleccionar el operador responsable.';
+    if (!Number.isFinite(Number(this.form.price_per_person)) || Number(this.form.price_per_person) < 0) {
+      return 'Ingresa un precio válido (0 o mayor).';
+    }
+    return null;
   }
 }

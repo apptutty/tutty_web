@@ -1,84 +1,73 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { PromotionsService } from './promotions.service';
-import { ToastService } from '../../shared/ui/toast/toast.service';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
-import { Promotion, PromoType, PromoUse } from '../../core/supabase/database.types';
+import { ToastService } from '../../shared/ui/toast/toast.service';
+import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
-
-type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
+import { AdminImageFieldComponent } from '../../shared/ui/image-field/admin-image-field.component';
+import {
+  createEmptyPromoTranslationMap,
+  HomePromo,
+  HomePromoInsert,
+  PromoCategory,
+  PromoFormLanguage,
+  PromoTranslationField,
+  PromoTargetType,
+  PromotionsService,
+} from './promotions.service';
 
 @Component({
   selector: 'app-promotions-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, AdminEmptyStateComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    AdminEmptyStateComponent,
+    AdminImageFieldComponent,
+  ],
   template: `
-    <app-page-header title="Promociones" subtitle="Códigos de descuento y ofertas">
-      <button class="btn-primary" (click)="openForm()">+ Nueva promoción</button>
+    <app-page-header
+      title="Promos del home"
+      subtitle="CRUD de promos dinámicas para la sección Promos de clientes">
+      <button class="btn-primary" (click)="openForm()">+ Nueva promo</button>
     </app-page-header>
 
-    <!-- Tabs -->
-    <div class="overflow-x-auto scrollbar-hide -mx-0 mb-4">
-      <div class="flex gap-1 bg-gray-100 p-1 rounded-xl w-max min-w-full sm:w-fit">
-        @for (tab of tabs; track tab.key) {
-          <button
-            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0"
-            [class]="activeTab() === tab.key ? 'bg-white text-gray-800 shadow-theme-xs' : 'text-gray-500 hover:text-gray-700'"
-            (click)="activeTab.set(tab.key); loadPromotions()"
-            [attr.aria-current]="activeTab() === tab.key ? 'page' : null"
-            [attr.aria-label]="'Ver promociones ' + tab.label.toLowerCase()"
-          >{{ tab.label }}</button>
-        }
-      </div>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-2 mb-4">
-      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'todas'" (click)="activeTab.set('todas'); loadPromotions()">
-        Todas {{ promotions().length }}
-      </button>
-      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'activas'" (click)="activeTab.set('activas'); loadPromotions()">
-        Activas {{ promoCountByTab('activas') }}
-      </button>
-      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'programadas'" (click)="activeTab.set('programadas'); loadPromotions()">
-        Programadas {{ promoCountByTab('programadas') }}
-      </button>
-      <button type="button" class="admin-chip" [class.admin-chip--active]="activeTab() === 'expiradas'" (click)="activeTab.set('expiradas'); loadPromotions()">
-        Expiradas {{ promoCountByTab('expiradas') }}
-      </button>
-    </div>
-
-    <!-- Search & Type filter -->
     <div class="flex flex-wrap gap-3 mb-4">
       <input
+        class="input-field max-w-sm"
         type="search"
-        class="input-field max-w-xs"
-        placeholder="Buscar por código o nombre..."
+        placeholder="Buscar por título o badge..."
         [(ngModel)]="searchText"
-        aria-label="Buscar promociones por código o nombre"
-      />
-      <select class="input-field w-48" [(ngModel)]="typeFilter" aria-label="Filtrar promociones por tipo">
-        <option value="">Todos los tipos</option>
-        <option value="percentage">Porcentaje (%)</option>
-        <option value="fixed_amount">Monto fijo (RD$)</option>
-        <option value="free_delivery">Delivery gratis</option>
+        aria-label="Buscar promos por título o badge" />
+
+      <select
+        class="input-field w-52"
+        [(ngModel)]="categoryFilter"
+        aria-label="Filtrar promos por categoría">
+        <option value="all">Todas las categorías</option>
+        @for (cat of categories; track cat.value) {
+          <option [value]="cat.value">{{ cat.label }}</option>
+        }
       </select>
     </div>
 
-    <!-- Table -->
     <div class="admin-table-card">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Código</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nombre</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tipo</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Valor</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Usos</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Validez</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Restaurante</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Title</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Category</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Badge</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Idiomas</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Priority</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Activo</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Starts</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ends</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Acciones</th>
             </tr>
           </thead>
@@ -93,67 +82,54 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
               }
             } @else if (filteredPromos().length === 0) {
               <tr>
-                <td colspan="9" class="px-4 py-12 text-center text-gray-400">
+                <td colspan="9" class="px-4 py-10">
                   <app-admin-empty-state
-                    icon="money"
-                    title="Sin promociones"
-                    description="Crea una promoción para comenzar a medir descuentos y conversiones."
-                    actionLabel="+ Nueva promoción"
+                    icon="search"
+                    title="Sin promos registradas"
+                    description="Crea la primera promo para el home de clientes."
+                    actionLabel="+ Nueva promo"
                     (action)="openForm()" />
                 </td>
               </tr>
             } @else {
-              @for (p of filteredPromos(); track p.id) {
-                <tr class="hover:bg-gray-50">
+              @for (promo of filteredPromos(); track promo.id) {
+                <tr class="hover:bg-gray-50 transition-colors">
                   <td class="px-4 py-3">
-                    <code class="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono font-bold">{{ p.code }}</code>
+                    <p class="text-sm font-medium text-gray-800">{{ promo.title }}</p>
                   </td>
-                  <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ p.name }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ categoryLabel(promo.category) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">{{ promo.badge || '—' }}</td>
                   <td class="px-4 py-3">
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ typeLabel(p.discount_type) }}</span>
-                  </td>
-                  <td class="px-4 py-3 text-sm text-gray-700">
-                    {{ p.discount_type === 'percentage' ? p.discount_value + '%' : 'RD$ ' + p.discount_value }}
-                  </td>
-                  <td class="px-4 py-3 text-sm text-gray-700">
-                    {{ p.current_uses }} / {{ p.max_uses ?? '∞' }}
-                    @if (p.max_uses) {
-                      <div class="h-1 bg-gray-200 rounded mt-1 w-16">
-                        <div class="h-1 bg-brand-500 rounded"
-                          [style.width.%]="(p.current_uses / p.max_uses) * 100"></div>
-                      </div>
+                    @if (missingTranslations(promo.id) === 0) {
+                      <span class="inline-flex items-center rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-semibold text-success-700">
+                        Completo
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center rounded-full bg-warning-50 px-2 py-0.5 text-[11px] font-semibold text-warning-700">
+                        Faltan {{ missingTranslations(promo.id) }}
+                      </span>
                     }
                   </td>
-                  <td class="px-4 py-3 text-xs text-gray-500">
-                    @if (p.valid_from || p.valid_until) {
-                      <div class="flex flex-col gap-0.5">
-                        <span class="text-gray-400">Desde</span>
-                        <span>{{ formatDate(p.valid_from) }}</span>
-                        <span class="text-gray-400 mt-0.5">Hasta</span>
-                        <span [class.text-error-500]="isExpired(p.valid_until)">
-                          {{ p.valid_until ? formatDate(p.valid_until) : '\u221e' }}
-                        </span>
-                      </div>
-                    } @else { Sin límite }
-                  </td>
-                  <td class="px-4 py-3 text-sm text-gray-600">{{ $any(p)['restaurant_name'] ?? 'Todos' }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ promo.priority }}</td>
                   <td class="px-4 py-3">
                     <button
                       class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-                      [class]="p.is_active ? 'bg-success-500' : 'bg-gray-200'"
-                      (click)="togglePromo(p)"
+                      [class]="promo.is_active ? 'bg-success-500' : 'bg-gray-200'"
+                      (click)="toggleActive(promo)"
                       role="switch"
-                      [attr.aria-checked]="p.is_active"
-                      [attr.aria-label]="p.is_active ? 'Desactivar promoción ' + p.name : 'Activar promoción ' + p.name"
-                    >
-                      <span class="inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform"
-                        [class]="p.is_active ? 'translate-x-4' : 'translate-x-0.5'"></span>
+                      [attr.aria-checked]="promo.is_active"
+                      [attr.aria-label]="promo.is_active ? 'Desactivar promo ' + promo.title : 'Activar promo ' + promo.title">
+                      <span
+                        class="inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform"
+                        [class]="promo.is_active ? 'translate-x-4' : 'translate-x-0.5'"></span>
                     </button>
                   </td>
+                  <td class="px-4 py-3 text-xs text-gray-500">{{ formatDate(promo.starts_at) }}</td>
+                  <td class="px-4 py-3 text-xs text-gray-500">{{ promo.ends_at ? formatDate(promo.ends_at) : 'Sin vencimiento' }}</td>
                   <td class="px-4 py-3">
                     <div class="flex gap-2">
-                      <button class="btn-secondary px-2 py-1 text-xs" (click)="openForm(p)">Editar</button>
-                      <button class="text-brand-500 hover:text-brand-700 text-xs font-medium px-1" (click)="openStats(p)">Stats</button>
+                      <button class="btn-secondary px-2 py-1 text-xs" (click)="openForm(promo)">Editar</button>
+                      <button class="btn-danger px-2 py-1 text-xs" (click)="deletePromo(promo)">Eliminar</button>
                     </div>
                   </td>
                 </tr>
@@ -164,148 +140,174 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
       </div>
     </div>
 
-    <!-- Stats Modal -->
-    @if (statsPromo()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/50" (click)="statsPromo.set(null)"></div>
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10">
-          <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
-            <div>
-              <h3 class="font-semibold text-gray-800">Estadísticas — {{ statsPromo()!.name }}</h3>
-              <code class="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono">{{ statsPromo()!.code }}</code>
-            </div>
-            <button aria-label="Cerrar estadísticas de promoción" class="text-gray-400" (click)="statsPromo.set(null)">✕</button>
-          </div>
-          <div class="p-6 space-y-5">
-            <!-- KPIs -->
-            <div class="grid grid-cols-3 gap-4">
-              <div class="card p-4">
-                <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Usos</p>
-                <p class="text-2xl font-bold text-gray-800">
-                  {{ statsPromo()!.current_uses }} / {{ statsPromo()!.max_uses ?? '∞' }}
-                </p>
-                @if (statsPromo()!.max_uses) {
-                  <div class="h-1.5 bg-gray-200 rounded mt-2">
-                    <div class="h-1.5 bg-brand-500 rounded" [style.width.%]="(statsPromo()!.current_uses / statsPromo()!.max_uses!) * 100"></div>
-                  </div>
-                }
-              </div>
-              <div class="card p-4">
-                <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Descuento total</p>
-                @if (statsLoading()) {
-                  <div class="animate-pulse h-8 bg-gray-200 rounded"></div>
-                } @else {
-                  <p class="text-2xl font-bold text-gray-800">RD$ {{ totalDiscount() | number:'1.0-0' }}</p>
-                }
-              </div>
-              <div class="card p-4">
-                <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Registros</p>
-                @if (statsLoading()) {
-                  <div class="animate-pulse h-8 bg-gray-200 rounded"></div>
-                } @else {
-                  <p class="text-2xl font-bold text-gray-800">{{ promoUses().length }}</p>
-                }
-              </div>
-            </div>
-
-            <!-- Last uses table -->
-            <div>
-              <h4 class="text-sm font-semibold text-gray-700 mb-3">Últimos usos</h4>
-              @if (statsLoading()) {
-                <div class="space-y-2">
-                  @for (i of [1,2,3]; track i) {
-                    <div class="animate-pulse h-10 bg-gray-200 rounded"></div>
-                  }
-                </div>
-              } @else if (promoUses().length === 0) {
-                <app-admin-empty-state
-                  icon="search"
-                  title="Sin usos registrados"
-                  description="Esta promoción todavía no tiene consumos en pedidos."
-                  variant="soft" />
-              } @else {
-                <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Usuario</th>
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Pedido</th>
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Descuento</th>
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-100">
-                    @for (u of promoUses(); track u.id) {
-                      <tr>
-                        <td class="px-3 py-2 text-sm text-gray-800">{{ u.user_name }}</td>
-                        <td class="px-3 py-2 text-sm text-gray-600">{{ u.order_number }}</td>
-                        <td class="px-3 py-2 text-sm font-medium text-gray-700">RD$ {{ u.discount_applied }}</td>
-                        <td class="px-3 py-2 text-xs text-gray-400">{{ u.used_at | date:'dd/MM/yy' }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              }
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- Form modal -->
     @if (showForm()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50" (click)="showForm.set(false)"></div>
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto z-10">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto z-10">
           <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between">
-            <h3 class="font-semibold">{{ editingId() ? 'Editar promoción' : 'Nueva promoción' }}</h3>
-            <button aria-label="Cerrar formulario de promoción" class="text-gray-400" (click)="showForm.set(false)">✕</button>
+            <h3 class="font-semibold">{{ editingId() ? 'Editar promo' : 'Nueva promo' }}</h3>
+            <button
+              type="button"
+              class="text-gray-400"
+              aria-label="Cerrar formulario"
+              (click)="showForm.set(false)">✕</button>
           </div>
-          <form [formGroup]="promoForm" (ngSubmit)="save()" class="p-6 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="col-span-2">
-                <label class="label">Nombre *</label>
-                <input class="input-field" formControlName="name" />
-              </div>
-              <div>
-                <label class="label">Código *</label>
-                <div class="flex gap-2">
-                  <input class="input-field flex-1" formControlName="code" />
-                  <button type="button" class="btn-secondary px-3" (click)="generateCode()">🎲</button>
+
+          <form class="p-6 space-y-5" [formGroup]="promoForm" (ngSubmit)="save()">
+            <div class="flex flex-wrap items-center gap-2">
+              @for (lang of formLangs; track lang.value) {
+                <button
+                  type="button"
+                  class="admin-chip"
+                  [class.admin-chip--active]="activeFormLang() === lang.value"
+                  [disabled]="lang.value !== 'es' && !editingId()"
+                  (click)="setFormLanguage(lang.value)"
+                >
+                  {{ lang.label }}
+                </button>
+              }
+              @if (!editingId()) {
+                <span class="text-xs text-gray-500">
+                  Guarda primero en ES para habilitar EN/FR/IT.
+                </span>
+              }
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              @if (activeFormLang() === 'es') {
+                <div class="md:col-span-2">
+                  <label class="label">Title *</label>
+                  <input class="input-field" formControlName="title" />
                 </div>
-              </div>
+
+                <div class="md:col-span-2">
+                  <label class="label">Description</label>
+                  <textarea class="input-field resize-none" rows="3" formControlName="description"></textarea>
+                </div>
+
+                <div>
+                  <label class="label">Badge</label>
+                  <input class="input-field" formControlName="badge" />
+                </div>
+              } @else {
+                <div class="md:col-span-2">
+                  <label class="label">Title ({{ activeFormLangLabel() }})</label>
+                  <input
+                    class="input-field"
+                    [ngModel]="translationValue('name')"
+                    (ngModelChange)="setTranslationValue('name', $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="(sin traducir, se usará el español)" />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="label">Description ({{ activeFormLangLabel() }})</label>
+                  <textarea
+                    class="input-field resize-none"
+                    rows="3"
+                    [ngModel]="translationValue('description')"
+                    (ngModelChange)="setTranslationValue('description', $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="(sin traducir, se usará el español)"></textarea>
+                </div>
+
+                <div>
+                  <label class="label">Badge ({{ activeFormLangLabel() }})</label>
+                  <input
+                    class="input-field"
+                    [ngModel]="translationValue('caption')"
+                    (ngModelChange)="setTranslationValue('caption', $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="(sin traducir, se usará el español)" />
+                </div>
+              }
+
               <div>
-                <label class="label">Tipo</label>
-                <select class="input-field" formControlName="discount_type">
-                  <option value="percentage">Porcentaje (%)</option>
-                  <option value="fixed_amount">Monto fijo (RD$)</option>
-                  <option value="free_delivery">Delivery gratis</option>
+                <label class="label">Category *</label>
+                <select class="input-field" formControlName="category">
+                  @for (cat of categories; track cat.value) {
+                    <option [value]="cat.value">{{ cat.label }}</option>
+                  }
                 </select>
               </div>
+
               <div>
-                <label class="label">Valor</label>
-                <input class="input-field" type="number" formControlName="discount_value" />
+                <label class="label">Color tone</label>
+                <input class="input-field" formControlName="color_tone" placeholder="pink, purple, blue..." />
               </div>
+
               <div>
-                <label class="label">Monto mínimo (RD$)</label>
-                <input class="input-field" type="number" formControlName="min_order_amount" />
+                <label class="label">Priority *</label>
+                <input class="input-field" type="number" formControlName="priority" />
               </div>
+
+              @if (activeFormLang() === 'es') {
+                <div>
+                  <label class="label">CTA label</label>
+                  <input class="input-field" formControlName="cta_label" />
+                </div>
+              } @else {
+                <div>
+                  <label class="label">CTA label ({{ activeFormLangLabel() }})</label>
+                  <input
+                    class="input-field"
+                    [ngModel]="translationValue('label')"
+                    (ngModelChange)="setTranslationValue('label', $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="(sin traducir, se usará el español)" />
+                </div>
+              }
+
               <div>
-                <label class="label">Máx. usos (vacío=ilimitado)</label>
-                <input class="input-field" type="number" formControlName="max_uses" />
+                <label class="label">CTA target type *</label>
+                <select class="input-field" formControlName="cta_target_type">
+                  @for (target of targetTypes; track target.value) {
+                    <option [value]="target.value">{{ target.label }}</option>
+                  }
+                </select>
               </div>
+
+              <div class="md:col-span-2">
+                <label class="label">CTA target value *</label>
+                <input
+                  class="input-field"
+                  formControlName="cta_target_value"
+                  [placeholder]="promoForm.value.cta_target_type === 'external' ? 'https://...' : '/customer/catalog'" />
+              </div>
+
               <div>
-                <label class="label">Válido desde</label>
-                <input class="input-field" type="date" formControlName="valid_from" />
+                <label class="label">Starts at *</label>
+                <input class="input-field" type="datetime-local" formControlName="starts_at" />
               </div>
+
               <div>
-                <label class="label">Válido hasta</label>
-                <input class="input-field" type="date" formControlName="valid_until" />
+                <label class="label">Ends at</label>
+                <input class="input-field" type="datetime-local" formControlName="ends_at" />
               </div>
-              <div class="col-span-2">
-                <label class="label">Descripción</label>
-                <textarea class="input-field resize-none" rows="2" formControlName="description"></textarea>
+
+              <div class="md:col-span-2">
+                <label class="label">Image URL</label>
+                <input class="input-field" formControlName="image_url" placeholder="https://..." />
+              </div>
+
+              <div class="md:col-span-2">
+                <app-admin-image-field
+                  label="Subir imagen"
+                  aspect="16/9"
+                  [maxMb]="8"
+                  [currentUrl]="promoForm.value.image_url || null"
+                  [uploading]="uploadingImage()"
+                  (fileSelected)="onImageSelected($event)"
+                  (removed)="promoForm.patchValue({ image_url: '' })">
+                </app-admin-image-field>
+              </div>
+
+              <div class="md:col-span-2 flex items-center gap-3">
+                <input id="promo-active" type="checkbox" class="w-4 h-4 text-brand-600" formControlName="is_active" />
+                <label for="promo-active" class="text-sm text-gray-700">Promo activa</label>
               </div>
             </div>
+
             <div class="flex gap-3 justify-end">
               <button type="button" class="btn-secondary" (click)="showForm.set(false)">Cancelar</button>
               <button type="submit" class="btn-primary" [disabled]="promoForm.invalid || saveLoading()">
@@ -321,147 +323,313 @@ type PromoTab = 'activas' | 'programadas' | 'expiradas' | 'todas';
 export class PromotionsPageComponent implements OnInit {
   private readonly service = inject(PromotionsService);
   private readonly toastService = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
-  readonly promotions = signal<Promotion[]>([]);
   readonly loading = signal(true);
+  readonly saveLoading = signal(false);
+  readonly uploadingImage = signal(false);
   readonly showForm = signal(false);
   readonly editingId = signal<string | null>(null);
-  readonly saveLoading = signal(false);
-  readonly activeTab = signal<PromoTab>('todas');
-
-  // Stats
-  readonly statsPromo = signal<Promotion | null>(null);
-  readonly promoUses = signal<PromoUse[]>([]);
-  readonly statsLoading = signal(false);
-  readonly totalDiscount = () => this.promoUses().reduce((sum, u) => sum + (u.discount_applied ?? 0), 0);
+  readonly promotions = signal<HomePromo[]>([]);
+  readonly activeFormLang = signal<PromoFormLanguage>('es');
+  readonly translations = signal(createEmptyPromoTranslationMap());
+  readonly translationMissingByPromo = signal<Record<string, number>>({});
 
   searchText = '';
-  typeFilter = '';
+  categoryFilter: 'all' | PromoCategory = 'all';
 
-  readonly tabs = [
-    { key: 'activas' as PromoTab, label: 'Activas' },
-    { key: 'programadas' as PromoTab, label: 'Programadas' },
-    { key: 'expiradas' as PromoTab, label: 'Expiradas' },
-    { key: 'todas' as PromoTab, label: 'Todas' },
+  readonly categories: ReadonlyArray<{ value: PromoCategory; label: string }> = [
+    { value: 'all', label: 'All' },
+    { value: 'food', label: 'Food' },
+    { value: 'beach', label: 'Beach' },
+    { value: 'experiences', label: 'Experiences' },
+    { value: 'transport', label: 'Transport' },
   ];
 
-  readonly promoForm = this.fb.group({
-    name: ['', Validators.required],
-    code: ['', Validators.required],
-    discount_type: ['percentage' as PromoType],
-    discount_value: [0, Validators.required],
-    min_order_amount: [null as number | null],
-    max_uses: [null as number | null],
-    valid_from: [null as string | null],
-    valid_until: [null as string | null],
+  readonly targetTypes: ReadonlyArray<{ value: PromoTargetType; label: string }> = [
+    { value: 'catalog', label: 'Catalog' },
+    { value: 'excursions', label: 'Excursions' },
+    { value: 'commerce', label: 'Commerce' },
+    { value: 'support', label: 'Support' },
+    { value: 'external', label: 'External URL' },
+  ];
+
+  readonly formLangs: ReadonlyArray<{ value: PromoFormLanguage; label: string }> = [
+    { value: 'es', label: 'ES' },
+    { value: 'en', label: 'EN' },
+    { value: 'fr', label: 'FR' },
+    { value: 'it', label: 'IT' },
+  ];
+
+  readonly promoForm = this.fb.nonNullable.group({
+    title: ['', Validators.required],
     description: [''],
+    badge: [''],
+    category: ['all' as PromoCategory, Validators.required],
+    color_tone: [''],
+    cta_label: [''],
+    cta_target_type: ['catalog' as PromoTargetType, Validators.required],
+    cta_target_value: ['', Validators.required],
+    image_url: [''],
+    priority: [0, Validators.required],
+    starts_at: [this.toLocalDateTime(new Date().toISOString()), Validators.required],
+    ends_at: [''],
+    is_active: [true],
   });
 
-  readonly filteredPromos = () => {
-    const now = new Date().toISOString().split('T')[0];
-    let promos = this.promotions();
-    if (this.activeTab() === 'activas') promos = promos.filter(p => p.is_active);
-    else if (this.activeTab() === 'programadas') promos = promos.filter(p => p.valid_from && p.valid_from > now);
-    else if (this.activeTab() === 'expiradas') promos = promos.filter(p => p.valid_until && p.valid_until < now);
-    if (this.searchText.trim()) {
-      const q = this.searchText.toLowerCase();
-      promos = promos.filter(p => p.code?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
-    }
-    if (this.typeFilter) promos = promos.filter(p => p.discount_type === this.typeFilter);
-    return promos;
-  };
+  readonly filteredPromos = computed(() => {
+    const text = this.searchText.trim().toLowerCase();
+    return this.promotions().filter((promo) => {
+      const matchesCategory = this.categoryFilter === 'all' || promo.category === this.categoryFilter;
+      if (!matchesCategory) {
+        return false;
+      }
+      if (!text) {
+        return true;
+      }
+      return (
+        promo.title.toLowerCase().includes(text) ||
+        (promo.badge ?? '').toLowerCase().includes(text)
+      );
+    });
+  });
 
-  ngOnInit(): void { this.loadPromotions(); }
+  ngOnInit(): void {
+    this.loadPromotions();
+  }
 
   loadPromotions(): void {
     this.loading.set(true);
     this.service.getPromotions().subscribe({
-      next: data => { this.promotions.set(data); this.loading.set(false); },
-      error: () => { this.toastService.error('Error al cargar'); this.loading.set(false); },
+      next: async (rows) => {
+        this.promotions.set(rows);
+        const ids = rows.map((promo) => promo.id);
+        try {
+          const coverage = await this.service.getTranslationCoverage(ids);
+          this.translationMissingByPromo.set(coverage);
+        } catch {
+          this.translationMissingByPromo.set({});
+        }
+        this.loading.set(false);
+      },
+      error: () => {
+        this.toastService.error('Error al cargar promos');
+        this.loading.set(false);
+      },
     });
   }
 
-  openForm(p?: Promotion): void {
-    this.editingId.set(p?.id ?? null);
-    if (p) { this.promoForm.patchValue(p as any); }
-    else { this.promoForm.reset({ discount_type: 'percentage', discount_value: 0 }); }
+  openForm(promo?: HomePromo): void {
+    this.editingId.set(promo?.id ?? null);
+    this.activeFormLang.set('es');
+    this.translations.set(createEmptyPromoTranslationMap());
+    this.promoForm.reset({
+      title: promo?.title ?? '',
+      description: promo?.description ?? '',
+      badge: promo?.badge ?? '',
+      category: promo?.category ?? 'all',
+      color_tone: promo?.color_tone ?? '',
+      cta_label: promo?.cta_label ?? '',
+      cta_target_type: promo?.cta_target_type ?? 'catalog',
+      cta_target_value: promo?.cta_target_value ?? '',
+      image_url: promo?.image_url ?? '',
+      priority: promo?.priority ?? 0,
+      starts_at: this.toLocalDateTime(promo?.starts_at ?? new Date().toISOString()),
+      ends_at: this.toLocalDateTime(promo?.ends_at ?? ''),
+      is_active: promo?.is_active ?? true,
+    });
+    if (promo?.id) {
+      void this.loadTranslations(promo.id);
+    }
     this.showForm.set(true);
   }
 
-  generateCode(): void {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    this.promoForm.patchValue({ code });
-  }
-
   async save(): Promise<void> {
-    if (this.promoForm.invalid) return;
+    if (this.promoForm.invalid) {
+      this.promoForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.promoForm.getRawValue();
+    const payload: HomePromoInsert = {
+      title: value.title.trim(),
+      description: this.asNullable(value.description),
+      badge: this.asNullable(value.badge),
+      category: value.category,
+      color_tone: this.asNullable(value.color_tone),
+      cta_label: this.asNullable(value.cta_label),
+      cta_target_type: value.cta_target_type,
+      cta_target_value: this.asNullable(value.cta_target_value),
+      image_url: this.asNullable(value.image_url),
+      priority: Number(value.priority) || 0,
+      starts_at: this.toIsoOrNow(value.starts_at),
+      ends_at: this.toIsoOrNull(value.ends_at),
+      is_active: value.is_active,
+    };
+
     this.saveLoading.set(true);
-    const val = this.promoForm.getRawValue();
     try {
-      await this.service.savePromotion({
-        ...(this.editingId() ? { id: this.editingId()! } : {}),
-        name: val.name!,
-        code: val.code!.toUpperCase(),
-        discount_type: val.discount_type as PromoType,
-        discount_value: val.discount_value ?? 0,
-        min_order_amount: val.min_order_amount ?? null,
-        max_uses: val.max_uses ?? null,
-        valid_from: val.valid_from ?? null,
-        valid_until: val.valid_until ?? null,
-        description: val.description ?? null,
-        is_active: true,
-        current_uses: 0,
-      });
-      this.toastService.success('Promoción guardada');
+      if (this.editingId()) {
+        await this.service.updatePromotion(this.editingId()!, payload);
+        await this.service.savePromotionTranslations(this.editingId()!, this.translations());
+      } else {
+        const created = await this.service.createPromotion(payload);
+        await this.service.savePromotionTranslations(created.id, this.translations());
+      }
+      this.toastService.success('Promo guardada');
       this.showForm.set(false);
       this.loadPromotions();
-    } catch { this.toastService.error('Error al guardar'); }
-    finally { this.saveLoading.set(false); }
+    } catch {
+      this.toastService.error('Error al guardar promo');
+    } finally {
+      this.saveLoading.set(false);
+    }
   }
 
-  async togglePromo(p: Promotion): Promise<void> {
-    try {
-      await this.service.togglePromotion(p.id, !p.is_active);
-      this.promotions.update(list => list.map(x => x.id === p.id ? { ...x, is_active: !p.is_active } : x));
-    } catch { this.toastService.error('Error al actualizar'); }
-  }
-
-  typeLabel(type: PromoType): string {
-    const map: Record<PromoType, string> = {
-      percentage: 'Porcentaje', fixed_amount: 'Monto fijo', free_delivery: 'Delivery gratis',
-    };
-    return map[type] ?? type;
-  }
-
-  formatDate(isoString: string | null | undefined): string {
-    if (!isoString) return '—';
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return '—';
-    return new Intl.DateTimeFormat('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }).format(d);
-  }
-
-  isExpired(isoString: string | null | undefined): boolean {
-    if (!isoString) return false;
-    return new Date(isoString) < new Date();
-  }
-
-  openStats(p: Promotion): void {
-    this.statsPromo.set(p);
-    this.promoUses.set([]);
-    this.statsLoading.set(true);
-    this.service.getPromoUses(p.id).subscribe(uses => {
-      this.promoUses.set(uses);
-      this.statsLoading.set(false);
+  async deletePromo(promo: HomePromo): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: `¿Eliminar "${promo.title}"?`,
+      message: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      danger: true,
     });
+    if (!ok) {
+      return;
+    }
+
+    try {
+      await this.service.deletePromotion(promo.id);
+      this.toastService.success('Promo eliminada');
+      this.loadPromotions();
+    } catch {
+      this.toastService.error('Error al eliminar promo');
+    }
   }
 
-  promoCountByTab(tab: PromoTab): number {
-    const now = new Date().toISOString().split('T')[0];
-    if (tab === 'activas') return this.promotions().filter(p => p.is_active).length;
-    if (tab === 'programadas') return this.promotions().filter(p => !!p.valid_from && p.valid_from > now).length;
-    if (tab === 'expiradas') return this.promotions().filter(p => !!p.valid_until && p.valid_until < now).length;
-    return this.promotions().length;
+  async toggleActive(promo: HomePromo): Promise<void> {
+    try {
+      await this.service.togglePromotion(promo.id, !promo.is_active);
+      this.promotions.update((list) =>
+        list.map((item) =>
+          item.id === promo.id
+            ? { ...item, is_active: !promo.is_active }
+            : item
+        )
+      );
+    } catch {
+      this.toastService.error('Error al actualizar estado');
+    }
+  }
+
+  async onImageSelected(file: File): Promise<void> {
+    this.uploadingImage.set(true);
+    try {
+      const imageUrl = await this.service.uploadPromoImage(file);
+      this.promoForm.patchValue({ image_url: imageUrl });
+      this.toastService.success('Imagen subida');
+    } catch {
+      this.toastService.error('Error al subir imagen');
+    } finally {
+      this.uploadingImage.set(false);
+    }
+  }
+
+  categoryLabel(value: PromoCategory): string {
+    return this.categories.find((item) => item.value === value)?.label ?? value;
+  }
+
+  missingTranslations(promoId: string): number {
+    return this.translationMissingByPromo()[promoId] ?? 12;
+  }
+
+  setFormLanguage(lang: PromoFormLanguage): void {
+    if (lang !== 'es' && !this.editingId()) {
+      return;
+    }
+    this.activeFormLang.set(lang);
+  }
+
+  activeFormLangLabel(): string {
+    return this.formLangs.find((item) => item.value === this.activeFormLang())?.label ?? 'ES';
+  }
+
+  translationValue(field: PromoTranslationField): string {
+    const lang = this.activeFormLang();
+    if (lang === 'es') {
+      return '';
+    }
+    return this.translations()[field][lang];
+  }
+
+  setTranslationValue(field: PromoTranslationField, value: string): void {
+    const lang = this.activeFormLang();
+    if (lang === 'es') {
+      return;
+    }
+    this.translations.update((prev) => ({
+      ...prev,
+      [field]: {
+        ...prev[field],
+        [lang]: value,
+      },
+    }));
+  }
+
+  formatDate(iso: string): string {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return '—';
+    }
+    return new Intl.DateTimeFormat('es-DO', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
+
+  private asNullable(value: string): string | null {
+    const normalized = value.trim();
+    return normalized ? normalized : null;
+  }
+
+  private toIsoOrNow(localDateTime: string): string {
+    const iso = this.toIsoOrNull(localDateTime);
+    return iso ?? new Date().toISOString();
+  }
+
+  private toIsoOrNull(localDateTime: string): string | null {
+    if (!localDateTime?.trim()) {
+      return null;
+    }
+    const date = new Date(localDateTime);
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+    return date.toISOString();
+  }
+
+  private toLocalDateTime(isoDateTime: string): string {
+    if (!isoDateTime) {
+      return '';
+    }
+    const date = new Date(isoDateTime);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const timezoneOffsetMs = date.getTimezoneOffset() * 60_000;
+    return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 16);
+  }
+
+  private async loadTranslations(promoId: string): Promise<void> {
+    try {
+      const rows = await this.service.getPromotionTranslations(promoId);
+      this.translations.set(rows);
+    } catch {
+      this.translations.set(createEmptyPromoTranslationMap());
+      this.toastService.error('No se pudieron cargar traducciones');
+    }
   }
 }
