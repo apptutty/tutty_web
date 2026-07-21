@@ -270,6 +270,8 @@ export interface DeliveryZone {
   weather_surcharge_override?: number | null;
   priority: number;
   is_active: boolean;
+  /** Raw geography(Polygon) value (opaque to the client) — only used to detect presence via `!= null`. */
+  boundary?: unknown;
 }
 
 export interface Courier {

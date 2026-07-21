@@ -6,11 +6,16 @@
  *   view    — read-only map with a single marker
  *   radius  — read-only (or editable via the center) map showing a commerce pin + a filled circle
  *             representing the delivery radius in km
+ *   polygon — precise area boundary. Reusable by ANY feature needing a delimited zone
+ *             (beaches, delivery zones, etc). [editable]=true lets the admin build/edit the
+ *             boundary by clicking to add vertices and dragging vertex markers to adjust them;
+ *             [editable]=false renders a read-only preview of [vertices].
  *
  * Usage:
- *   <app-tutty-map mode="picker" [lat]="..." [lng]="..." (locationChange)="onPick($event)" />
- *   <app-tutty-map mode="view"   [lat]="..." [lng]="..." />
- *   <app-tutty-map mode="radius" [lat]="..." [lng]="..." [radiusKm]="5" />
+ *   <app-tutty-map mode="picker"  [lat]="..." [lng]="..." (locationChange)="onPick($event)" />
+ *   <app-tutty-map mode="view"    [lat]="..." [lng]="..." />
+ *   <app-tutty-map mode="radius"  [lat]="..." [lng]="..." [radiusKm]="5" />
+ *   <app-tutty-map mode="polygon" [vertices]="vertices()" [editable]="true" (verticesChange)="onVertices($event)" />
  *
  * Note (zoneless app): this app runs without zone.js, so every piece of state that the
  * template depends on MUST be a signal — plain class fields mutated from callbacks that
@@ -22,7 +27,7 @@ import {
     SimpleChanges, inject, PLATFORM_ID, ChangeDetectionStrategy, signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { GoogleMap, MapMarker, MapCircle } from '@angular/google-maps';
+import { GoogleMap, MapMarker, MapCircle, MapPolygon } from '@angular/google-maps';
 import { environment } from '../../../../environments/environment';
 
 export interface LatLng {
@@ -70,7 +75,7 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
 @Component({
     selector: 'app-tutty-map',
     standalone: true,
-    imports: [GoogleMap, MapMarker, MapCircle],
+    imports: [GoogleMap, MapMarker, MapCircle, MapPolygon],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     @if (apiLoaded() && isBrowser) {
@@ -80,10 +85,10 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
         [center]="center()"
         [zoom]="zoom"
         [options]="mapOptions"
-        (mapClick)="mode === 'picker' ? onMapClick($event) : null"
+        (mapClick)="onMapClick($event)"
         [class]="mapClass"
       >
-        @if (markerPosition(); as position) {
+        @if (mode !== 'polygon' && markerPosition(); as position) {
           <map-marker
             [position]="position"
             [options]="markerOptions"
@@ -95,6 +100,20 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
             [radius]="radiusKm * 1000"
             [options]="circleOptions"
           />
+        }
+        @if (mode === 'polygon') {
+          @if (polygonPath().length > 2) {
+            <map-polygon [paths]="polygonPath()" [options]="polygonOptions" />
+          }
+          @if (editable) {
+            @for (vertex of polygonPath(); track $index) {
+              <map-marker
+                [position]="vertex"
+                [options]="vertexMarkerOptions"
+                (mapDragend)="onVertexDragEnd($index, $event)"
+              />
+            }
+          }
         }
       </google-map>
     } @else {
@@ -127,7 +146,7 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
   `,
 })
 export class TuttyMapComponent implements OnInit, OnChanges {
-    @Input() mode: 'picker' | 'view' | 'radius' = 'view';
+    @Input() mode: 'picker' | 'view' | 'radius' | 'polygon' = 'view';
     @Input() lat: number | null | undefined = null;
     @Input() lng: number | null | undefined = null;
     @Input() radiusKm = 0;
@@ -136,7 +155,14 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     @Input() mapClass = 'rounded-xl overflow-hidden';
     @Input() zoom = 14;
 
+    /** mode="polygon" only: current boundary vertices (in order). */
+    @Input() vertices: LatLng[] | null = null;
+    /** mode="polygon" only: when true, clicking adds a vertex and vertex markers are draggable. */
+    @Input() editable = true;
+
     @Output() locationChange = new EventEmitter<LatLng>();
+    /** mode="polygon" only: emitted whenever the vertex list changes (add/drag/undo/clear). */
+    @Output() verticesChange = new EventEmitter<LatLng[]>();
 
     private readonly platformId = inject(PLATFORM_ID);
     readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -145,6 +171,7 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     readonly mapError = signal<string | null>(null);
     readonly center = signal<google.maps.LatLngLiteral>({ lat: 18.4718, lng: -69.9513 }); // Santo Domingo default
     readonly markerPosition = signal<google.maps.LatLngLiteral | null>(null);
+    readonly polygonPath = signal<google.maps.LatLngLiteral[]>([]);
 
     readonly mapOptions: google.maps.MapOptions = {
         mapTypeControl: false,
@@ -161,6 +188,18 @@ export class TuttyMapComponent implements OnInit, OnChanges {
         animation: undefined,
     };
 
+    readonly vertexMarkerOptions: google.maps.MarkerOptions = {
+        draggable: true,
+        icon: {
+            path: 0, // google.maps.SymbolPath.CIRCLE (numeric to avoid needing the API loaded at module-eval time)
+            scale: 7,
+            fillColor: '#FF3C97',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+        },
+    };
+
     readonly circleOptions: google.maps.CircleOptions = {
         fillColor: '#FF3C97',
         fillOpacity: 0.12,
@@ -169,15 +208,27 @@ export class TuttyMapComponent implements OnInit, OnChanges {
         strokeOpacity: 0.6,
     };
 
+    readonly polygonOptions: google.maps.PolygonOptions = {
+        fillColor: '#FF3C97',
+        fillOpacity: 0.15,
+        strokeColor: '#FF3C97',
+        strokeWeight: 2,
+        strokeOpacity: 0.8,
+    };
+
     ngOnInit(): void {
         if (!this.isBrowser) return;
         this.loadApi();
         this.syncPosition();
+        this.syncVertices();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['lat'] || changes['lng']) {
             this.syncPosition();
+        }
+        if (changes['vertices']) {
+            this.syncVertices();
         }
     }
 
@@ -188,6 +239,14 @@ export class TuttyMapComponent implements OnInit, OnChanges {
             this.center.set(position);
         } else {
             this.markerPosition.set(null);
+        }
+    }
+
+    private syncVertices(): void {
+        const path = (this.vertices ?? []).map((v) => ({ lat: v.lat, lng: v.lng }));
+        this.polygonPath.set(path);
+        if (path.length > 0 && this.lat == null && this.lng == null) {
+            this.center.set(path[0]);
         }
     }
 
@@ -219,9 +278,41 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     }
 
     onMapClick(event: google.maps.MapMouseEvent): void {
-        if (!event.latLng || this.mode !== 'picker') return;
-        const pos = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-        this.markerPosition.set(pos);
-        this.locationChange.emit(pos);
+        if (!event.latLng) return;
+
+        if (this.mode === 'picker') {
+            const pos = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+            this.markerPosition.set(pos);
+            this.locationChange.emit(pos);
+            return;
+        }
+
+        if (this.mode === 'polygon' && this.editable) {
+            const pos = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+            const next = [...this.polygonPath(), pos];
+            this.polygonPath.set(next);
+            this.verticesChange.emit(next);
+        }
+    }
+
+    onVertexDragEnd(index: number, event: google.maps.MapMouseEvent): void {
+        if (!event.latLng || this.mode !== 'polygon' || !this.editable) return;
+        const next = this.polygonPath().slice();
+        next[index] = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+        this.polygonPath.set(next);
+        this.verticesChange.emit(next);
+    }
+
+    /** mode="polygon" only: removes the last added vertex. Call from a host "Undo" button. */
+    undoLastVertex(): void {
+        const next = this.polygonPath().slice(0, -1);
+        this.polygonPath.set(next);
+        this.verticesChange.emit(next);
+    }
+
+    /** mode="polygon" only: clears the boundary entirely. Call from a host "Clear" button. */
+    clearVertices(): void {
+        this.polygonPath.set([]);
+        this.verticesChange.emit([]);
     }
 }

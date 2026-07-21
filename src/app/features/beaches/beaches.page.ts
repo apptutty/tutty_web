@@ -114,6 +114,7 @@ import { TuttyMapComponent, LatLng } from '../../shared/ui/map/tutty-map.compone
                         <td class="py-[14px] px-4 align-middle text-[#344055]">{{ beach.commerces_count }}</td>
                         <td class="py-[14px] px-4 align-middle">
                           <div class="flex justify-end gap-2">
+                            <button type="button" class="min-h-[34px] px-[11px] rounded-[9px] border border-[#e5e9f1] bg-white text-[12px] font-extrabold" [class]="beach.has_boundary ? 'text-[var(--admin-green)]' : ''" (click)="openBoundaryEditor(beach); $event.stopPropagation()">{{ beach.has_boundary ? 'Contorno ✓' : 'Delimitar' }}</button>
                             <button type="button" class="min-h-[34px] px-[11px] rounded-[9px] border border-[#e5e9f1] bg-white text-[12px] font-extrabold" (click)="openBeachForm(beach); $event.stopPropagation()">Editar</button>
                             <button type="button" class="min-h-[34px] px-[11px] rounded-[9px] border border-[#f1d0d0] bg-white text-[12px] font-extrabold text-[#d93b3b]" (click)="deleteBeach(beach); $event.stopPropagation()">Eliminar</button>
                           </div>
@@ -298,6 +299,36 @@ import { TuttyMapComponent, LatLng } from '../../shared/ui/map/tutty-map.compone
         </div>
       </div>
     }
+
+    @if (showBoundaryModal(); as boundaryBeach) {
+      <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl rounded-2xl bg-white p-4">
+          <h3 class="text-lg font-bold mb-1">Delimitar {{ boundaryBeach.name }}</h3>
+          <p class="text-xs text-[#6f7a8f] mb-3">
+            Haz clic en el mapa para agregar vértices y dibujar el contorno real de la playa (mínimo 3 puntos).
+            Arrastra un vértice para ajustarlo. Esto reemplaza el matching por radio con una delimitación precisa.
+          </p>
+          <app-tutty-map
+            mode="polygon"
+            [editable]="true"
+            [vertices]="boundaryVertices()"
+            height="360px"
+            (verticesChange)="boundaryVertices.set($event)">
+          </app-tutty-map>
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <span class="text-xs text-[#6f7a8f]">{{ boundaryVertices().length }} vértice(s)</span>
+            <div class="flex gap-2">
+              <button class="btn-secondary text-xs" type="button" [disabled]="boundaryVertices().length === 0" (click)="undoLastBoundaryVertex()">Deshacer último</button>
+              <button class="btn-secondary text-xs" type="button" [disabled]="boundaryVertices().length === 0" (click)="clearBoundaryVertices()">Limpiar</button>
+            </div>
+          </div>
+          <div class="mt-4 flex justify-end gap-2">
+            <button class="btn-secondary" [disabled]="savingBoundary()" (click)="showBoundaryModal.set(null)">Cancelar</button>
+            <button class="btn-primary" [disabled]="savingBoundary()" (click)="saveBoundary()">{{ savingBoundary() ? 'Guardando…' : 'Guardar contorno' }}</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class BeachesPageComponent implements OnInit {
@@ -318,6 +349,10 @@ export class BeachesPageComponent implements OnInit {
   readonly savingBeach = signal(false);
   readonly savingPoint = signal(false);
   readonly savingCoverage = signal(false);
+
+  readonly showBoundaryModal = signal<BeachRow | null>(null);
+  readonly boundaryVertices = signal<LatLng[]>([]);
+  readonly savingBoundary = signal(false);
 
   readonly commerces = signal<Array<{ id: string; name: string; is_beach_delivery: boolean }>>([]);
   readonly selectedCoverageIds = signal<string[]>([]);
@@ -558,5 +593,47 @@ export class BeachesPageComponent implements OnInit {
       lat: Number(position.lat.toFixed(6)),
       lng: Number(position.lng.toFixed(6)),
     };
+  }
+
+  async openBoundaryEditor(beach: BeachRow): Promise<void> {
+    this.showBoundaryModal.set(beach);
+    this.boundaryVertices.set([]);
+    if (beach.has_boundary) {
+      try {
+        const vertices = await this.service.getBeachBoundary(beach.id);
+        this.boundaryVertices.set(vertices ?? []);
+      } catch {
+        this.toast.error('No se pudo cargar el contorno actual');
+      }
+    }
+  }
+
+  undoLastBoundaryVertex(): void {
+    this.boundaryVertices.set(this.boundaryVertices().slice(0, -1));
+  }
+
+  clearBoundaryVertices(): void {
+    this.boundaryVertices.set([]);
+  }
+
+  async saveBoundary(): Promise<void> {
+    const beach = this.showBoundaryModal();
+    if (!beach) return;
+    const vertices = this.boundaryVertices();
+    if (vertices.length > 0 && vertices.length < 3) {
+      this.toast.error('El contorno necesita al menos 3 vértices');
+      return;
+    }
+    this.savingBoundary.set(true);
+    try {
+      await this.service.saveBeachBoundary(beach.id, vertices);
+      this.showBoundaryModal.set(null);
+      await this.loadAll();
+      this.toast.success(vertices.length === 0 ? 'Contorno eliminado' : 'Contorno guardado');
+    } catch (err) {
+      this.toast.error(err instanceof Error ? err.message : 'No se pudo guardar el contorno');
+    } finally {
+      this.savingBoundary.set(false);
+    }
   }
 }

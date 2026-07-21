@@ -7,8 +7,9 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { DeliveryZone, Restaurant } from '../../core/supabase/database.types';
-import { TuttyMapComponent } from '../../shared/ui/map/tutty-map.component';
+import { TuttyMapComponent, LatLng } from '../../shared/ui/map/tutty-map.component';
 import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admin-empty-state.component';
+import { getSupabaseClient } from '../../core/supabase/supabase.client';
 
 @Component({
     selector: 'app-delivery-zones-page',
@@ -131,6 +132,7 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
                   <td class="px-4 py-3">
                     <div class="flex gap-2">
                       <button class="text-brand-500 hover:text-brand-700 text-sm font-medium" (click)="openForm(zone)">Editar</button>
+                      <button class="text-sm font-medium" [class]="zone.boundary ? 'text-success-600 hover:text-success-700' : 'text-gray-500 hover:text-gray-700'" (click)="openZoneBoundaryEditor(zone)">{{ zone.boundary ? 'Contorno ✓' : 'Delimitar' }}</button>
                       <button class="text-error-500 hover:text-error-700 text-sm font-medium" (click)="deleteZone(zone)">Eliminar</button>
                     </div>
                   </td>
@@ -235,6 +237,39 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
         </div>
       </div>
     }
+
+    <!-- Zone Boundary Modal (reuses the same polygon editor as Beaches / store-admin zones) -->
+    @if (showZoneBoundaryModal(); as boundaryZone) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="showZoneBoundaryModal.set(null)"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-10 p-6">
+          <h3 class="text-base font-semibold text-gray-900 mb-1">Delimitar "{{ boundaryZone.name }}"</h3>
+          <p class="text-xs text-gray-500 mb-3">
+            Dibuja el contorno real de la zona en vez de usar solo un radio. Haz clic para agregar vértices (mínimo 3) y arrastra para ajustarlos.
+          </p>
+          <app-tutty-map
+            mode="polygon"
+            [editable]="true"
+            [vertices]="zoneBoundaryVertices()"
+            [lat]="restaurant()?.lat ?? null"
+            [lng]="restaurant()?.lng ?? null"
+            height="360px"
+            (verticesChange)="zoneBoundaryVertices.set($event)">
+          </app-tutty-map>
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <span class="text-xs text-gray-500">{{ zoneBoundaryVertices().length }} vértice(s)</span>
+            <div class="flex gap-2">
+              <button class="btn-secondary text-xs" type="button" [disabled]="zoneBoundaryVertices().length === 0" (click)="zoneBoundaryVertices.set(zoneBoundaryVertices().slice(0, -1))">Deshacer último</button>
+              <button class="btn-secondary text-xs" type="button" [disabled]="zoneBoundaryVertices().length === 0" (click)="zoneBoundaryVertices.set([])">Limpiar</button>
+            </div>
+          </div>
+          <div class="mt-4 flex justify-end gap-2">
+            <button class="btn-secondary" [disabled]="savingZoneBoundary()" (click)="showZoneBoundaryModal.set(null)">Cancelar</button>
+            <button class="btn-primary" [disabled]="savingZoneBoundary()" (click)="saveZoneBoundary()">{{ savingZoneBoundary() ? 'Guardando…' : 'Guardar contorno' }}</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class DeliveryZonesPageComponent implements OnInit {
@@ -244,6 +279,7 @@ export class DeliveryZonesPageComponent implements OnInit {
     private readonly toastService = inject(ToastService);
     private readonly confirmService = inject(ConfirmService);
     private readonly fb = inject(FormBuilder);
+    private readonly supabase = getSupabaseClient();
 
     readonly restaurant = signal<Restaurant | null>(null);
     readonly zones = signal<DeliveryZone[]>([]);
@@ -252,6 +288,10 @@ export class DeliveryZonesPageComponent implements OnInit {
     readonly editingZone = signal<DeliveryZone | null>(null);
     readonly saveLoading = signal(false);
     sectors: string[] = [];
+
+    readonly showZoneBoundaryModal = signal<DeliveryZone | null>(null);
+    readonly zoneBoundaryVertices = signal<LatLng[]>([]);
+    readonly savingZoneBoundary = signal(false);
 
     private commerceId = '';
 
@@ -374,6 +414,44 @@ export class DeliveryZonesPageComponent implements OnInit {
             this.loadZones();
         } catch {
             this.toastService.error('Error al eliminar');
+        }
+    }
+
+    async openZoneBoundaryEditor(zone: DeliveryZone): Promise<void> {
+        this.showZoneBoundaryModal.set(zone);
+        this.zoneBoundaryVertices.set([]);
+        if (zone.boundary) {
+            const { data, error } = await this.supabase.rpc('get_delivery_zone_boundary', { p_zone_id: zone.id });
+            if (error) {
+                this.toastService.error('No se pudo cargar el contorno actual');
+                return;
+            }
+            this.zoneBoundaryVertices.set((data as LatLng[] | null) ?? []);
+        }
+    }
+
+    async saveZoneBoundary(): Promise<void> {
+        const zone = this.showZoneBoundaryModal();
+        if (!zone) return;
+        const vertices = this.zoneBoundaryVertices();
+        if (vertices.length > 0 && vertices.length < 3) {
+            this.toastService.error('El contorno necesita al menos 3 vértices');
+            return;
+        }
+        this.savingZoneBoundary.set(true);
+        try {
+            const { error } = await this.supabase.rpc('save_delivery_zone_boundary', {
+                p_zone_id: zone.id,
+                p_vertices: vertices,
+            });
+            if (error) throw error;
+            this.showZoneBoundaryModal.set(null);
+            this.loadZones();
+            this.toastService.success(vertices.length === 0 ? 'Contorno eliminado' : 'Contorno guardado');
+        } catch {
+            this.toastService.error('No se pudo guardar el contorno');
+        } finally {
+            this.savingZoneBoundary.set(false);
         }
     }
 }

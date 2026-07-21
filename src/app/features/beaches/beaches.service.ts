@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { getSupabaseClient } from '../../core/supabase/supabase.client';
+import { LatLng } from '../../shared/ui/map/tutty-map.component';
 
 export interface BeachRow {
   id: string;
@@ -10,6 +11,7 @@ export interface BeachRow {
   points_count: number;
   commerces_count: number;
   created_at: string | null;
+  has_boundary: boolean;
 }
 
 export interface BeachPointRow {
@@ -29,7 +31,7 @@ export class BeachesService {
   async listBeaches(): Promise<BeachRow[]> {
     const { data, error } = await this.supabase
       .from('beaches')
-      .select('id, name, city, sector, is_active, created_at, beach_points(count), commerce_beach_coverage(count)')
+      .select('id, name, city, sector, is_active, created_at, boundary, beach_points(count), commerce_beach_coverage(count)')
       .order('name');
     if (error) throw error;
     return ((data ?? []) as any[]).map((row) => ({
@@ -41,6 +43,7 @@ export class BeachesService {
       points_count: Number(row.beach_points?.[0]?.count ?? 0),
       commerces_count: Number(row.commerce_beach_coverage?.[0]?.count ?? 0),
       created_at: row.created_at ?? null,
+      has_boundary: row.boundary != null,
     }));
   }
 
@@ -79,6 +82,22 @@ export class BeachesService {
 
   async deleteBeach(id: string): Promise<void> {
     const { error } = await this.supabase.from('beaches').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  /** Boundary vertices ({lat,lng}[]) for a beach, or null if not delimited yet. */
+  async getBeachBoundary(beachId: string): Promise<LatLng[] | null> {
+    const { data, error } = await this.supabase.rpc('get_beach_boundary', { p_beach_id: beachId });
+    if (error) throw error;
+    return (data as LatLng[] | null) ?? null;
+  }
+
+  /** Saves (or clears, when vertices is an empty array) the polygon boundary for a beach. */
+  async saveBeachBoundary(beachId: string, vertices: LatLng[]): Promise<void> {
+    const { error } = await this.supabase.rpc('save_beach_boundary', {
+      p_beach_id: beachId,
+      p_vertices: vertices,
+    });
     if (error) throw error;
   }
 
