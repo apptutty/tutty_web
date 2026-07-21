@@ -427,14 +427,25 @@ export class BeachesPageComponent implements OnInit {
       this.showBeachForm.set(false);
       await this.loadAll();
       this.toast.success('Playa guardada');
-    } catch {
-      this.toast.error('No se pudo guardar la playa');
+    } catch (err) {
+      this.toast.error(err instanceof Error ? err.message : 'No se pudo guardar la playa');
     } finally {
       this.savingBeach.set(false);
     }
   }
 
   async deleteBeach(beach: BeachRow): Promise<void> {
+    try {
+      const activeOrders = await this.service.countActiveOrdersForBeach(beach.id);
+      if (activeOrders > 0) {
+        this.toast.error(`No se puede eliminar: hay ${activeOrders} pedido(s) activo(s) en esta playa.`);
+        return;
+      }
+    } catch {
+      this.toast.error('No se pudo verificar pedidos activos. Intenta de nuevo.');
+      return;
+    }
+
     const ok = await this.confirm.confirm({
       title: `Eliminar ${beach.name}`,
       message: `Esto también eliminará los ${beach.points_count} puntos de entrega asociados.`,
@@ -471,14 +482,25 @@ export class BeachesPageComponent implements OnInit {
       await this.selectBeach(this.selectedBeach()!);
       await this.loadAll();
       this.toast.success('Punto guardado');
-    } catch {
-      this.toast.error('No se pudo guardar el punto');
+    } catch (err) {
+      this.toast.error(err instanceof Error ? err.message : 'No se pudo guardar el punto');
     } finally {
       this.savingPoint.set(false);
     }
   }
 
   async deletePoint(point: BeachPointRow): Promise<void> {
+    try {
+      const activeOrders = await this.service.countActiveOrdersForPoint(point.id);
+      if (activeOrders > 0) {
+        this.toast.error(`No se puede eliminar: hay ${activeOrders} pedido(s) activo(s) en este punto.`);
+        return;
+      }
+    } catch {
+      this.toast.error('No se pudo verificar pedidos activos. Intenta de nuevo.');
+      return;
+    }
+
     const ok = await this.confirm.confirm({ title: `Eliminar punto ${point.name}`, message: 'Esta acción no se puede deshacer.', danger: true });
     if (!ok) return;
     try {

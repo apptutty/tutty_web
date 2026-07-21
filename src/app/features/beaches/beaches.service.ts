@@ -51,6 +51,23 @@ export class BeachesService {
       sector: payload.sector?.trim() || null,
       is_active: payload.is_active ?? true,
     };
+    if (!data.name) {
+      throw new Error('El nombre es obligatorio');
+    }
+
+    let duplicateQuery = this.supabase
+      .from('beaches')
+      .select('id', { count: 'exact', head: true })
+      .ilike('name', data.name);
+    if (payload.id) {
+      duplicateQuery = duplicateQuery.neq('id', payload.id);
+    }
+    const { count: duplicateCount, error: duplicateError } = await duplicateQuery;
+    if (duplicateError) throw duplicateError;
+    if ((duplicateCount ?? 0) > 0) {
+      throw new Error('Ya existe una playa con ese nombre');
+    }
+
     if (payload.id) {
       const { error } = await this.supabase.from('beaches').update(data).eq('id', payload.id);
       if (error) throw error;
@@ -63,6 +80,28 @@ export class BeachesService {
   async deleteBeach(id: string): Promise<void> {
     const { error } = await this.supabase.from('beaches').delete().eq('id', id);
     if (error) throw error;
+  }
+
+  /** Active (non-terminal) orders whose historical snapshot references this beach. */
+  async countActiveOrdersForBeach(beachId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .not('status', 'in', '(entregado,cancelado)')
+      .eq('delivery_address_snapshot->>beach_id', beachId);
+    if (error) throw error;
+    return count ?? 0;
+  }
+
+  /** Active (non-terminal) orders whose historical snapshot references this beach point. */
+  async countActiveOrdersForPoint(pointId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .not('status', 'in', '(entregado,cancelado)')
+      .eq('delivery_address_snapshot->>beach_point_id', pointId);
+    if (error) throw error;
+    return count ?? 0;
   }
 
   async listPoints(beachId: string): Promise<BeachPointRow[]> {
@@ -92,6 +131,33 @@ export class BeachesService {
       reference_notes: payload.reference_notes?.trim() || null,
       is_active: payload.is_active ?? true,
     };
+    if (!point.beach_id) {
+      throw new Error('La playa es obligatoria');
+    }
+    if (!point.name) {
+      throw new Error('El nombre es obligatorio');
+    }
+    if (point.lat == null || point.lng == null || Number.isNaN(point.lat) || Number.isNaN(point.lng)) {
+      throw new Error('Las coordenadas son obligatorias');
+    }
+    if (point.lat < -90 || point.lat > 90 || point.lng < -180 || point.lng > 180) {
+      throw new Error('Las coordenadas no son válidas');
+    }
+
+    let duplicateQuery = this.supabase
+      .from('beach_points')
+      .select('id', { count: 'exact', head: true })
+      .eq('beach_id', point.beach_id)
+      .ilike('name', point.name);
+    if (payload.id) {
+      duplicateQuery = duplicateQuery.neq('id', payload.id);
+    }
+    const { count: duplicateCount, error: duplicateError } = await duplicateQuery;
+    if (duplicateError) throw duplicateError;
+    if ((duplicateCount ?? 0) > 0) {
+      throw new Error('Ya existe un punto con ese nombre en esta playa');
+    }
+
     if (payload.id) {
       const { error } = await this.supabase.from('beach_points').update(point).eq('id', payload.id);
       if (error) throw error;
