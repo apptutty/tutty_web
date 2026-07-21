@@ -63,6 +63,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/stores/stores.page').then(m => m.StoresPageComponent),
       },
       {
+        path: 'beaches',
+        canActivate: [roleGuard(['super_admin'])],
+        loadComponent: () => import('./features/beaches/beaches.page').then(m => m.BeachesPageComponent),
+      },
+      {
         path: 'stores/:id',
         canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/stores/store-detail.page').then(m => m.StoreDetailPageComponent),
@@ -274,4 +279,3 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: '' },
 ];
-

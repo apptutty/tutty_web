@@ -61,6 +61,20 @@ export interface SurchargeTotals {
     total: number;
 }
 
+export interface BeachOption {
+    id: string;
+    name: string;
+}
+
+export interface BeachOrderRow {
+    id: string;
+    order_number: string;
+    total: number;
+    created_at: string;
+    beach_name: string;
+    point_name: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
     private supabase = getSupabaseClient();
@@ -343,5 +357,58 @@ export class ReportsService {
         });
 
         return { daily: Object.values(dayMap), totals };
+    }
+
+    listActiveBeaches(): Observable<BeachOption[]> {
+        return from(
+            this.supabase
+                .from('beaches')
+                .select('id, name')
+                .eq('is_active', true)
+                .order('name')
+                .then(({ data, error }) => {
+                    if (error) throw error;
+                    return (data ?? []) as BeachOption[];
+                })
+        );
+    }
+
+    beachDeliveryOrders(from_date: string, to_date: string, beachId?: string): Observable<BeachOrderRow[]> {
+        return from(this.fetchBeachDeliveryOrders(from_date, to_date, beachId));
+    }
+
+    private async fetchBeachDeliveryOrders(from_date: string, to_date: string, beachId?: string): Promise<BeachOrderRow[]> {
+        let query = this.supabase
+            .from('orders')
+            .select(`
+                id, order_number, total, created_at,
+                addresses:delivery_address_id(
+                  beach_points(
+                    name,
+                    beach_id,
+                    beaches(name)
+                  )
+                )
+            `)
+            .eq('is_beach_delivery', true)
+            .gte('created_at', from_date)
+            .lte('created_at', to_date + 'T23:59:59')
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        const rows = ((data ?? []) as any[]).map((row) => ({
+            id: row.id as string,
+            order_number: row.order_number as string,
+            total: Number(row.total ?? 0),
+            created_at: row.created_at as string,
+            point_name: row.addresses?.beach_points?.name ?? 'Punto',
+            beach_name: row.addresses?.beach_points?.beaches?.name ?? 'Playa',
+            beach_id: row.addresses?.beach_points?.beach_id ?? null,
+        }));
+        return rows
+            .filter((row) => !beachId || row.beach_id === beachId)
+            .map(({ beach_id, ...row }) => row);
     }
 }

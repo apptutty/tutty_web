@@ -28,6 +28,13 @@ export interface StoreDaySchedule {
   closing_time: string;
 }
 
+export interface BeachOption {
+  id: string;
+  name: string;
+  city: string | null;
+  sector: string | null;
+}
+
 const NOTIF_PREFS_KEY = (storeId: string) => `tutty_notif_${storeId}`;
 const DEFAULT_NOTIF: StoreNotifPrefs = {
   soundEnabled: true,
@@ -150,6 +157,52 @@ export class StoreSettingsService {
       .eq('commerce_id', storeId)
       .eq('user_id', userId);
     if (error) throw error;
+  }
+
+  async getActiveBeaches(): Promise<BeachOption[]> {
+    const { data, error } = await this.supabase
+      .from('beaches')
+      .select('id, name, city, sector')
+      .eq('is_active', true)
+      .order('name');
+    if (error) throw error;
+    return ((data ?? []) as any[]).map((row) => ({
+      id: row.id as string,
+      name: row.name as string,
+      city: (row.city as string | null) ?? null,
+      sector: (row.sector as string | null) ?? null,
+    }));
+  }
+
+  async getStoreBeachCoverage(storeId: string): Promise<string[]> {
+    const { data, error } = await this.supabase
+      .from('commerce_beach_coverage')
+      .select('beach_id')
+      .eq('commerce_id', storeId);
+    if (error) throw error;
+    return ((data ?? []) as any[]).map((row) => row.beach_id as string);
+  }
+
+  async updateStoreBeachCoverage(storeId: string, beachIds: string[]): Promise<void> {
+    const current = await this.getStoreBeachCoverage(storeId);
+    const toAdd = beachIds.filter((id) => !current.includes(id));
+    const toRemove = current.filter((id) => !beachIds.includes(id));
+
+    if (toAdd.length > 0) {
+      const { error } = await this.supabase
+        .from('commerce_beach_coverage')
+        .insert(toAdd.map((beachId) => ({ commerce_id: storeId, beach_id: beachId })));
+      if (error) throw error;
+    }
+
+    if (toRemove.length > 0) {
+      const { error } = await this.supabase
+        .from('commerce_beach_coverage')
+        .delete()
+        .eq('commerce_id', storeId)
+        .in('beach_id', toRemove);
+      if (error) throw error;
+    }
   }
 
   // ─── Payouts (Finances tab) ────────────────────────────────────────────────

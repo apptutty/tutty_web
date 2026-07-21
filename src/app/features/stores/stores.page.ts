@@ -200,6 +200,7 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
             <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="activeStateFilter === 'active' ? 'bg-[#eafbf1] border-[#b7efcc] text-[#087b3c]' : 'border-[#e7eaf1] text-[#475467]'" (click)="setActiveStateFilter('active')">Activos {{ activeCount(true) }}</button>
             <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="approvalFilter === 'pendiente' ? 'bg-[#fff6e6] border-[#ffd8a8] text-[#b54708]' : 'border-[#e7eaf1] text-[#475467]'" (click)="setApprovalFilter('pendiente')">Pendientes {{ approvalCount('pendiente') }}</button>
             <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="rating45Only ? 'bg-[#eef4ff] border-[#d7e3ff] text-[#2451c7]' : 'border-[#e7eaf1] text-[#475467]'" (click)="toggleRating45()">Rating 4.5+</button>
+            <button type="button" class="h-9 rounded-full border px-3 text-sm font-bold transition-colors" [class]="beachDeliveryOnly ? 'bg-[#ecfeff] border-[#bae6fd] text-[#0369a1]' : 'border-[#e7eaf1] text-[#475467]'" (click)="toggleBeachDeliveryOnly()">Entrega a playa {{ beachDeliveryCount() }}</button>
           </div>
         </section>
 
@@ -267,6 +268,11 @@ const APPROVAL_COLORS: Record<ApprovalStatus, string> = {
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500">
                           {{ label(s.commerce_type) }}
                         </span>
+                        @if (hasBeachDelivery(s)) {
+                          <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 ml-1">
+                            Entrega a playa
+                          </span>
+                        }
                       </div>
                     </div>
                   </td>
@@ -506,6 +512,7 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     tierFilter: CommissionTier | '' = '';
     activeStateFilter: 'active' | 'inactive' | '' = '';
     rating45Only = false;
+    beachDeliveryOnly = false;
     openMenuId: string | null = null;
     private searchTimeout: any;
 
@@ -533,6 +540,9 @@ export class StoresPageComponent implements OnInit, OnDestroy {
 
         if (this.rating45Only) {
             list = list.filter((s) => Number(s.avg_rating ?? 0) >= 4.5);
+        }
+        if (this.beachDeliveryOnly) {
+            list = list.filter((s) => this.hasBeachDelivery(s));
         }
 
         return list;
@@ -564,6 +574,7 @@ export class StoresPageComponent implements OnInit, OnDestroy {
             approval_status: this.approvalFilter,
             open_status: this.openFilter,
             search: this.searchText || undefined,
+            beach_delivery_only: this.beachDeliveryOnly,
         };
         this.service.getStores(filters).subscribe({
             next: (data) => { this.stores.set(data); this.loading.set(false); },
@@ -587,6 +598,7 @@ export class StoresPageComponent implements OnInit, OnDestroy {
         this.tierFilter = '';
         this.activeStateFilter = '';
         this.rating45Only = false;
+        this.beachDeliveryOnly = false;
         this.loadStores();
     }
 
@@ -638,12 +650,25 @@ export class StoresPageComponent implements OnInit, OnDestroy {
     }
 
     isAllFiltersActive(): boolean {
-        return !this.activeType() && !this.approvalFilter && !this.openFilter && !this.tierFilter && !this.activeStateFilter && !this.rating45Only;
+        return !this.activeType() && !this.approvalFilter && !this.openFilter && !this.tierFilter && !this.activeStateFilter && !this.rating45Only && !this.beachDeliveryOnly;
+    }
+
+    toggleBeachDeliveryOnly(): void {
+        this.beachDeliveryOnly = !this.beachDeliveryOnly;
+        this.loadStores();
+    }
+
+    hasBeachDelivery(store: Restaurant): boolean {
+        return (store as any)?.is_beach_delivery === true;
+    }
+
+    beachDeliveryCount(): number {
+        return this.stores().filter((store) => this.hasBeachDelivery(store)).length;
     }
 
     exportCsv(): void {
         const rows = this.visibleStores();
-        const header = ['comercio', 'categoria', 'admin', 'admin_email', 'abierto', 'activo', 'aprobacion', 'rating', 'tier'];
+        const header = ['comercio', 'categoria', 'admin', 'admin_email', 'abierto', 'activo', 'playa', 'aprobacion', 'rating', 'tier'];
         const csv = [
             header.join(','),
             ...rows.map((s) => [
@@ -653,6 +678,7 @@ export class StoresPageComponent implements OnInit, OnDestroy {
                 this.escapeCsv(s.admin_email ?? ''),
                 s.is_open ? 'si' : 'no',
                 s.is_active ? 'si' : 'no',
+                this.hasBeachDelivery(s) ? 'si' : 'no',
                 this.escapeCsv(s.approval_status ?? ''),
                 Number(s.avg_rating ?? 0).toFixed(1),
                 this.escapeCsv(this.tierLabel(s.commission_tier)),

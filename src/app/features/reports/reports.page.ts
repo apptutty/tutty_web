@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ReportsService, SalesByDay, RestaurantSales, TopProduct, CourierPerformance, CommerceTypeRow, CustomerRetention, TopCustomer, PromoEffectiveness, SurchargeDay, SurchargeTotals } from './reports.service';
+import { ReportsService, SalesByDay, RestaurantSales, TopProduct, CourierPerformance, CommerceTypeRow, CustomerRetention, TopCustomer, PromoEffectiveness, SurchargeDay, SurchargeTotals, BeachOrderRow, BeachOption } from './reports.service';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { CurrencyDopPipe } from '../../shared/pipes/currency-dop.pipe';
 import { StatCardComponent } from '../../shared/ui/stat-card/stat-card.component';
@@ -53,6 +53,49 @@ Chart.register(...registerables);
         <app-stat-card title="Pedidos Entregados" [value]="totalOrders()" icon="📦" color="blue" />
         <app-stat-card title="Ticket Promedio" [value]="avgTicket() | currencyDop" icon="🧾" color="purple" />
         <app-stat-card title="Tasa de Cancelación" [value]="cancellationRate()" icon="❌" color="red" />
+      </div>
+
+      <div class="card p-4 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center gap-3 md:justify-between mb-3">
+          <div>
+            <h3 class="text-base font-semibold text-gray-900">Pedidos de playa</h3>
+            <p class="text-sm text-gray-500">{{ beachOrders().length }} pedidos en el rango seleccionado</p>
+          </div>
+          <select class="input-field w-full md:w-72" [(ngModel)]="beachFilterId" (ngModelChange)="loadBeachOrders()">
+            <option value="">Todas las playas</option>
+            @for (beach of beachOptions(); track beach.id) {
+              <option [value]="beach.id">{{ beach.name }}</option>
+            }
+          </select>
+        </div>
+        @if (loadingBeachOrders()) {
+          <div class="animate-pulse h-24 bg-gray-100 rounded-xl"></div>
+        } @else if (beachOrders().length === 0) {
+          <app-admin-empty-state icon="search" title="Sin pedidos de playa" description="No hay resultados para este filtro y rango de fecha." variant="soft" />
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase text-gray-500">
+                  <th class="py-2">Orden</th>
+                  <th class="py-2">Playa</th>
+                  <th class="py-2">Punto</th>
+                  <th class="py-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                @for (row of beachOrders().slice(0, 12); track row.id) {
+                  <tr>
+                    <td class="py-2 font-medium">#{{ row.order_number }}</td>
+                    <td class="py-2">{{ row.beach_name }}</td>
+                    <td class="py-2 text-gray-600">{{ row.point_name }}</td>
+                    <td class="py-2 text-right">{{ row.total | currencyDop }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
 
       <div class="flex flex-wrap items-center gap-2 mb-6">
@@ -541,6 +584,10 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
   surchargeDaily = signal<SurchargeDay[]>([]);
   surchargeTotals = signal<SurchargeTotals | null>(null);
   loadingSurcharge = signal(false);
+  beachOptions = signal<BeachOption[]>([]);
+  beachOrders = signal<BeachOrderRow[]>([]);
+  loadingBeachOrders = signal(false);
+  beachFilterId = '';
 
   readonly donutColors = ['#FF3C97', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#06B6D4', '#84CC16'];
 
@@ -587,6 +634,7 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.applyPreset({ days: 30 });
+    this.loadBeachOptions();
   }
 
   ngAfterViewInit() {
@@ -636,6 +684,7 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
     this.loadRetention();
     this.loadPromos();
     this.loadSurcharges();
+    this.loadBeachOrders();
   }
 
   private renderChart(data: SalesByDay[]) {
@@ -714,6 +763,21 @@ export class ReportsPageComponent implements OnInit, AfterViewInit {
     this.reportsService.surchargeReport(this.fromDate, this.toDate + 'T23:59:59').subscribe({
       next: (d) => { this.surchargeDaily.set(d.daily); this.surchargeTotals.set(d.totals); this.loadingSurcharge.set(false); },
       error: () => this.loadingSurcharge.set(false),
+    });
+  }
+
+  private loadBeachOptions() {
+    this.reportsService.listActiveBeaches().subscribe({
+      next: (rows) => this.beachOptions.set(rows),
+      error: () => this.beachOptions.set([]),
+    });
+  }
+
+  loadBeachOrders() {
+    this.loadingBeachOrders.set(true);
+    this.reportsService.beachDeliveryOrders(this.fromDate, this.toDate, this.beachFilterId || undefined).subscribe({
+      next: (rows) => { this.beachOrders.set(rows); this.loadingBeachOrders.set(false); },
+      error: () => { this.beachOrders.set([]); this.loadingBeachOrders.set(false); },
     });
   }
 }

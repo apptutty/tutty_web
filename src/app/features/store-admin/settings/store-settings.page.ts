@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StoreAdminService } from '../store-admin.service';
-import { StoreSettingsService, TeamMember, StoreNotifPrefs } from './store-settings.service';
+import { StoreSettingsService, TeamMember, StoreNotifPrefs, BeachOption } from './store-settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { Restaurant, CommerceCategory, Payout } from '../../../core/supabase/database.types';
@@ -488,7 +488,38 @@ interface DeliveryForm {
             </div>
           }
         </app-admin-form-section>
+
+        <app-admin-form-section title="Playas donde entrego" subtitle="Marca las playas activas que cubre tu comercio">
+          @if (beachCoverageLoading()) {
+            <p class="text-sm text-gray-500">Cargando playas...</p>
+          } @else if (beachOptions().length === 0) {
+            <p class="text-sm text-gray-500">No hay playas activas para configurar.</p>
+          } @else {
+            <div class="grid gap-2">
+              @for (beach of beachOptions(); track beach.id) {
+                <label class="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-800">{{ beach.name }}</p>
+                    <p class="text-xs text-gray-500">{{ beach.city || 'Sin ciudad' }}@if (beach.sector) { · {{ beach.sector }} }</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 accent-pink-600"
+                    [checked]="selectedBeachIds().includes(beach.id)"
+                    (change)="toggleBeachCoverage(beach.id)" />
+                </label>
+              }
+            </div>
+          }
+          <p class="mt-3 text-xs text-gray-500">El badge "Entrega a playa" se recalcula automáticamente por el backend según esta cobertura.</p>
+        </app-admin-form-section>
         <div class="flex justify-end">
+          <button
+            (click)="saveBeachCoverage()"
+            [disabled]="beachCoverageSaving()"
+            class="btn-secondary px-4 py-2 mr-2 disabled:opacity-50">
+            {{ beachCoverageSaving() ? 'Guardando playas...' : 'Guardar playas' }}
+          </button>
           <button (click)="saveDelivery()" [disabled]="isSaving()"
             class="btn-primary px-6 py-2 disabled:opacity-50">Guardar delivery</button>
         </div>
@@ -765,6 +796,10 @@ export class StoreSettingsPageComponent implements OnInit {
 
     // Delivery
     deliveryForm: DeliveryForm = { min_order_amount: 0, free_delivery_enabled: false, free_delivery_threshold: 500, express_delivery: false, express_fee: 100 };
+    readonly beachOptions = signal<BeachOption[]>([]);
+    readonly selectedBeachIds = signal<string[]>([]);
+    readonly beachCoverageLoading = signal(false);
+    readonly beachCoverageSaving = signal(false);
 
     // Notifications (reactive)
     private readonly notifPrefsSignal = signal<StoreNotifPrefs>({ soundEnabled: true, whatsappEnabled: false, whatsappNumber: '', lowStockEnabled: false, lowStockThreshold: 5 });
@@ -822,6 +857,7 @@ export class StoreSettingsPageComponent implements OnInit {
             if (!storeId) return;
             if (tab === 'equipo') this.loadTeam(storeId);
             if (tab === 'finanzas') this.loadFinances(storeId);
+            if (tab === 'delivery') void this.loadBeachCoverage(storeId);
         });
     }
 
@@ -860,6 +896,45 @@ export class StoreSettingsPageComponent implements OnInit {
                 this.storeCategories.set(cats);
             },
         ).catch(() => { });
+    }
+
+    private async loadBeachCoverage(storeId: string): Promise<void> {
+        this.beachCoverageLoading.set(true);
+        try {
+            const [beaches, coverage] = await Promise.all([
+                this.settingsSvc.getActiveBeaches(),
+                this.settingsSvc.getStoreBeachCoverage(storeId),
+            ]);
+            this.beachOptions.set(beaches);
+            this.selectedBeachIds.set(coverage);
+        } catch {
+            this.toast.error('No se pudo cargar la cobertura de playas');
+        } finally {
+            this.beachCoverageLoading.set(false);
+        }
+    }
+
+    toggleBeachCoverage(beachId: string): void {
+        const current = this.selectedBeachIds();
+        if (current.includes(beachId)) {
+            this.selectedBeachIds.set(current.filter((id) => id !== beachId));
+            return;
+        }
+        this.selectedBeachIds.set([...current, beachId]);
+    }
+
+    async saveBeachCoverage(): Promise<void> {
+        const storeId = this.storeAdminSvc.activeStoreId();
+        if (!storeId) return;
+        this.beachCoverageSaving.set(true);
+        try {
+            await this.settingsSvc.updateStoreBeachCoverage(storeId, this.selectedBeachIds());
+            this.toast.success('Cobertura de playas actualizada');
+        } catch {
+            this.toast.error('No se pudo guardar la cobertura de playas');
+        } finally {
+            this.beachCoverageSaving.set(false);
+        }
     }
 
     private loadTeam(storeId: string) {

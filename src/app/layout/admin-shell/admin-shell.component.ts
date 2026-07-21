@@ -45,6 +45,7 @@ const SUPER_ADMIN_NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Pedidos', path: '/orders', roles: ['super_admin'], svgPath: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
       { label: 'Comercios', path: '/stores', roles: ['super_admin'], svgPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+      { label: 'Playas', path: '/beaches', roles: ['super_admin'], svgPath: 'M2.25 15c0 1.87 1.485 3.375 3.375 3.375h13.5A2.625 2.625 0 0021.75 15v-.75A2.25 2.25 0 0019.5 12h-3.128a3.75 3.75 0 10-7.244 0H5.625A3.375 3.375 0 002.25 15z' },
       { label: 'Repartidores', path: '/couriers', roles: ['super_admin'], svgPath: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
       { label: 'Excursiones', path: '/excursions', roles: ['super_admin'], svgPath: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
     ],
@@ -514,6 +515,7 @@ export class AdminShellComponent implements OnInit, OnDestroy {
       { match: '/dashboard', title: 'Dashboard de Plataforma' },
       { match: '/orders', title: 'Operación de Pedidos' },
       { match: '/stores', title: 'Gestión de Comercios' },
+      { match: '/beaches', title: 'Gestión de Playas' },
       { match: '/restaurants', title: 'Gestión de Restaurantes' },
       { match: '/couriers', title: 'Gestión de Repartidores' },
       { match: '/approvals', title: 'Bandeja de Aprobaciones' },

@@ -12,6 +12,7 @@ export interface StoreFilters {
     commerce_type?: CommerceType | '';
     approval_status?: ApprovalStatus | '';
     open_status?: 'open' | 'closed' | '';
+    beach_delivery_only?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +39,7 @@ export class StoresService {
         if (filters.open_status === 'open') query = query.eq('is_open', true);
         if (filters.open_status === 'closed') query = query.eq('is_open', false);
         if (filters.search) query = query.or(`name.ilike.%${filters.search}%,slug.ilike.%${filters.search}%`);
+        if (filters.beach_delivery_only) query = query.eq('is_beach_delivery', true);
 
         const { data, error } = await query;
         if (error) throw error;
