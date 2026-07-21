@@ -12,6 +12,7 @@ export interface StoreOrder extends StoreOrderSummary {
     items_preview: string;
     delivery_address: string;
     repartidor_name: string | null;
+    is_beach_delivery: boolean;
 }
 
 export interface StoreOrderFilters {
@@ -88,6 +89,7 @@ export class StoreOrdersService {
         // Fetch items separately to build preview (orders_full is a flat view, no nested joins)
         const orderIds = (data ?? []).map((o: any) => o.id);
         let itemsMap: Map<string, any[]> = new Map();
+        let beachMap: Map<string, boolean> = new Map();
         if (orderIds.length > 0) {
             const { data: itemsData } = await this.supabase
                 .from('order_items')
@@ -96,6 +98,16 @@ export class StoreOrdersService {
             for (const item of itemsData ?? []) {
                 if (!itemsMap.has(item.order_id)) itemsMap.set(item.order_id, []);
                 itemsMap.get(item.order_id)!.push(item);
+            }
+
+            // is_beach_delivery is trigger-derived on the base table; fetched separately since
+            // orders_full does not expose it.
+            const { data: beachData } = await this.supabase
+                .from('orders')
+                .select('id, is_beach_delivery')
+                .in('id', orderIds);
+            for (const row of beachData ?? []) {
+                beachMap.set(row.id, row.is_beach_delivery === true);
             }
         }
 
@@ -115,6 +127,7 @@ export class StoreOrdersService {
                 customer_name: o.customer_name ?? '—',
                 customer_phone: o.customer_phone ?? '',
                 repartidor_name: o.repartidor_name ?? null,
+                is_beach_delivery: beachMap.get(o.id) ?? false,
                 item_count: items.length,
                 items_preview: items
                     .slice(0, 3)

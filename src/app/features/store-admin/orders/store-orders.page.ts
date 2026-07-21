@@ -273,7 +273,17 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
                 <tbody>
                   @for (order of listOrders(); track order.id) {
                     <tr>
-                      <td>#{{ order.order_number }}</td>
+                      <td>
+                        <span>#{{ order.order_number }}</span>
+                        @if (order.is_beach_delivery) {
+                          <span class="beach-badge" title="Entrega en playa">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                            </svg>
+                            Playa
+                          </span>
+                        }
+                      </td>
                       <td>{{ order.customer_name }}</td>
                       <td><span [class]="statusColor(order.status)">{{ statusLabel(order.status) }}</span></td>
                       <td class="truncate">{{ order.items_preview }}</td>
@@ -755,6 +765,22 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
       vertical-align: middle;
     }
     .orders-list-table tbody tr:hover { background: #fbfcff; }
+    .beach-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #bae6fd;
+      background: #f0f9ff;
+      color: #0369a1;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .beach-badge svg { width: 12px; height: 12px; }
     .orders-loading {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
