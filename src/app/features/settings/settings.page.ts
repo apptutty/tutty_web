@@ -153,6 +153,28 @@ type SettingsTab = 'general' | 'delivery' | 'notificaciones' | 'feriados' | 'usu
                   }
                 </div>
 
+                <!-- Recargo Beach Delivery -->
+                <div class="border rounded-lg p-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <p class="font-medium text-gray-900">Recargo Beach Delivery</p>
+                      <p class="text-sm text-gray-500">Porcentaje adicional sobre la tarifa normal para pedidos entregados en playa. Déjalo en 0% para no cobrar recargo (envío igual al normal).</p>
+                    </div>
+                    <button type="button"
+                      (click)="deliveryForm.beach_surcharge_enabled = !deliveryForm.beach_surcharge_enabled"
+                      [class]="deliveryForm.beach_surcharge_enabled ? 'bg-brand-500 relative inline-flex h-6 w-11 rounded-full transition-colors' : 'bg-gray-200 relative inline-flex h-6 w-11 rounded-full transition-colors'">
+                      <span [class]="deliveryForm.beach_surcharge_enabled ? 'translate-x-6 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5' : 'translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ml-0.5'"></span>
+                    </button>
+                  </div>
+                  @if (deliveryForm.beach_surcharge_enabled) {
+                    <div>
+                      <label class="label">Porcentaje de Recargo (%)</label>
+                      <input type="number" class="input-field" [(ngModel)]="deliveryForm.beach_surcharge_rate" name="beach_surcharge_rate" min="0" max="200" step="1" />
+                      <p class="text-xs text-gray-500 mt-1">0 = sin recargo (envío gratis adicional para playas)</p>
+                    </div>
+                  }
+                </div>
+
                 <button type="submit" class="btn-primary" [disabled]="savingDelivery()">
                   {{ savingDelivery() ? 'Guardando...' : 'Guardar Configuración' }}
                 </button>
@@ -892,6 +914,8 @@ export class SettingsPageComponent implements OnInit {
     peak_surcharge_rate: 20,
     night_surcharge_rate: 15,
     peak_hours: '12:00-14:00,18:00-21:00',
+    beach_surcharge_enabled: false,
+    beach_surcharge_rate: 0,
   };
 
   notifForm = {
@@ -953,6 +977,8 @@ export class SettingsPageComponent implements OnInit {
       this.deliveryForm.peak_surcharge_rate = Number(map['peak_surcharge_rate'] ?? 20);
       this.deliveryForm.night_surcharge_rate = Number(map['night_surcharge_rate'] ?? 15);
       this.deliveryForm.peak_hours = map['peak_hours'] ?? '12:00-14:00,18:00-21:00';
+      this.deliveryForm.beach_surcharge_enabled = map['beach_surcharge_enabled'] === 'true';
+      this.deliveryForm.beach_surcharge_rate = Number(map['beach_surcharge_rate'] ?? 0);
       this.notifForm.push_enabled = map['push_enabled'] !== 'false';
       this.notifForm.whatsapp_enabled = map['whatsapp_enabled'] === 'true';
       this.notifForm.new_order_alert = map['new_order_alert'] !== 'false';
