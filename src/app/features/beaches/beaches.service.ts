@@ -9,6 +9,7 @@ export interface BeachRow {
   is_active: boolean;
   points_count: number;
   commerces_count: number;
+  created_at: string | null;
 }
 
 export interface BeachPointRow {
@@ -28,7 +29,7 @@ export class BeachesService {
   async listBeaches(): Promise<BeachRow[]> {
     const { data, error } = await this.supabase
       .from('beaches')
-      .select('id, name, city, sector, is_active, beach_points(count), commerce_beach_coverage(count)')
+      .select('id, name, city, sector, is_active, created_at, beach_points(count), commerce_beach_coverage(count)')
       .order('name');
     if (error) throw error;
     return ((data ?? []) as any[]).map((row) => ({
@@ -39,6 +40,7 @@ export class BeachesService {
       is_active: row.is_active === true,
       points_count: Number(row.beach_points?.[0]?.count ?? 0),
       commerces_count: Number(row.commerce_beach_coverage?.[0]?.count ?? 0),
+      created_at: row.created_at ?? null,
     }));
   }
 
@@ -112,6 +114,16 @@ export class BeachesService {
       .order('name');
     if (error) throw error;
     return (data ?? []) as Array<{ id: string; name: string; is_beach_delivery: boolean }>;
+  }
+
+  /** Distinct count of commerces that have at least one beach coverage row, across all beaches. */
+  async countCommercesWithCoverage(): Promise<number> {
+    const { data, error } = await this.supabase
+      .from('commerce_beach_coverage')
+      .select('commerce_id');
+    if (error) throw error;
+    const uniqueIds = new Set(((data ?? []) as any[]).map((row) => row.commerce_id as string));
+    return uniqueIds.size;
   }
 
   async getCoverageByCommerce(commerceId: string): Promise<string[]> {

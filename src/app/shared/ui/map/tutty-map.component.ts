@@ -11,10 +11,15 @@
  *   <app-tutty-map mode="picker" [lat]="..." [lng]="..." (locationChange)="onPick($event)" />
  *   <app-tutty-map mode="view"   [lat]="..." [lng]="..." />
  *   <app-tutty-map mode="radius" [lat]="..." [lng]="..." [radiusKm]="5" />
+ *
+ * Note (zoneless app): this app runs without zone.js, so every piece of state that the
+ * template depends on MUST be a signal — plain class fields mutated from callbacks that
+ * Angular doesn't know about (e.g. a native <script> "load"/"error" event) will never
+ * trigger a re-render otherwise.
  */
 import {
     Component, Input, Output, EventEmitter, OnInit, OnChanges,
-    SimpleChanges, inject, PLATFORM_ID, ChangeDetectionStrategy,
+    SimpleChanges, inject, PLATFORM_ID, ChangeDetectionStrategy, signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { GoogleMap, MapMarker, MapCircle } from '@angular/google-maps';
@@ -25,31 +30,68 @@ export interface LatLng {
     lng: number;
 }
 
+/** Module-level singleton so concurrent map instances never inject the Google Maps
+ *  script twice and all resolve/reject off the same load event. */
+let gmapsLoadPromise: Promise<void> | null = null;
+
+function loadGoogleMapsScript(apiKey: string): Promise<void> {
+    if ((window as any).google?.maps) {
+        return Promise.resolve();
+    }
+    if (gmapsLoadPromise) {
+        return gmapsLoadPromise;
+    }
+
+    gmapsLoadPromise = new Promise<void>((resolve, reject) => {
+        const existing = document.getElementById('gmaps-script') as HTMLScriptElement | null;
+        if (existing) {
+            existing.addEventListener('load', () => resolve());
+            existing.addEventListener('error', () => reject(new Error('gmaps-load-error')));
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.id = 'gmaps-script';
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('gmaps-load-error'));
+        document.head.appendChild(script);
+    }).catch((err) => {
+        // Allow a future retry (e.g. after a transient network failure) instead of caching a failure forever.
+        gmapsLoadPromise = null;
+        throw err;
+    });
+
+    return gmapsLoadPromise;
+}
+
 @Component({
     selector: 'app-tutty-map',
     standalone: true,
     imports: [GoogleMap, MapMarker, MapCircle],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-    @if (apiLoaded && isBrowser) {
+    @if (apiLoaded() && isBrowser) {
       <google-map
         [width]="width"
         [height]="height"
-        [center]="center"
+        [center]="center()"
         [zoom]="zoom"
         [options]="mapOptions"
         (mapClick)="mode === 'picker' ? onMapClick($event) : null"
         [class]="mapClass"
       >
-        @if (markerPosition) {
+        @if (markerPosition(); as position) {
           <map-marker
-            [position]="markerPosition"
+            [position]="position"
             [options]="markerOptions"
           />
         }
-        @if (mode === 'radius' && radiusKm > 0 && markerPosition) {
+        @if (mode === 'radius' && radiusKm > 0 && markerPosition(); as position) {
           <map-circle
-            [center]="markerPosition"
+            [center]="position"
             [radius]="radiusKm * 1000"
             [options]="circleOptions"
           />
@@ -60,12 +102,17 @@ export interface LatLng {
         [style.width]="width"
         [style.height]="height"
         [class]="mapClass"
-        class="bg-gray-100 flex items-center justify-center text-gray-400 text-sm"
+        class="bg-gray-100 flex items-center justify-center text-gray-400 text-sm overflow-hidden rounded-xl"
       >
         @if (!isBrowser) {
           <span>Map (SSR)</span>
-        } @else if (mapError) {
-          <span>{{ mapError }}</span>
+        } @else if (mapError(); as error) {
+          <span class="flex flex-col items-center gap-2 text-center px-3">
+            <span>{{ error }}</span>
+            @if (mode === 'picker') {
+              <span class="text-xs text-gray-400">Puedes ingresar las coordenadas manualmente arriba.</span>
+            }
+          </span>
         } @else {
           <span class="flex items-center gap-2">
             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -94,10 +141,10 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     private readonly platformId = inject(PLATFORM_ID);
     readonly isBrowser = isPlatformBrowser(this.platformId);
 
-    apiLoaded = false;
-    mapError: string | null = null;
-    center: google.maps.LatLngLiteral = { lat: 18.4718, lng: -69.9513 }; // Santo Domingo default
-    markerPosition: google.maps.LatLngLiteral | null = null;
+    readonly apiLoaded = signal(false);
+    readonly mapError = signal<string | null>(null);
+    readonly center = signal<google.maps.LatLngLiteral>({ lat: 18.4718, lng: -69.9513 }); // Santo Domingo default
+    readonly markerPosition = signal<google.maps.LatLngLiteral | null>(null);
 
     readonly mapOptions: google.maps.MapOptions = {
         mapTypeControl: false,
@@ -136,56 +183,45 @@ export class TuttyMapComponent implements OnInit, OnChanges {
 
     private syncPosition(): void {
         if (this.lat != null && this.lng != null) {
-            this.markerPosition = { lat: +this.lat, lng: +this.lng };
-            this.center = { lat: +this.lat, lng: +this.lng };
+            const position = { lat: +this.lat, lng: +this.lng };
+            this.markerPosition.set(position);
+            this.center.set(position);
         } else {
-            this.markerPosition = null;
+            this.markerPosition.set(null);
         }
     }
 
     private loadApi(): void {
         const apiKey = (environment.googleMapsApiKey ?? '').trim();
         if (!apiKey || apiKey.includes('YOUR_GOOGLE_MAPS_API_KEY')) {
-            this.mapError = 'Google Maps no está configurado en este entorno.';
-            this.apiLoaded = false;
+            this.mapError.set('Google Maps no está configurado en este entorno.');
+            this.apiLoaded.set(false);
             return;
         }
 
         if ((window as any).google?.maps) {
             this.markerOptions.animation = (window as any).google.maps.Animation?.DROP;
-            this.apiLoaded = true;
-            this.mapError = null;
+            this.apiLoaded.set(true);
+            this.mapError.set(null);
             return;
         }
-        const existing = document.getElementById('gmaps-script');
-        if (existing) {
-            existing.addEventListener('load', () => {
+
+        loadGoogleMapsScript(apiKey)
+            .then(() => {
                 this.markerOptions.animation = (window as any).google?.maps?.Animation?.DROP;
-                this.apiLoaded = true;
+                this.apiLoaded.set(true);
+                this.mapError.set(null);
+            })
+            .catch(() => {
+                this.apiLoaded.set(false);
+                this.mapError.set('No se pudo cargar Google Maps.');
             });
-            return;
-        }
-        const script = document.createElement('script');
-        script.id = 'gmaps-script';
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-            this.markerOptions.animation = (window as any).google?.maps?.Animation?.DROP;
-            this.apiLoaded = true;
-            this.mapError = null;
-        };
-        script.onerror = () => {
-            this.apiLoaded = false;
-            this.mapError = 'No se pudo cargar Google Maps.';
-        };
-        document.head.appendChild(script);
     }
 
     onMapClick(event: google.maps.MapMouseEvent): void {
         if (!event.latLng || this.mode !== 'picker') return;
         const pos = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-        this.markerPosition = pos;
+        this.markerPosition.set(pos);
         this.locationChange.emit(pos);
     }
 }
