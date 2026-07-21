@@ -132,6 +132,9 @@ import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component'
                 }
                 <div class="flex gap-3 pt-1">
                   <button class="text-sm text-brand-500 font-medium" (click)="openForm(zone)">Editar</button>
+                  @if (zone.boundary) {
+                    <button class="text-sm font-medium text-gray-500" (click)="openZoneBoundaryEditor(zone, true)">Ver</button>
+                  }
                   <button class="text-sm font-medium" [class]="zone.boundary ? 'text-success-600' : 'text-gray-500'" (click)="openZoneBoundaryEditor(zone)">{{ zone.boundary ? 'Contorno ✓' : 'Delimitar' }}</button>
                   <button class="text-sm text-error-500 font-medium" (click)="deleteZone(zone)">Eliminar</button>
                 </div>
@@ -195,6 +198,12 @@ import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component'
                           class="text-sm text-brand-500 hover:text-brand-700 font-medium transition-colors"
                           (click)="openForm(zone)"
                         >Edit</button>
+                        @if (zone.boundary) {
+                          <button
+                            class="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                            (click)="openZoneBoundaryEditor(zone, true)"
+                          >View</button>
+                        }
                         <button
                           class="text-sm font-medium transition-colors"
                           [class]="zone.boundary ? 'text-success-600 hover:text-success-700' : 'text-gray-500 hover:text-gray-700'"
@@ -346,29 +355,39 @@ import { AdminEmptyStateComponent } from '../shared/admin-empty-state.component'
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="showZoneBoundaryModal.set(null)"></div>
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-10 p-6">
-          <h3 class="text-base font-semibold text-gray-900 mb-1">Delimitar "{{ boundaryZone.name }}"</h3>
+          <h3 class="text-base font-semibold text-gray-900 mb-1">{{ zoneBoundaryReadOnly() ? 'Contorno de' : 'Delimitar' }} "{{ boundaryZone.name }}"</h3>
           <p class="text-xs text-gray-500 mb-3">
-            Dibuja el contorno real de la zona de entrega en vez de usar solo un radio. Haz clic para agregar vértices (mínimo 3) y arrastra para ajustarlos.
+            @if (zoneBoundaryReadOnly()) {
+              Vista de solo lectura del contorno guardado.
+            } @else {
+              Dibuja el contorno real de la zona de entrega en vez de usar solo un radio. Haz clic para agregar vértices (mínimo 3) y arrastra para ajustarlos.
+            }
           </p>
           <app-tutty-map
             mode="polygon"
-            [editable]="true"
+            [editable]="!zoneBoundaryReadOnly()"
             [vertices]="zoneBoundaryVertices()"
             [lat]="storeLat()"
             [lng]="storeLng()"
             height="360px"
             (verticesChange)="zoneBoundaryVertices.set($event)">
           </app-tutty-map>
-          <div class="mt-2 flex items-center justify-between gap-2">
-            <span class="text-xs text-gray-500">{{ zoneBoundaryVertices().length }} vértice(s)</span>
-            <div class="flex gap-2">
-              <button class="btn-secondary text-xs" type="button" [disabled]="zoneBoundaryVertices().length === 0" (click)="zoneBoundaryVertices.set(zoneBoundaryVertices().slice(0, -1))">Deshacer último</button>
-              <button class="btn-secondary text-xs" type="button" [disabled]="zoneBoundaryVertices().length === 0" (click)="zoneBoundaryVertices.set([])">Limpiar</button>
+          @if (!zoneBoundaryReadOnly()) {
+            <div class="mt-2 flex items-center justify-between gap-2">
+              <span class="text-xs text-gray-500">{{ zoneBoundaryVertices().length }} vértice(s)</span>
+              <div class="flex gap-2">
+                <button class="btn-secondary text-xs" type="button" [disabled]="zoneBoundaryVertices().length === 0" (click)="zoneBoundaryVertices.set(zoneBoundaryVertices().slice(0, -1))">Deshacer último</button>
+                <button class="btn-secondary text-xs" type="button" [disabled]="zoneBoundaryVertices().length === 0" (click)="zoneBoundaryVertices.set([])">Limpiar</button>
+              </div>
             </div>
-          </div>
+          }
           <div class="mt-4 flex justify-end gap-2">
-            <button class="btn-secondary" [disabled]="savingZoneBoundary()" (click)="showZoneBoundaryModal.set(null)">Cancel</button>
-            <button class="btn-primary" [disabled]="savingZoneBoundary()" (click)="saveZoneBoundary()">{{ savingZoneBoundary() ? 'Saving…' : 'Guardar contorno' }}</button>
+            @if (zoneBoundaryReadOnly()) {
+              <button class="btn-secondary" (click)="showZoneBoundaryModal.set(null)">Close</button>
+            } @else {
+              <button class="btn-secondary" [disabled]="savingZoneBoundary()" (click)="showZoneBoundaryModal.set(null)">Cancel</button>
+              <button class="btn-primary" [disabled]="savingZoneBoundary()" (click)="saveZoneBoundary()">{{ savingZoneBoundary() ? 'Saving…' : 'Guardar contorno' }}</button>
+            }
           </div>
         </div>
       </div>
@@ -389,6 +408,7 @@ export class StoreZonesPageComponent implements OnInit {
     readonly saveLoading = signal(false);
 
     readonly showZoneBoundaryModal = signal<DeliveryZone | null>(null);
+    readonly zoneBoundaryReadOnly = signal(false);
     readonly zoneBoundaryVertices = signal<LatLng[]>([]);
     readonly savingZoneBoundary = signal(false);
 
@@ -541,8 +561,9 @@ export class StoreZonesPageComponent implements OnInit {
         this.zones.update(list => list.filter(z => z.id !== zone.id));
     }
 
-    async openZoneBoundaryEditor(zone: DeliveryZone): Promise<void> {
+    async openZoneBoundaryEditor(zone: DeliveryZone, readOnly = false): Promise<void> {
         this.showZoneBoundaryModal.set(zone);
+        this.zoneBoundaryReadOnly.set(readOnly);
         this.zoneBoundaryVertices.set([]);
         if (zone.boundary) {
             const { data, error } = await this.supabase.rpc('get_delivery_zone_boundary', { p_zone_id: zone.id });

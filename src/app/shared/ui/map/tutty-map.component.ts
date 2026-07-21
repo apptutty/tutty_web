@@ -24,7 +24,7 @@
  */
 import {
     Component, Input, Output, EventEmitter, OnInit, OnChanges,
-    SimpleChanges, inject, PLATFORM_ID, ChangeDetectionStrategy, signal,
+    SimpleChanges, inject, PLATFORM_ID, ChangeDetectionStrategy, signal, ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { GoogleMap, MapMarker, MapCircle, MapPolygon } from '@angular/google-maps';
@@ -80,6 +80,7 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
     template: `
     @if (apiLoaded() && isBrowser) {
       <google-map
+        #googleMapRef
         [width]="width"
         [height]="height"
         [center]="center()"
@@ -164,6 +165,8 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     /** mode="polygon" only: emitted whenever the vertex list changes (add/drag/undo/clear). */
     @Output() verticesChange = new EventEmitter<LatLng[]>();
 
+    @ViewChild('googleMapRef') private googleMapRef?: GoogleMap;
+
     private readonly platformId = inject(PLATFORM_ID);
     readonly isBrowser = isPlatformBrowser(this.platformId);
 
@@ -236,7 +239,12 @@ export class TuttyMapComponent implements OnInit, OnChanges {
         if (this.lat != null && this.lng != null) {
             const position = { lat: +this.lat, lng: +this.lng };
             this.markerPosition.set(position);
-            this.center.set(position);
+            // In polygon mode, an existing boundary takes priority over the anchor
+            // lat/lng (e.g. the commerce's own location) — the admin wants to see
+            // the delimited zone, not where the commerce happens to be pinned.
+            if (this.mode !== 'polygon' || this.polygonPath().length === 0) {
+                this.center.set(position);
+            }
         } else {
             this.markerPosition.set(null);
         }
@@ -245,9 +253,35 @@ export class TuttyMapComponent implements OnInit, OnChanges {
     private syncVertices(): void {
         const path = (this.vertices ?? []).map((v) => ({ lat: v.lat, lng: v.lng }));
         this.polygonPath.set(path);
-        if (path.length > 0 && this.lat == null && this.lng == null) {
-            this.center.set(path[0]);
+        if (path.length > 0) {
+            this.center.set(this.computeCentroid(path));
+            this.scheduleFitToPath();
+        } else if (this.lat != null && this.lng != null) {
+            this.center.set({ lat: +this.lat, lng: +this.lng });
         }
+    }
+
+    private computeCentroid(path: google.maps.LatLngLiteral[]): google.maps.LatLngLiteral {
+        const sum = path.reduce((acc, p) => ({ lat: acc.lat + p.lat, lng: acc.lng + p.lng }), { lat: 0, lng: 0 });
+        return { lat: sum.lat / path.length, lng: sum.lng / path.length };
+    }
+
+    /** Defers to the next tick so the <google-map> (behind an @if on apiLoaded) has
+     *  had a chance to render and populate `googleMapRef` before we call fitBounds. */
+    private scheduleFitToPath(): void {
+        if (!this.isBrowser) return;
+        setTimeout(() => {
+            const path = this.polygonPath();
+            if (path.length >= 2) this.fitBoundsToPath(path);
+        }, 0);
+    }
+
+    private fitBoundsToPath(path: google.maps.LatLngLiteral[]): void {
+        const gmaps = (window as any).google?.maps;
+        if (!gmaps || !this.googleMapRef) return;
+        const bounds = new gmaps.LatLngBounds();
+        for (const point of path) bounds.extend(point);
+        this.googleMapRef.fitBounds(bounds, 48);
     }
 
     private loadApi(): void {
@@ -262,6 +296,7 @@ export class TuttyMapComponent implements OnInit, OnChanges {
             this.markerOptions.animation = (window as any).google.maps.Animation?.DROP;
             this.apiLoaded.set(true);
             this.mapError.set(null);
+            this.scheduleFitToPath();
             return;
         }
 
@@ -270,6 +305,7 @@ export class TuttyMapComponent implements OnInit, OnChanges {
                 this.markerOptions.animation = (window as any).google?.maps?.Animation?.DROP;
                 this.apiLoaded.set(true);
                 this.mapError.set(null);
+                this.scheduleFitToPath();
             })
             .catch(() => {
                 this.apiLoaded.set(false);

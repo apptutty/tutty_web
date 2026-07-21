@@ -114,6 +114,9 @@ import { TuttyMapComponent, LatLng } from '../../shared/ui/map/tutty-map.compone
                         <td class="py-[14px] px-4 align-middle text-[#344055]">{{ beach.commerces_count }}</td>
                         <td class="py-[14px] px-4 align-middle">
                           <div class="flex justify-end gap-2">
+                            @if (beach.has_boundary) {
+                              <button type="button" class="min-h-[34px] px-[11px] rounded-[9px] border border-[#e5e9f1] bg-white text-[12px] font-extrabold" (click)="openBoundaryEditor(beach, true); $event.stopPropagation()">Ver</button>
+                            }
                             <button type="button" class="min-h-[34px] px-[11px] rounded-[9px] border border-[#e5e9f1] bg-white text-[12px] font-extrabold" [class]="beach.has_boundary ? 'text-[var(--admin-green)]' : ''" (click)="openBoundaryEditor(beach); $event.stopPropagation()">{{ beach.has_boundary ? 'Contorno ✓' : 'Delimitar' }}</button>
                             <button type="button" class="min-h-[34px] px-[11px] rounded-[9px] border border-[#e5e9f1] bg-white text-[12px] font-extrabold" (click)="openBeachForm(beach); $event.stopPropagation()">Editar</button>
                             <button type="button" class="min-h-[34px] px-[11px] rounded-[9px] border border-[#f1d0d0] bg-white text-[12px] font-extrabold text-[#d93b3b]" (click)="deleteBeach(beach); $event.stopPropagation()">Eliminar</button>
@@ -303,28 +306,38 @@ import { TuttyMapComponent, LatLng } from '../../shared/ui/map/tutty-map.compone
     @if (showBoundaryModal(); as boundaryBeach) {
       <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
         <div class="w-full max-w-2xl rounded-2xl bg-white p-4">
-          <h3 class="text-lg font-bold mb-1">Delimitar {{ boundaryBeach.name }}</h3>
+          <h3 class="text-lg font-bold mb-1">{{ boundaryReadOnly() ? 'Contorno de' : 'Delimitar' }} {{ boundaryBeach.name }}</h3>
           <p class="text-xs text-[#6f7a8f] mb-3">
-            Haz clic en el mapa para agregar vértices y dibujar el contorno real de la playa (mínimo 3 puntos).
-            Arrastra un vértice para ajustarlo. Esto reemplaza el matching por radio con una delimitación precisa.
+            @if (boundaryReadOnly()) {
+              Vista de solo lectura del contorno guardado.
+            } @else {
+              Haz clic en el mapa para agregar vértices y dibujar el contorno real de la playa (mínimo 3 puntos).
+              Arrastra un vértice para ajustarlo. Esto reemplaza el matching por radio con una delimitación precisa.
+            }
           </p>
           <app-tutty-map
             mode="polygon"
-            [editable]="true"
+            [editable]="!boundaryReadOnly()"
             [vertices]="boundaryVertices()"
             height="360px"
             (verticesChange)="boundaryVertices.set($event)">
           </app-tutty-map>
-          <div class="mt-2 flex items-center justify-between gap-2">
-            <span class="text-xs text-[#6f7a8f]">{{ boundaryVertices().length }} vértice(s)</span>
-            <div class="flex gap-2">
-              <button class="btn-secondary text-xs" type="button" [disabled]="boundaryVertices().length === 0" (click)="undoLastBoundaryVertex()">Deshacer último</button>
-              <button class="btn-secondary text-xs" type="button" [disabled]="boundaryVertices().length === 0" (click)="clearBoundaryVertices()">Limpiar</button>
+          @if (!boundaryReadOnly()) {
+            <div class="mt-2 flex items-center justify-between gap-2">
+              <span class="text-xs text-[#6f7a8f]">{{ boundaryVertices().length }} vértice(s)</span>
+              <div class="flex gap-2">
+                <button class="btn-secondary text-xs" type="button" [disabled]="boundaryVertices().length === 0" (click)="undoLastBoundaryVertex()">Deshacer último</button>
+                <button class="btn-secondary text-xs" type="button" [disabled]="boundaryVertices().length === 0" (click)="clearBoundaryVertices()">Limpiar</button>
+              </div>
             </div>
-          </div>
+          }
           <div class="mt-4 flex justify-end gap-2">
-            <button class="btn-secondary" [disabled]="savingBoundary()" (click)="showBoundaryModal.set(null)">Cancelar</button>
-            <button class="btn-primary" [disabled]="savingBoundary()" (click)="saveBoundary()">{{ savingBoundary() ? 'Guardando…' : 'Guardar contorno' }}</button>
+            @if (boundaryReadOnly()) {
+              <button class="btn-secondary" (click)="showBoundaryModal.set(null)">Cerrar</button>
+            } @else {
+              <button class="btn-secondary" [disabled]="savingBoundary()" (click)="showBoundaryModal.set(null)">Cancelar</button>
+              <button class="btn-primary" [disabled]="savingBoundary()" (click)="saveBoundary()">{{ savingBoundary() ? 'Guardando…' : 'Guardar contorno' }}</button>
+            }
           </div>
         </div>
       </div>
@@ -352,6 +365,7 @@ export class BeachesPageComponent implements OnInit {
 
   readonly showBoundaryModal = signal<BeachRow | null>(null);
   readonly boundaryVertices = signal<LatLng[]>([]);
+  readonly boundaryReadOnly = signal(false);
   readonly savingBoundary = signal(false);
 
   readonly commerces = signal<Array<{ id: string; name: string; is_beach_delivery: boolean }>>([]);
@@ -595,8 +609,9 @@ export class BeachesPageComponent implements OnInit {
     };
   }
 
-  async openBoundaryEditor(beach: BeachRow): Promise<void> {
+  async openBoundaryEditor(beach: BeachRow, readOnly = false): Promise<void> {
     this.showBoundaryModal.set(beach);
+    this.boundaryReadOnly.set(readOnly);
     this.boundaryVertices.set([]);
     if (beach.has_boundary) {
       try {
