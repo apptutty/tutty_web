@@ -1245,6 +1245,28 @@ export class StoreProductFormPageComponent implements OnInit {
             this.toast.warning('Nombre y precio son obligatorios');
             return;
         }
+        if (this.form.price < 0) {
+            this.toast.warning('El precio no puede ser negativo');
+            return;
+        }
+        if (this.form.discount_price != null) {
+            if (this.form.discount_price < 0) {
+                this.toast.warning('El precio con descuento no puede ser negativo');
+                return;
+            }
+            if (this.form.discount_price >= this.form.price) {
+                this.toast.warning('El precio con descuento debe ser menor al precio regular');
+                return;
+            }
+        }
+        if (this.form.max_qty_per_order != null && this.form.max_qty_per_order < 1) {
+            this.toast.warning('El máximo por pedido debe ser al menos 1');
+            return;
+        }
+        if (this.form.track_stock && this.form.stock_count != null && this.form.stock_count < 0) {
+            this.toast.warning('El stock no puede ser negativo');
+            return;
+        }
         const storeId = this.storeService.activeStoreId();
         if (!storeId) return;
 

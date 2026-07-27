@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { AbstractControl, FormsModule, ReactiveFormsModule, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { RestaurantsService } from './restaurants.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
@@ -163,6 +163,9 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
               <div>
                 <label class="label">Precio descuento</label>
                 <input class="input-field" type="number" formControlName="discount_price" />
+                @if (itemForm.errors?.['discountNotLower']) {
+                  <p class="text-xs text-red-600 mt-1">El precio de descuento debe ser menor al precio regular</p>
+                }
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -217,15 +220,25 @@ export class MenuManagerPageComponent implements OnInit {
 
   readonly selectedCategory = () => this.categories().find(c => c.id === this.selectedCategoryId());
 
-  readonly itemForm = this.fb.group({
-    name: ['', Validators.required],
-    description: [''],
-    price: [0, [Validators.required, Validators.min(0)]],
-    discount_price: [null as number | null],
-    preparation_time: [15],
-    is_available: [true],
-    is_featured: [false],
-  });
+  readonly itemForm = this.fb.group(
+    {
+      name: ['', Validators.required],
+      description: [''],
+      price: [0, [Validators.required, Validators.min(0)]],
+      discount_price: [null as number | null, [Validators.min(0)]],
+      preparation_time: [15, [Validators.min(0), Validators.max(240)]],
+      is_available: [true],
+      is_featured: [false],
+    },
+    { validators: [MenuManagerPageComponent.discountValidator] }
+  );
+
+  private static discountValidator(group: AbstractControl): ValidationErrors | null {
+    const price = group.get('price')?.value as number | null;
+    const discount = group.get('discount_price')?.value as number | null;
+    if (discount == null || price == null) return null;
+    return discount < price ? null : { discountNotLower: true };
+  }
 
   ngOnInit(): void { this.loadCategories(); }
 

@@ -7,7 +7,12 @@
     "build": "ng build",
     "postbuild": "cp dist/tutty_web/browser/index.csr.html dist/tutty_web/browser/index.html",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "e2e": "playwright test --config=e2e/playwright.config.ts",
+    "e2e:ui": "playwright test --config=e2e/playwright.config.ts --ui",
+    "e2e:debug": "playwright test --config=e2e/playwright.config.ts --debug",
+    "e2e:headed": "playwright test --config=e2e/playwright.config.ts --headed",
+    "e2e:report": "playwright show-report e2e/playwright-report"
   },
   "prettier": {
     "printWidth": 100,
@@ -45,9 +50,11 @@
     "@angular/build": "^21.1.2",
     "@angular/cli": "^21.1.2",
     "@angular/compiler-cli": "^21.1.0",
+    "@playwright/test": "^1.61.1",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
     "autoprefixer": "^10.5.0",
+    "dotenv": "^17.4.2",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^3.4.19",

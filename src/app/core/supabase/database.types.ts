@@ -257,7 +257,10 @@ export interface ProductVariant {
 
 export interface DeliveryZone {
   id: string;
-  commerce_id: string;
+  /** Null for global zones (shared, assigned via commerce_delivery_zone_coverage). Legacy zones still carry the owning commerce here. */
+  commerce_id: string | null;
+  /** Optional link to the Nivel-1 delivery_areas row this zone belongs to. */
+  area_id?: string | null;
   name: string;
   sector_list: string[];
   delivery_fee: number;
@@ -270,6 +273,28 @@ export interface DeliveryZone {
   weather_surcharge_override?: number | null;
   priority: number;
   is_active: boolean;
+  /** Raw geography(Polygon) value (opaque to the client) — only used to detect presence via `!= null`. */
+  boundary?: unknown;
+}
+
+/** Nivel 1 — delivery_areas: the absolute ceiling of where the app can deliver at all. */
+export interface DeliveryArea {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  base_fee: number;
+  radius_km?: number | null;
+  lat_center?: number | null;
+  lng_center?: number | null;
+  color?: string | null;
+  display_order?: number | null;
+  is_active: boolean;
+  /** Nivel 2 flag: true means only commerces/repartidores explicitly authorized via
+   *  commerce_area_coverage / repartidor_areas can operate here (e.g. residential zones). */
+  requires_special_driver: boolean;
+  special_fee_multiplier: number;
+  created_at?: string;
   /** Raw geography(Polygon) value (opaque to the client) — only used to detect presence via `!= null`. */
   boundary?: unknown;
 }

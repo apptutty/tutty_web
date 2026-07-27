@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SettingsService } from '../settings.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { StoreCategory, CommerceType } from '../../../core/supabase/database.types';
 import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/admin-empty-state.component';
 
@@ -74,7 +75,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
                     <div class="flex gap-2">
                       <button class="text-brand-500 hover:text-brand-700 text-sm" (click)="openForm(cat)">Editar</button>
                       <button class="text-error-500 hover:text-error-700 text-sm"
-                        (click)="delete(cat.id)" [disabled]="deleting() === cat.id">
+                        (click)="delete(cat)" [disabled]="deleting() === cat.id">
                         {{ deleting() === cat.id ? '...' : 'Eliminar' }}
                       </button>
                     </div>
@@ -155,6 +156,7 @@ import { AdminEmptyStateComponent } from '../../../shared/ui/admin-empty-state/a
 export class CategoriesPageComponent implements OnInit {
   private readonly svc = inject(SettingsService);
   private readonly toast = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -209,13 +211,20 @@ export class CategoriesPageComponent implements OnInit {
     finally { this.saving.set(false); }
   }
 
-  async delete(id: string) {
-    this.deleting.set(id);
+  async delete(cat: StoreCategory) {
+    const ok = await this.confirm.confirm({
+      title: `¿Eliminar "${cat.name}"?`,
+      message: 'Si hay comercios usando esta categoría, la eliminación podría fallar o dejarlos sin categoría. Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      danger: true,
+    });
+    if (!ok) return;
+    this.deleting.set(cat.id);
     try {
-      await this.svc.deleteStoreCategory(id);
+      await this.svc.deleteStoreCategory(cat.id);
       this.toast.success('Categoría eliminada');
       this.load();
-    } catch { this.toast.error('Error al eliminar'); }
+    } catch { this.toast.error('Error al eliminar. Puede tener comercios asociados.'); }
     finally { this.deleting.set(null); }
   }
 

@@ -68,6 +68,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/beaches/beaches.page').then(m => m.BeachesPageComponent),
       },
       {
+        path: 'delivery-areas',
+        canActivate: [roleGuard(['super_admin'])],
+        loadComponent: () => import('./features/delivery-areas/delivery-areas.page').then(m => m.DeliveryAreasPageComponent),
+      },
+      {
         path: 'stores/:id',
         canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/stores/store-detail.page').then(m => m.StoreDetailPageComponent),

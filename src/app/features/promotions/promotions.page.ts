@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { PageHeaderComponent } from '../../layout/admin-shell/page-header.component';
 import { ToastService } from '../../shared/ui/toast/toast.service';
@@ -238,7 +238,10 @@ import {
 
               <div>
                 <label class="label">Priority *</label>
-                <input class="input-field" type="number" formControlName="priority" />
+                <input class="input-field" type="number" min="0" step="1" formControlName="priority" />
+                @if (promoForm.controls.priority.touched && promoForm.controls.priority.errors?.['min']) {
+                  <p class="text-xs text-red-600 mt-1">La prioridad no puede ser negativa</p>
+                }
               </div>
 
               @if (activeFormLang() === 'es') {
@@ -283,6 +286,9 @@ import {
               <div>
                 <label class="label">Ends at</label>
                 <input class="input-field" type="datetime-local" formControlName="ends_at" />
+                @if (promoForm.errors?.['dateRangeInvalid']) {
+                  <p class="text-xs text-red-600 mt-1">La fecha de fin debe ser posterior a la fecha de inicio</p>
+                }
               </div>
 
               <div class="md:col-span-2">
@@ -362,21 +368,31 @@ export class PromotionsPageComponent implements OnInit {
     { value: 'it', label: 'IT' },
   ];
 
-  readonly promoForm = this.fb.nonNullable.group({
-    title: ['', Validators.required],
-    description: [''],
-    badge: [''],
-    category: ['all' as PromoCategory, Validators.required],
-    color_tone: [''],
-    cta_label: [''],
-    cta_target_type: ['catalog' as PromoTargetType, Validators.required],
-    cta_target_value: ['', Validators.required],
-    image_url: [''],
-    priority: [0, Validators.required],
-    starts_at: [this.toLocalDateTime(new Date().toISOString()), Validators.required],
-    ends_at: [''],
-    is_active: [true],
-  });
+  readonly promoForm = this.fb.nonNullable.group(
+    {
+      title: ['', Validators.required],
+      description: [''],
+      badge: [''],
+      category: ['all' as PromoCategory, Validators.required],
+      color_tone: [''],
+      cta_label: [''],
+      cta_target_type: ['catalog' as PromoTargetType, Validators.required],
+      cta_target_value: ['', Validators.required],
+      image_url: [''],
+      priority: [0, [Validators.required, Validators.min(0)]],
+      starts_at: [this.toLocalDateTime(new Date().toISOString()), Validators.required],
+      ends_at: [''],
+      is_active: [true],
+    },
+    { validators: [PromotionsPageComponent.dateRangeValidator] }
+  );
+
+  private static dateRangeValidator(group: AbstractControl): ValidationErrors | null {
+    const starts = group.get('starts_at')?.value as string;
+    const ends = group.get('ends_at')?.value as string;
+    if (!starts || !ends) return null;
+    return new Date(ends).getTime() > new Date(starts).getTime() ? null : { dateRangeInvalid: true };
+  }
 
   readonly filteredPromos = computed(() => {
     const text = this.searchText.trim().toLowerCase();

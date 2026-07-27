@@ -42,3 +42,14 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+.env.local
+e2e/.env
+
+# Playwright E2E artifacts
+e2e/.auth/
+e2e/playwright-report/
+e2e/test-results/
+e2e/blob-report/

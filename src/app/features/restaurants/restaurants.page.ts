@@ -197,6 +197,9 @@ import { AdminEmptyStateComponent } from '../../shared/ui/admin-empty-state/admi
                 <div>
                   <label class="label">WhatsApp</label>
                   <input class="input-field" formControlName="whatsapp_number" placeholder="8091234567" />
+                  @if (restaurantForm.controls.whatsapp_number.errors?.['pattern']) {
+                    <p class="text-xs text-red-600 mt-1">Formato de teléfono inválido</p>
+                  }
                 </div>
               </div>
             </div>
@@ -294,14 +297,14 @@ export class RestaurantsPageComponent implements OnInit {
     slug: ['', Validators.required],
     description: [''],
     commerce_type: ['' as CommerceType | ''],
-    whatsapp_number: [''],
+    whatsapp_number: ['', Validators.pattern(/^\+?[0-9\s\-()]{7,20}$/)],
     address: ['', Validators.required],
     sector: [''],
     city: ['Santo Domingo', Validators.required],
     commission_tier: ['estandar' as CommissionTier],
     commission_rate_display: [10, [Validators.min(1), Validators.max(99)]],
-    min_order_amount: [200],
-    avg_delivery_time: [30],
+    min_order_amount: [200, [Validators.min(0), Validators.max(1000000)]],
+    avg_delivery_time: [30, [Validators.min(1), Validators.max(600)]],
   });
 
   ngOnInit(): void { this.loadRestaurants(); }

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CouriersService } from './couriers.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
+import { ConfirmService } from '../../shared/ui/modal/confirm.service';
 import { StatusBadgeComponent } from '../../shared/ui/badge/status-badge.component';
 import { AuthService } from '../../core/auth/auth.service';
 import {
@@ -606,6 +607,7 @@ export class CourierDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(CouriersService);
   private readonly toastService = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly authService = inject(AuthService);
 
   readonly courier = signal<Courier | null>(null);
@@ -843,6 +845,13 @@ export class CourierDetailPageComponent implements OnInit {
   }
 
   async deleteAbsence(id: string): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: '¿Eliminar ausencia?',
+      message: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await this.service.deleteDriverAbsence(id);
       this.toastService.success('Ausencia eliminada');
@@ -852,6 +861,10 @@ export class CourierDetailPageComponent implements OnInit {
 
   async saveSanction(): Promise<void> {
     if (!this.newSanctionType) return;
+    if (this.newSanctionPoints != null && (!Number.isFinite(this.newSanctionPoints) || this.newSanctionPoints < 0)) {
+      this.toastService.error('Los puntos de la sanción no pueden ser negativos');
+      return;
+    }
     this.formLoading.set(true);
     try {
       await this.service.createDriverSanction({
