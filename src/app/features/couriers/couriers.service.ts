@@ -31,21 +31,32 @@ export class CouriersService {
     getDriverStats(): Observable<DriverStats> {
         return from((async () => {
             const { data } = await this.supabase.from('repartidores').select('is_available, approval_status, photo_url, cedula_photo_url, vehicle_photo_url, license_photo_url, total_deliveries, total_earnings, avg_rating, last_location_at');
-            const list = data ?? [];
+            const list = (data ?? []) as Array<{
+                is_available: boolean | null;
+                approval_status: string | null;
+                photo_url: string | null;
+                cedula_photo_url: string | null;
+                vehicle_photo_url: string | null;
+                license_photo_url: string | null;
+                total_deliveries: number | null;
+                total_earnings: number | null;
+                avg_rating: number | null;
+                last_location_at: string | null;
+            }>;
             const now = Date.now();
             const recentThreshold = 30 * 60 * 1000; // 30 minutes
             const stats: DriverStats = {
                 total: list.length,
-                pending: list.filter((r: any) => r.approval_status === 'pendiente').length,
-                approved: list.filter((r: any) => r.approval_status === 'aprobado').length,
-                available: list.filter((r: any) => r.is_available).length,
-                unavailable: list.filter((r: any) => !r.is_available).length,
-                suspended: list.filter((r: any) => r.approval_status === 'suspendido' || r.approval_status === 'rechazado').length,
-                totalDeliveries: list.reduce((s: number, r: any) => s + (r.total_deliveries ?? 0), 0),
-                totalEarnings: list.reduce((s: number, r: any) => s + (r.total_earnings ?? 0), 0),
-                avgRating: list.length ? list.reduce((s: number, r: any) => s + (r.avg_rating ?? 0), 0) / list.length : 0,
-                missingDocs: list.filter((r: any) => !r.photo_url || !r.cedula_photo_url || !r.vehicle_photo_url || !r.license_photo_url).length,
-                onlineRecently: list.filter((r: any) => r.last_location_at && (now - new Date(r.last_location_at).getTime()) < recentThreshold).length,
+                pending: list.filter(r => r.approval_status === 'pendiente').length,
+                approved: list.filter(r => r.approval_status === 'aprobado').length,
+                available: list.filter(r => r.is_available).length,
+                unavailable: list.filter(r => !r.is_available).length,
+                suspended: list.filter(r => r.approval_status === 'suspendido' || r.approval_status === 'rechazado').length,
+                totalDeliveries: list.reduce((s, r) => s + (r.total_deliveries ?? 0), 0),
+                totalEarnings: list.reduce((s, r) => s + (r.total_earnings ?? 0), 0),
+                avgRating: list.length ? list.reduce((s, r) => s + (r.avg_rating ?? 0), 0) / list.length : 0,
+                missingDocs: list.filter(r => !r.photo_url || !r.cedula_photo_url || !r.vehicle_photo_url || !r.license_photo_url).length,
+                onlineRecently: list.filter(r => r.last_location_at && (now - new Date(r.last_location_at).getTime()) < recentThreshold).length,
             };
             return stats;
         })());
@@ -54,12 +65,12 @@ export class CouriersService {
     getCouriers(filters: { available?: boolean; approvalStatus?: string; vehicleType?: string } = {}): Observable<Courier[]> {
         return from(
             (async () => {
-                let q = this.supabase.from('repartidores')
+                let query = this.supabase.from('repartidores')
                     .select('*, user:users!repartidores_user_id_fkey(full_name, phone, email, avatar_url)');
-                if (filters.available !== undefined) q = (q as any).eq('is_available', filters.available);
-                if (filters.approvalStatus) q = (q as any).eq('approval_status', filters.approvalStatus);
-                if (filters.vehicleType) q = (q as any).eq('vehicle_type', filters.vehicleType);
-                const { data, error } = await (q as any).order('id', { ascending: false });
+                if (filters.available !== undefined) query = query.eq('is_available', filters.available);
+                if (filters.approvalStatus) query = query.eq('approval_status', filters.approvalStatus);
+                if (filters.vehicleType) query = query.eq('vehicle_type', filters.vehicleType);
+                const { data, error } = await query.order('id', { ascending: false });
                 if (error) throw error;
                 return (data ?? []).map((r: any) => ({
                     ...r,
@@ -218,6 +229,77 @@ export class CouriersService {
 
     async removeDriverZone(courierId: string, zoneId: string): Promise<void> {
         const { error } = await this.supabase.from('repartidor_zones').delete().eq('repartidor_id', courierId).eq('zone_id', zoneId);
+        if (error) throw error;
+    }
+
+    /** Nivel 1 special areas (requires_special_driver = true) for the area-authorization selector. */
+    async listSpecialAreas(): Promise<Array<{ id: string; name: string; special_fee_multiplier: number | null }>> {
+        const { data, error } = await this.supabase
+            .from('delivery_areas')
+            .select('id, name, special_fee_multiplier')
+            .eq('requires_special_driver', true)
+            .eq('is_active', true)
+            .order('name');
+        if (error) throw error;
+        return (data ?? []) as Array<{ id: string; name: string; special_fee_multiplier: number | null }>;
+    }
+
+    /** Special-area ids this repartidor is authorized for, plus which one is marked primary. */
+    async getDriverAreaCoverage(courierId: string): Promise<{ areaIds: string[]; primaryAreaId: string | null }> {
+        const { data, error } = await this.supabase
+            .from('repartidor_areas')
+            .select('area_id, is_primary')
+            .eq('repartidor_id', courierId);
+        if (error) throw error;
+        const rows = (data ?? []) as Array<{ area_id: string; is_primary: boolean | null }>;
+        return {
+            areaIds: rows.map((r) => r.area_id),
+            primaryAreaId: rows.find((r) => r.is_primary)?.area_id ?? null,
+        };
+    }
+
+    /** Full replace of the special-area authorization set for one repartidor (direct write — no dedicated RPC, under the `rep_areas_superadmin` policy). */
+    async saveDriverAreaCoverage(courierId: string, areaIds: string[], primaryAreaId: string | null): Promise<void> {
+        const { error: deleteError } = await this.supabase.from('repartidor_areas').delete().eq('repartidor_id', courierId);
+        if (deleteError) throw deleteError;
+        if (areaIds.length === 0) return;
+        const rows = areaIds.map((areaId) => ({
+            repartidor_id: courierId,
+            area_id: areaId,
+            is_primary: areaId === primaryAreaId,
+        }));
+        const { error: insertError } = await this.supabase.from('repartidor_areas').insert(rows);
+        if (insertError) throw insertError;
+    }
+
+    /** Nivel 3 global zones (commerce_id null) for the zone-coverage selector. */
+    async listGlobalZonesForCoverage(): Promise<Array<{ id: string; name: string; delivery_fee: number }>> {
+        const { data, error } = await this.supabase
+            .from('delivery_zones')
+            .select('id, name, delivery_fee')
+            .is('commerce_id', null)
+            .eq('is_active', true)
+            .order('priority');
+        if (error) throw error;
+        return (data ?? []) as Array<{ id: string; name: string; delivery_fee: number }>;
+    }
+
+    /** Global-zone ids this repartidor is authorized to deliver in. */
+    async getDriverZoneCoverage(courierId: string): Promise<string[]> {
+        const { data, error } = await this.supabase
+            .from('driver_delivery_zone_coverage')
+            .select('zone_id')
+            .eq('repartidor_id', courierId);
+        if (error) throw error;
+        return ((data ?? []) as Array<{ zone_id: string }>).map((row) => row.zone_id);
+    }
+
+    /** Full replace of the global-zone coverage set for one repartidor. */
+    async saveDriverZoneCoverage(courierId: string, zoneIds: string[]): Promise<void> {
+        const { error } = await this.supabase.rpc('save_driver_delivery_zone_coverage', {
+            p_repartidor_id: courierId,
+            p_zone_ids: zoneIds,
+        });
         if (error) throw error;
     }
 

@@ -32,7 +32,6 @@ export class StoreAdminService {
 
     async loadUserStores(userId: string): Promise<void> {
         this.isLoading.set(true);
-        console.log('[StoreAdminService] loadUserStores start', { userId });
         const { data, error } = await this.supabase
             .from('commerce_admins')
             .select('commerces(*)')
@@ -49,11 +48,6 @@ export class StoreAdminService {
             .filter(Boolean) as Restaurant[];
 
         this.stores.set(restaurants);
-        console.log('[StoreAdminService] loadUserStores result', {
-            userId,
-            count: restaurants.length,
-            approvalStatuses: restaurants.map(r => ({ id: r.id, status: r.approval_status })),
-        });
 
         // Keep saved id if valid. Prefer approved stores when available,
         // otherwise fall back to the first pending store.
@@ -68,7 +62,6 @@ export class StoreAdminService {
         if (target) {
             this.activeStoreId.set(target.id);
             localStorage.setItem(ACTIVE_STORE_KEY, target.id);
-            console.log('[StoreAdminService] active store set', { storeId: target.id, status: target.approval_status });
         } else {
             this.activeStoreId.set(null);
             localStorage.removeItem(ACTIVE_STORE_KEY);

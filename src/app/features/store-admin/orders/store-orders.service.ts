@@ -28,8 +28,14 @@ export interface StoreOrderDetail extends OrderDetail {
     // commission_amount intentionally excluded from display
 }
 
+// El comercio puede avanzar el pedido hasta 'en_camino'; la transición final a
+// 'entregado' queda reservada al repartidor (vía PIN, confirm_order_delivery())
+// y a super_admin para soporte — ver 040_delivery_pin_confirmation.sql. Por eso
+// 'entregado' NO está en esta secuencia: nextStatus('en_camino') debe devolver
+// null para que la UI deje de ofrecer "Marcar entregado" (el UPDATE directo ya
+// no pasa la policy RLS de todos modos).
 const STATUS_SEQUENCE: OrderStatus[] = [
-    'recibido', 'confirmado', 'en_preparacion', 'en_camino', 'entregado',
+    'recibido', 'confirmado', 'en_preparacion', 'en_camino',
 ];
 
 @Injectable({ providedIn: 'root' })

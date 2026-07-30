@@ -438,13 +438,14 @@ export class SupportService {
 
         // 4. Notify reporter for non-internal messages
         if (!isInternal && ticketData?.reporter_id) {
-            await this.supabase.from('notifications').insert({
+            const { error: notifyError } = await this.supabase.from('notifications').insert({
                 user_id: ticketData.reporter_id,
-                type: 'ticket_reply',
+                type: 'soporte_respuesta',
                 title: 'Respuesta a tu ticket de soporte',
-                body: message.length > 100 ? `${message.slice(0, 97)}…` : message,
+                message: message.length > 100 ? `${message.slice(0, 97)}…` : message,
                 data: { ticket_id: ticketId },
             });
+            if (notifyError) console.error('[Support] Failed to notify reporter:', notifyError);
         }
     }
 
@@ -502,13 +503,14 @@ export class SupportService {
             .single();
 
         if (ticketData?.reporter_id) {
-            await this.supabase.from('notifications').insert({
+            const { error: notifyError } = await this.supabase.from('notifications').insert({
                 user_id: ticketData.reporter_id,
-                type: 'ticket_status_changed',
+                type: 'soporte_respuesta',
                 title: `Tu ticket fue ${statusLabels[status]}`,
-                body: systemMsg,
+                message: systemMsg,
                 data: { ticket_id: ticketId },
             });
+            if (notifyError) console.error('[Support] Failed to notify reporter:', notifyError);
         }
     }
 

@@ -8,7 +8,6 @@ export const authGuard: CanActivateFn = async () => {
   try {
     await auth.ready;
     const allowed = auth.sessionExists();
-    console.log('[AuthGuard] decision', { allowed, sessionExists: auth.sessionExists() });
     return allowed ? true : router.createUrlTree(['/login']);
   } catch (err) {
     console.error('[AuthGuard] failed', err);
@@ -22,7 +21,6 @@ export const noAuthGuard: CanActivateFn = async () => {
   try {
     await auth.ready;
     if (!auth.sessionExists()) {
-      console.log('[NoAuthGuard] allow login route (no session)');
       return true;
     }
     await auth.profileReady;
@@ -32,7 +30,6 @@ export const noAuthGuard: CanActivateFn = async () => {
       return true; // profile failed — show login rather than redirect loop
     }
     const redirect = user.role === 'store_admin' ? '/store' : '/dashboard';
-    console.log('[NoAuthGuard] redirect authenticated user', { userId: user.id, role: user.role, redirect });
     return router.createUrlTree([redirect]);
   } catch (err) {
     console.error('[NoAuthGuard] failed', err);

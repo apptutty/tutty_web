@@ -44,6 +44,24 @@ const DEFAULT_NOTIF: StoreNotifPrefs = {
   lowStockThreshold: 5,
 };
 
+/**
+ * Campos de `commerces` que el propio comercio puede editar desde Store
+ * Settings. Se define como allowlist explícita (en vez de `Partial<Restaurant>`)
+ * a propósito: `Restaurant` también incluye columnas financieras/de moderación
+ * (`commission_rate`, `commission_tier`, `is_active`, `approval_status`, etc.)
+ * que nunca deben poder llegar a un `update()` disparado desde este servicio,
+ * ni por error de un cambio futuro que haga `{ ...form }` sobre un objeto más
+ * grande. Ver docs/tutty-continuous-fix-log.md — hallazgo de hardening
+ * (defensa en profundidad, no había un exploit activo hoy: ningún caller
+ * actual envía estos campos, pero el tipo lo permitía).
+ */
+export type StoreOwnerEditableFields = Pick<Restaurant,
+  | 'name' | 'description' | 'whatsapp_number' | 'address' | 'sector' | 'city'
+  | 'category_id' | 'lat' | 'lng' | 'logo_url' | 'banner_url'
+  | 'open_days' | 'opening_time' | 'closing_time' | 'avg_service_time'
+  | 'min_order_amount' | 'free_delivery_threshold'
+>;
+
 @Injectable({ providedIn: 'root' })
 export class StoreSettingsService {
   private readonly supabase = getSupabaseClient();
@@ -52,7 +70,7 @@ export class StoreSettingsService {
 
   // ─── Store profile ─────────────────────────────────────────────────────────
 
-  async updateStore(id: string, patch: Partial<Restaurant>): Promise<void> {
+  async updateStore(id: string, patch: Partial<StoreOwnerEditableFields>): Promise<void> {
     this.isSaving.set(true);
     try {
       const { error } = await this.supabase.from('commerces').update(patch).eq('id', id);

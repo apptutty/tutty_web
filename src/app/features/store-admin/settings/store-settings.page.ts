@@ -13,6 +13,7 @@ import { StoreSettingsService, TeamMember, StoreNotifPrefs, BeachOption } from '
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/modal/confirm.service';
 import { Restaurant, CommerceCategory, Payout } from '../../../core/supabase/database.types';
+import { StoreOwnerEditableFields } from './store-settings.service';
 import { TuttyMapComponent, LatLng } from '../../../shared/ui/map/tutty-map.component';
 import { AdminGeoService, PlaceSuggestion } from '../../../core/services/admin-geo.service';
 import { AdminImageFieldComponent } from '../../../shared/ui/image-field/admin-image-field.component';
@@ -1027,7 +1028,7 @@ export class StoreSettingsPageComponent implements OnInit {
         const storeId = this.storeAdminSvc.activeStoreId();
         if (!storeId) return;
         try {
-            const patch: Partial<Restaurant> = {
+            const patch: Partial<StoreOwnerEditableFields> = {
                 name: this.profileForm.name, description: this.profileForm.description || null,
                 whatsapp_number: this.profileForm.whatsapp_number || null,
                 address: this.profileForm.address, sector: this.profileForm.sector, city: this.profileForm.city,

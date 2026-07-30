@@ -94,68 +94,48 @@ export class OperatorRegisterService {
         });
         if (userError) throw userError;
 
-        // 3. Insert excursion_operator
-        const { data: op, error: opError } = await this.supabase
-            .from('excursion_operators')
-            .insert({
-                name: d.name,
-                slug: d.slug,
-                description: d.description || null,
-                category: d.category,
-                whatsapp_number: d.whatsapp_number || null,
-                address: d.address || null,
-                logo_url: d.logo_url,
-                banner_url: d.banner_url,
-                is_active: false,
-                approval_status: 'pendiente',
-            } as Record<string, unknown>)
-            .select('id')
-            .single();
-        if (opError || !op) throw opError ?? new Error('Error al crear el perfil de operador');
+        // 3-6. Create operator profile + admin link + optional first excursion,
+        // atomically, via RPC (direct inserts to these tables are blocked by
+        // RLS today — see migration 043_register_excursion_operator_rpc.sql).
+        const { data: rpcData, error: rpcError } = await this.supabase.rpc(
+            'register_excursion_operator',
+            {
+                p_name: d.name,
+                p_slug: d.slug,
+                p_description: d.description || null,
+                p_category: d.category,
+                p_whatsapp_number: d.whatsapp_number || null,
+                p_address: d.address || null,
+                p_logo_url: d.logo_url,
+                p_banner_url: d.banner_url,
+                p_tour_name: d.tour_enabled && d.tour_name.trim() ? d.tour_name : null,
+                p_tour_short_description: d.tour_short_description || null,
+                p_tour_price: d.tour_price,
+                p_tour_duration_hours: d.tour_duration_hours,
+                p_tour_difficulty: d.tour_difficulty,
+                p_tour_meeting_point: d.tour_meeting_point || null,
+                p_tour_min_people: d.tour_min_people,
+                p_tour_max_people: d.tour_max_people,
+                p_tour_photos: d.tour_photos,
+                p_tour_language: d.languages[0] ?? 'Español',
+            },
+        );
+        if (rpcError) throw rpcError;
 
-        const operatorId = (op as { id: string }).id;
+        const result = rpcData as {
+            success: boolean;
+            operator_id?: string;
+            approved?: boolean;
+            error_code?: string;
+        };
+        if (!result?.success || !result.operator_id) {
+            throw new Error(result?.error_code ?? 'Error al crear el perfil de operador');
+        }
+
+        const operatorId = result.operator_id;
         this.lastOperatorId.set(operatorId);
 
-        // 4. Link operator admin
-        const { error: adminError } = await this.supabase
-            .from('excursion_operator_admins')
-            .insert({ user_id: userId, operator_id: operatorId });
-        if (adminError) throw adminError;
-
-        // 5. Check auto-approve setting
-        const { data: setting } = await this.supabase
-            .from('app_settings')
-            .select('value')
-            .eq('key', 'store_auto_approve')
-            .maybeSingle();
-        const autoApprove = setting?.value === 'true';
-
-        if (autoApprove) {
-            await this.supabase
-                .from('excursion_operators')
-                .update({ is_active: true, approval_status: 'aprobado' } as Record<string, unknown>)
-                .eq('id', operatorId);
-        }
-
-        // 6. Insert first excursion if provided
-        if (d.tour_enabled && d.tour_name.trim()) {
-            await this.supabase.from('excursions').insert({
-                operator_id: operatorId,
-                name: d.tour_name,
-                short_description: d.tour_short_description || null,
-                price_per_person: d.tour_price,
-                duration_hours: d.tour_duration_hours,
-                difficulty_level: d.tour_difficulty,
-                meeting_point: d.tour_meeting_point || null,
-                min_people: d.tour_min_people,
-                max_people: d.tour_max_people,
-                photos: d.tour_photos,
-                is_active: false,
-                language: (d.languages[0] ?? 'Español'),
-            });
-        }
-
-        return { approved: autoApprove, operatorId };
+        return { approved: !!result.approved, operatorId };
     }
 
     async getOperatorStatus(operatorId: string): Promise<{ is_active: boolean } | null> {

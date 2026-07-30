@@ -1004,9 +1004,11 @@ interface ProductForm {
                 <p class="product-preview-name">{{ form.name || 'Nombre del producto' }}</p>
                 <p class="product-preview-meta">⏱ {{ form.preparation_time ?? 15 }} min</p>
                 <p class="product-preview-price">
-                  &#36;{{ (form.price ?? 0).toFixed(2) }}
                   @if (form.discount_price && form.discount_price > 0) {
-                    <span class="price-old">&#36;{{ form.discount_price.toFixed(2) }}</span>
+                    &#36;{{ form.discount_price.toFixed(2) }}
+                    <span class="price-old">&#36;{{ (form.price ?? 0).toFixed(2) }}</span>
+                  } @else {
+                    &#36;{{ (form.price ?? 0).toFixed(2) }}
                   }
                 </p>
                 <div class="product-preview-footer">

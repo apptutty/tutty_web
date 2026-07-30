@@ -83,7 +83,7 @@ type ScreenState = 'loading' | 'approved' | 'pending' | 'rejected';
             <p class="help-text">
               Si crees que hay un error o deseas más información, contáctanos al
               <a href="https://wa.me/18090000000" class="link" target="_blank">+1 809-000-0000</a>
-              o escríbenos a <a href="mailto:soporte@tuttys.do" class="link">soporte@tuttys.do</a>.
+              o escríbenos a <a href="mailto:soporte@tutty.do" class="link">soporte@tutty.do</a>.
             </p>
             <a routerLink="/register/info" class="btn-outline" (click)="startOver()">Editar y reenviar</a>
           </div>

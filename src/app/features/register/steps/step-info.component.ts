@@ -56,7 +56,7 @@ function slugify(text: string): string {
         <div class="form-group">
           <label class="label" for="slug">URL única (slug) *</label>
           <div class="slug-wrapper">
-            <span class="slug-prefix">tuttys.do/</span>
+            <span class="slug-prefix">tutty.do/</span>
             <input id="slug" type="text" class="input-field slug-input" formControlName="slug" placeholder="mi-comercio" />
           </div>
           @if (f['slug'].pending) {

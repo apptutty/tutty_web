@@ -1071,7 +1071,9 @@ export class StoreOrdersPageComponent implements OnInit, OnDestroy {
     primaryActionLabel(order: StoreOrder): string | null {
         if (order.status === 'recibido') return 'Aceptar pedido';
         if (order.status === 'confirmado' || order.status === 'en_preparacion') return 'Marcar listo';
-        if (order.status === 'en_camino') return 'Marcar entregado';
+        // 'entregado' ya no se marca manualmente desde el comercio — ver
+        // 040_delivery_pin_confirmation.sql: esa transición requiere el PIN
+        // del repartidor (confirm_order_delivery()).
         return null;
     }
 

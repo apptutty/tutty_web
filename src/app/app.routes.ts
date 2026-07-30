@@ -73,6 +73,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/delivery-areas/delivery-areas.page').then(m => m.DeliveryAreasPageComponent),
       },
       {
+        path: 'delivery-zones',
+        canActivate: [roleGuard(['super_admin'])],
+        loadComponent: () => import('./features/delivery-areas/delivery-zones-global.page').then(m => m.DeliveryZonesGlobalPageComponent),
+      },
+      {
         path: 'stores/:id',
         canActivate: [roleGuard(['super_admin'])],
         loadComponent: () => import('./features/stores/store-detail.page').then(m => m.StoreDetailPageComponent),

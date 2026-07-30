@@ -402,6 +402,70 @@ type DetailTab = 'overview' | 'documents' | 'vehicle' | 'location' | 'wallet' | 
             }
           </div>
         }
+
+        <!-- Nivel 2: special-area authorization for this repartidor -->
+        <div class="card p-4 mt-5">
+          <h3 class="font-semibold text-gray-800 mb-1">Zonas especiales autorizadas</h3>
+          <p class="text-xs text-gray-400 mb-3">Solo aplica a zonas globales marcadas como "Especial" (ej. residenciales). Sin autorización, este repartidor no puede recibir pedidos ahí.</p>
+          @if (specialAreasLoading()) {
+            <div class="animate-pulse h-20 bg-gray-200 rounded-xl"></div>
+          } @else if (specialAreas().length === 0) {
+            <p class="text-sm text-gray-400">No hay zonas especiales configuradas todavía.</p>
+          } @else {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              @for (area of specialAreas(); track area.id) {
+                <label class="border border-gray-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                  <span class="min-w-0">
+                    <span class="block text-sm font-medium text-gray-800 truncate">{{ area.name }}</span>
+                    <span class="block text-xs text-gray-400">Recargo x{{ area.special_fee_multiplier ?? 1 }}</span>
+                  </span>
+                  <span class="flex items-center gap-3 flex-shrink-0">
+                    @if (selectedAreaIds().includes(area.id)) {
+                      <label class="text-xs text-gray-500 flex items-center gap-1">
+                        <input type="radio" name="primaryArea" [checked]="selectedPrimaryAreaId() === area.id" (change)="selectedPrimaryAreaId.set(area.id)" />
+                        Principal
+                      </label>
+                    }
+                    <input type="checkbox" class="w-[18px] h-[18px]" [checked]="selectedAreaIds().includes(area.id)" (change)="toggleAreaCoverage(area.id)" />
+                  </span>
+                </label>
+              }
+            </div>
+            <div class="flex justify-end mt-3">
+              <button class="btn-primary text-sm" [disabled]="savingAreaCoverage()" (click)="saveAreaCoverage()">
+                {{ savingAreaCoverage() ? 'Guardando…' : 'Guardar autorización' }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Nivel 3: global delivery-zone coverage for this repartidor -->
+        <div class="card p-4 mt-5">
+          <h3 class="font-semibold text-gray-800 mb-1">Cobertura de zonas de entrega (globales)</h3>
+          <p class="text-xs text-gray-400 mb-3">Zonas de entrega globales (sin comercio fijo) que este repartidor puede cubrir.</p>
+          @if (globalZonesLoading()) {
+            <div class="animate-pulse h-20 bg-gray-200 rounded-xl"></div>
+          } @else if (globalZones().length === 0) {
+            <p class="text-sm text-gray-400">No hay zonas de entrega globales configuradas todavía.</p>
+          } @else {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              @for (zone of globalZones(); track zone.id) {
+                <label class="border border-gray-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                  <span class="min-w-0">
+                    <span class="block text-sm font-medium text-gray-800 truncate">{{ zone.name }}</span>
+                    <span class="block text-xs text-gray-400">RD$ {{ zone.delivery_fee }}</span>
+                  </span>
+                  <input type="checkbox" class="w-[18px] h-[18px]" [checked]="selectedZoneIds().includes(zone.id)" (change)="toggleZoneCoverage(zone.id)" />
+                </label>
+              }
+            </div>
+            <div class="flex justify-end mt-3">
+              <button class="btn-primary text-sm" [disabled]="savingZoneCoverage()" (click)="saveZoneCoverage()">
+                {{ savingZoneCoverage() ? 'Guardando…' : 'Guardar cobertura' }}
+              </button>
+            </div>
+          }
+        </div>
       }
 
       <!-- TAB: Absences -->
@@ -640,6 +704,15 @@ export class CourierDetailPageComponent implements OnInit {
   readonly sessionsLoading = signal(false);
   readonly zones = signal<any[]>([]);
   readonly zonesLoading = signal(false);
+  readonly specialAreas = signal<Array<{ id: string; name: string; special_fee_multiplier: number | null }>>([]);
+  readonly specialAreasLoading = signal(false);
+  readonly selectedAreaIds = signal<string[]>([]);
+  readonly selectedPrimaryAreaId = signal<string | null>(null);
+  readonly savingAreaCoverage = signal(false);
+  readonly globalZones = signal<Array<{ id: string; name: string; delivery_fee: number }>>([]);
+  readonly globalZonesLoading = signal(false);
+  readonly selectedZoneIds = signal<string[]>([]);
+  readonly savingZoneCoverage = signal(false);
   readonly absences = signal<RepartidorAbsence[]>([]);
   readonly absencesLoading = signal(false);
   readonly sanctions = signal<RepartidorSanction[]>([]);
@@ -745,6 +818,8 @@ export class CourierDetailPageComponent implements OnInit {
     if (tab === 'bank' && this.bankAccounts().length === 0) this.loadBankAccounts();
     if (tab === 'sessions' && this.sessions().length === 0) this.loadSessions();
     if (tab === 'zones' && this.zones().length === 0) this.loadZones();
+    if (tab === 'zones' && this.specialAreas().length === 0) this.loadAreaCoverage();
+    if (tab === 'zones' && this.globalZones().length === 0) this.loadZoneCoverage();
     if (tab === 'absences' && this.absences().length === 0) this.loadAbsences();
     if (tab === 'sanctions' && this.sanctions().length === 0) this.loadSanctions();
     if (tab === 'location' && this.locationHistory().length === 0) this.loadLocationHistory();
@@ -792,6 +867,81 @@ export class CourierDetailPageComponent implements OnInit {
   loadZones(): void {
     this.zonesLoading.set(true);
     this.service.getDriverZones(this.courierId).subscribe(data => { this.zones.set(data); this.zonesLoading.set(false); });
+  }
+
+  async loadAreaCoverage(): Promise<void> {
+    this.specialAreasLoading.set(true);
+    try {
+      const [areas, coverage] = await Promise.all([
+        this.service.listSpecialAreas(),
+        this.service.getDriverAreaCoverage(this.courierId),
+      ]);
+      this.specialAreas.set(areas);
+      this.selectedAreaIds.set(coverage.areaIds);
+      this.selectedPrimaryAreaId.set(coverage.primaryAreaId);
+    } catch {
+      this.toastService.error('No se pudieron cargar las zonas especiales');
+    } finally {
+      this.specialAreasLoading.set(false);
+    }
+  }
+
+  toggleAreaCoverage(areaId: string): void {
+    const current = this.selectedAreaIds();
+    if (current.includes(areaId)) {
+      this.selectedAreaIds.set(current.filter((id) => id !== areaId));
+      if (this.selectedPrimaryAreaId() === areaId) this.selectedPrimaryAreaId.set(null);
+    } else {
+      this.selectedAreaIds.set([...current, areaId]);
+      if (!this.selectedPrimaryAreaId()) this.selectedPrimaryAreaId.set(areaId);
+    }
+  }
+
+  async saveAreaCoverage(): Promise<void> {
+    this.savingAreaCoverage.set(true);
+    try {
+      await this.service.saveDriverAreaCoverage(this.courierId, this.selectedAreaIds(), this.selectedPrimaryAreaId());
+      this.toastService.success('Autorización de zonas especiales actualizada');
+    } catch {
+      this.toastService.error('No se pudo guardar la autorización');
+    } finally {
+      this.savingAreaCoverage.set(false);
+    }
+  }
+
+  async loadZoneCoverage(): Promise<void> {
+    this.globalZonesLoading.set(true);
+    try {
+      const [zones, zoneIds] = await Promise.all([
+        this.service.listGlobalZonesForCoverage(),
+        this.service.getDriverZoneCoverage(this.courierId),
+      ]);
+      this.globalZones.set(zones);
+      this.selectedZoneIds.set(zoneIds);
+    } catch {
+      this.toastService.error('No se pudieron cargar las zonas de entrega globales');
+    } finally {
+      this.globalZonesLoading.set(false);
+    }
+  }
+
+  toggleZoneCoverage(zoneId: string): void {
+    const current = this.selectedZoneIds();
+    this.selectedZoneIds.set(
+      current.includes(zoneId) ? current.filter((id) => id !== zoneId) : [...current, zoneId],
+    );
+  }
+
+  async saveZoneCoverage(): Promise<void> {
+    this.savingZoneCoverage.set(true);
+    try {
+      await this.service.saveDriverZoneCoverage(this.courierId, this.selectedZoneIds());
+      this.toastService.success('Cobertura de zonas actualizada');
+    } catch {
+      this.toastService.error('No se pudo guardar la cobertura');
+    } finally {
+      this.savingZoneCoverage.set(false);
+    }
   }
 
   loadAbsences(): void {
